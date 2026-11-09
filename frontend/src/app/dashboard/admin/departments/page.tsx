@@ -41,6 +41,7 @@ import { useSchoolSettings, useSchoolStats, useSchoolProfile } from "@/lib/api/h
 import { generatePDF } from "@/utils/pdfGenerator";
 import { format } from "date-fns";
 import DepartmentModal from "./components/DepartmentModal";
+import { DepartmentExportModal } from "./components/DepartmentExportModal";
 import Pagination from "@/components/ui/Pagination";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -53,6 +54,7 @@ export default function DepartmentsPage() {
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   
   useEffect(() => {
     if (window.innerWidth < 768) {
@@ -133,82 +135,6 @@ export default function DepartmentsPage() {
     }
   };
 
-  const handleExport = async (targetFormat: 'csv' | 'pdf') => {
-    setIsExporting(true);
-    try {
-      const dataToExport = departments || [];
-      if (!dataToExport || dataToExport.length === 0) {
-        toast.info("No departments to export.");
-        return;
-      }
-      
-      const headers = ["#", "Department Name", "Code", "Subjects", "Classes", "Students"];
-      const rows = dataToExport.map((dept, index) => [
-        (index + 1).toString(),
-        dept.name || "N/A",
-        dept.code || "N/A",
-        (dept.subjects?.length || 0).toString(),
-        (dept._count?.classes || 0).toString(),
-        (dept._count?.students || 0).toString()
-      ]);
-
-      const dateStr = format(new Date(), "yyyy-MM-dd");
-      const schoolName = schoolProfile?.name || user?.schools?.[0]?.name || (user as any)?.tenant?.name || "School";
-      const sanitizedSchoolName = schoolName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      const fileNameBase = `${sanitizedSchoolName}_departments_export_${dateStr}`;
-
-      if (targetFormat === 'csv') {
-        const csvContent = [];
-        csvContent.push(`"${schoolName.toUpperCase()}"`);
-        if (schoolProfile?.motto) csvContent.push(`"${schoolProfile.motto}"`);
-        csvContent.push("");
-        csvContent.push(`"Departments Report"`);
-        csvContent.push(`"Generated on: ${dateStr}"`);
-        csvContent.push("");
-
-        const csvRows = dataToExport.map((dept, index) => [
-          (index + 1).toString(),
-          `"${(dept.name || "").replace(/"/g, '""')}"`,
-          `"${(dept.code || "").replace(/"/g, '""')}"`,
-          (dept.subjects?.length || 0).toString(),
-          (dept._count?.classes || 0).toString(),
-          (dept._count?.students || 0).toString()
-        ]);
-        
-        csvContent.push(headers.join(","));
-        csvRows.forEach(r => csvContent.push(r.join(",")));
-
-        const csv = csvContent.join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${fileNameBase}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } else {
-        await generatePDF({
-          title: `School Departments Report`,
-          filename: `${fileNameBase}.pdf`,
-          schoolProfile,
-          metaData: [
-            { label: 'Date', value: dateStr },
-            { label: 'Total Departments', value: dataToExport.length.toString() }
-          ],
-          tableHeaders: [headers],
-          tableData: rows
-        });
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error(`Failed to export records as ${targetFormat.toUpperCase()}.`);
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 6;
 
@@ -267,37 +193,15 @@ export default function DepartmentsPage() {
           </div>
           
           <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-5 w-full lg:w-auto mt-6 lg:mt-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  disabled={isExporting}
-                  variant="outline"
-                  className="group w-full sm:w-auto h-14 md:h-16 px-6 md:px-8 rounded-xl font-bold tracking-wide gap-3 hover:scale-[1.02] active:scale-95 transition-all duration-300 border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl text-slate-700 dark:text-slate-300 shadow-sm hover:shadow-xl hover:border-slate-300 dark:hover:border-white/20 disabled:opacity-50 relative overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/5 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-                  {isExporting ? (
-                    <div className="size-5 rounded-full border-2 border-slate-400 border-t-slate-800 dark:border-slate-600 dark:border-t-white animate-spin" />
-                  ) : (
-                    <Download size={20} strokeWidth={2.5} className="text-slate-500 group-hover:text-slate-800 dark:group-hover:text-white transition-colors" />
-                  )}
-                  {isExporting ? "Generating..." : "Export Data"}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl p-2 shadow-xl">
-                <DropdownMenuItem 
-                  onClick={() => handleExport('csv')}
-                  className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3"
-                >
-                  Export as CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => handleExport('pdf')}
-                  className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3 mt-1"
-                >
-                  Export as PDF
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button 
+              onClick={() => setIsExportModalOpen(true)}
+              variant="outline"
+              className="group w-full sm:w-auto h-14 md:h-16 px-6 md:px-8 rounded-xl font-bold tracking-wide gap-3 hover:scale-[1.02] active:scale-95 transition-all duration-300 border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl text-slate-700 dark:text-slate-300 shadow-sm hover:shadow-xl hover:border-slate-300 dark:hover:border-white/20 relative overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/5 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+              <Download size={20} strokeWidth={2.5} className="text-slate-500 group-hover:text-slate-800 dark:group-hover:text-white transition-colors" />
+              <span>Export Departments</span>
+            </Button>
             <Button 
               onClick={() => {
                 setSelectedDepartment(null);
@@ -721,6 +625,14 @@ export default function DepartmentsPage() {
             </div>
         </div>
       </div>
+
+      <DepartmentExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        departments={departments || []}
+        schoolProfile={schoolProfile}
+        schoolId={schoolId || ''}
+      />
 
       <DepartmentModal 
         isOpen={isModalOpen}

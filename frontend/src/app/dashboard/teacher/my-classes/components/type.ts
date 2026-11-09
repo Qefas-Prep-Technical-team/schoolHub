@@ -16,6 +16,8 @@ export interface Class {
   term?: string;
   room?: string;
   description?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface ClassFilter {

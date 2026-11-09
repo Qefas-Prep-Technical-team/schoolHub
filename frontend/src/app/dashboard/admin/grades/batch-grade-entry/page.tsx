@@ -11,6 +11,11 @@ import FilterChips from './components/FilterChips';
 import GradeEntryTable from './components/GradeEntryTable';
 import SaveStatus from './components/SaveStatus';
 import Button from '../components/ui/Button';
+import ExportResultScopeModal, { ExportStudentOption, ExportScopeMode, ExportFileFormat } from '../components/ExportResultScopeModal';
+import { executeExportWorkflow } from '../components/export/exportWorkflowHandler';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { toast } from 'react-toastify';
 
 const mockBatchData: BatchGradeEntry = {
     className: '10A',
@@ -86,6 +91,11 @@ export default function BatchGradeEntry() {
         lastSaved: new Date()
     });
     const [isSaving, setIsSaving] = useState(false);
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+    const { user } = useAuthStore();
+    const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
+    const { data: schoolProfile } = useSchoolProfile(schoolId);
 
     const handleScoreChange = (studentId: string, score: number | null) => {
         setBatchData(prev => ({
@@ -142,9 +152,61 @@ export default function BatchGradeEntry() {
         }
     };
 
+    // Map batch students for ExportResultScopeModal
+    const exportStudentsList: ExportStudentOption[] = batchData.students.map(s => ({
+        id: s.id,
+        name: s.studentName,
+        studentCode: s.studentId,
+        className: batchData.className,
+        score: s.score ?? 0,
+        totalMarks: batchData.maxScore,
+        rawItem: {
+            score: s.score ?? 0,
+            maxScore: batchData.maxScore,
+            student: {
+                name: s.studentName,
+                studentCode: s.studentId,
+            }
+        }
+    }));
+
     const handleExport = () => {
-        // console.log('Exporting grades...');
-        // Implement export functionality
+        setIsExportModalOpen(true);
+    };
+
+    const handleExecuteExport = async (
+        mode: ExportScopeMode,
+        selectedList: ExportStudentOption[],
+        format?: ExportFileFormat,
+        isPaying?: boolean
+    ) => {
+        setIsExporting(true);
+        try {
+            await executeExportWorkflow({
+                selectedFormat: format || 'pdf',
+                scopeMode: mode,
+                exportItems: selectedList,
+                examTitle: batchData.assessment,
+                title: `${batchData.className} ${batchData.subject} Results`,
+                schoolId,
+                schoolName: schoolProfile?.name || 'School',
+                className: batchData.className,
+                userName: user?.name || 'Administrator',
+                userRole: 'ADMIN',
+                isPaying: Boolean(isPaying),
+                quotaContextId: schoolId || 'default_context',
+                onExport: async () => {},
+                onSuccess: () => {
+                    setIsExportModalOpen(false);
+                    toast.success('Batch assessment export completed successfully.');
+                }
+            });
+        } catch (err) {
+            console.error('Batch grade export failed:', err);
+            toast.error('Failed to export batch grades.');
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     const handleHelp = () => {
@@ -229,6 +291,20 @@ export default function BatchGradeEntry() {
                     )}
                 </div>
             </main>
+
+            <ExportResultScopeModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                onExport={handleExecuteExport}
+                isExporting={isExporting}
+                students={exportStudentsList}
+                title="Export Batch Assessment Grades"
+                description="Download and export the current marksheet cohort."
+                school={schoolProfile}
+                examTitle={batchData.assessment}
+                className={batchData.className}
+                role="ADMIN"
+            />
         </main>
     );
 }

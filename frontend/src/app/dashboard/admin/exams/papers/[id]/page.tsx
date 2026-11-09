@@ -19,7 +19,8 @@ import PaperPreviewModal from "../../[examId]/papers/[paperId]/components/PaperP
 import EditPaperModal from "../../[examId]/papers/[paperId]/components/EditPaperModal";
 import React, { useState, useMemo, useEffect } from "react";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import ExportResultScopeModal, { ExportStudentOption, ExportScopeMode, ExportFileFormat } from '../../../grades/components/ExportResultScopeModal';
+import { executeExportWorkflow } from '../../../grades/components/export/exportWorkflowHandler';
 import SubjectPaperReport from './components/SubjectPaperReport';
 import Pagination from "../../components/Pagination";
 
@@ -39,6 +40,9 @@ export default function StandalonePaperDetailPage() {
   const paper = paperData as any;
   const [isMounted, setIsMounted] = useState(false);
   const [gradesPage, setGradesPage] = useState(1);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportStudentsList, setExportStudentsList] = useState<ExportStudentOption[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -146,6 +150,41 @@ export default function StandalonePaperDetailPage() {
   const isAdmin = user?.userType === "ADMIN";
   const isAssignedTeacher = paper?.teacherId === user?.id;
   const canAccess = isAdmin || (isTeacher && isAssignedTeacher);
+
+  const handleExecuteExport = async (
+    mode: ExportScopeMode,
+    selectedList: ExportStudentOption[],
+    format?: ExportFileFormat,
+    isPaying?: boolean
+  ) => {
+    setIsExporting(true);
+    try {
+      await executeExportWorkflow({
+        selectedFormat: format || 'pdf',
+        scopeMode: mode,
+        exportItems: selectedList,
+        examTitle: paper?.title || 'Subject Paper',
+        title: `${paper?.subject?.name || 'Subject'} - ${paper?.title || 'Assessment'}`,
+        schoolId: paperSchoolId || fallbackSchoolId || '',
+        schoolName: school?.name || 'School',
+        className: paper?.class?.name || 'Class',
+        userName: user?.name || 'Administrator',
+        userRole: 'ADMIN',
+        isPaying: Boolean(isPaying),
+        quotaContextId: paperSchoolId || fallbackSchoolId || 'admin_exam_paper',
+        onExport: async () => {},
+        onSuccess: () => {
+          setIsExportModalOpen(false);
+          toast.success('Subject Paper report exported successfully.');
+        }
+      });
+    } catch (err) {
+      console.error('Subject paper export failed:', err);
+      toast.error('Failed to export subject paper report.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (isLoadingPaper) {
     return (
@@ -391,28 +430,36 @@ export default function StandalonePaperDetailPage() {
                     </div>
 
                     {isMounted && hasResults ? (
-                      <PDFDownloadLink
-                        document={<SubjectPaperReport paper={paper} school={school} attempts={allResults.map(r => ({
-                          ...r,
-                          totalMarks: r.maxMarks, // Pass totalMarks for compatibility with component
-                          examAttempt: { student: { name: r.studentName, studentCode: r.studentCode } }
-                        }))} />}
-                        fileName={`${paper.title?.replace(/\s+/g, '_') || 'Report'}_Grade_Report.pdf`}
+                      <Button
+                        onClick={() => {
+                          const formatted: ExportStudentOption[] = allResults.map((r: any) => ({
+                            id: r.id,
+                            name: r.studentName || 'Student',
+                            studentCode: r.studentCode || 'N/A',
+                            className: paper?.class?.name || 'Class',
+                            score: r.score,
+                            totalMarks: r.maxMarks,
+                            rawItem: {
+                              score: r.score,
+                              maxScore: r.maxMarks,
+                              student: {
+                                name: r.studentName,
+                                studentCode: r.studentCode,
+                              }
+                            }
+                          }));
+                          setExportStudentsList(formatted);
+                          setIsExportModalOpen(true);
+                        }}
+                        className="text-white font-bold px-6 rounded-xl shadow-lg transition-all gap-2 cursor-pointer"
+                        style={{
+                          backgroundColor: paper.school?.settings?.themeColor || 'var(--primary)',
+                          boxShadow: paper.school?.settings?.themeColor ? `0 10px 15px -3px ${paper.school.settings.themeColor}33` : undefined
+                        }}
                       >
-                        {({ loading }: any) => (
-                          <Button 
-                            className="text-white font-bold px-6 rounded-xl shadow-lg transition-all gap-2"
-                            disabled={loading}
-                            style={{ 
-                              backgroundColor: paper.school?.settings?.themeColor || 'var(--primary)',
-                              boxShadow: paper.school?.settings?.themeColor ? `0 10px 15px -3px ${paper.school.settings.themeColor}33` : undefined
-                            }}
-                          >
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText size={18} />}
-                            {loading ? 'Preparing Download...' : 'Download Grade Report'}
-                          </Button>
-                        )}
-                      </PDFDownloadLink>
+                        <FileText size={18} />
+                        Export Grade Report
+                      </Button>
                     ) : (
                       <Button 
                         className="bg-gray-200 text-gray-400 font-bold px-6 rounded-xl cursor-not-allowed border border-gray-300"

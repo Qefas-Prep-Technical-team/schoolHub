@@ -41,6 +41,8 @@ import { RecordsStatsCards } from './components/RecordsStatsCards';
 import { SubjectResultCard, SubjectResultItem } from './components/SubjectResultCard';
 import { RecordsSkeleton } from './components/RecordsSkeleton';
 import { CreateResultDialog } from './components/CreateResultDialog';
+import { RecordsExportModal } from '@/app/dashboard/admin/records/components/RecordsExportModal';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 
 interface DateGroup<T> {
   label: string;
@@ -96,6 +98,7 @@ export default function RecordsPage() {
   const [activeTab, setActiveTab] = useState<'subject' | 'student'>('subject');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isExportPopupOpen, setIsExportPopupOpen] = useState(false);
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,6 +121,7 @@ export default function RecordsPage() {
     '';
 
   // Dropdown Data Hooks
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
   const { data: classesData, isLoading: isLoadingClasses } = useClasses(effectiveSchoolId);
   const { data: teacherClassesData } = useTeacherClasses(effectiveSchoolId);
   const { data: sessionsData, isLoading: isLoadingSessions } = useSessions(effectiveSchoolId);
@@ -471,8 +475,8 @@ export default function RecordsPage() {
         <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <button
             type="button"
-            onClick={() => toast.info('Exporting report summary...')}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 h-11 px-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all shadow-sm active:scale-95"
+            onClick={() => setIsExportPopupOpen(true)}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 h-11 px-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all shadow-sm active:scale-95 cursor-pointer"
           >
             <Download className="w-4 h-4 text-slate-500" />
             <span>Export Data</span>
@@ -481,7 +485,7 @@ export default function RecordsPage() {
           <button
             type="button"
             onClick={() => setIsPopupOpen(true)}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 h-11 px-5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm shadow-emerald-500/20 active:scale-95"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 h-11 px-5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm shadow-emerald-500/20 active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Final Result</span>
@@ -509,11 +513,10 @@ export default function RecordsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('subject')}
-                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                  activeTab === 'subject'
+                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${activeTab === 'subject'
                     ? 'bg-white dark:bg-emerald-950/60 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <BookOpen className="w-4 h-4 text-emerald-500" />
                 <span>Subject Final Results</span>
@@ -525,11 +528,10 @@ export default function RecordsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('student')}
-                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                  activeTab === 'student'
+                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${activeTab === 'student'
                     ? 'bg-white dark:bg-emerald-950/60 text-slate-900 dark:text-white shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <Users className="w-4 h-4 text-blue-500" />
                 <span>Students Final Results</span>
@@ -555,11 +557,10 @@ export default function RecordsPage() {
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
-                className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all ${
-                  viewMode === 'grid'
+                className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all ${viewMode === 'grid'
                     ? 'bg-white dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
+                  }`}
                 aria-label="Grid View"
               >
                 <LayoutGrid className="w-4 h-4" />
@@ -567,11 +568,10 @@ export default function RecordsPage() {
               <button
                 type="button"
                 onClick={() => setViewMode('table')}
-                className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all ${
-                  viewMode === 'table'
+                className={`flex items-center justify-center h-8 w-8 rounded-lg transition-all ${viewMode === 'table'
                     ? 'bg-white dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200/60 dark:border-emerald-700/50'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
+                  }`}
                 aria-label="Table View"
               >
                 <List className="w-4 h-4" />
@@ -832,11 +832,10 @@ export default function RecordsPage() {
                                   </td>
                                   <td className="px-4 py-4">
                                     <span
-                                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${
-                                        isPublished
+                                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${isPublished
                                           ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40'
                                           : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/40'
-                                      }`}
+                                        }`}
                                     >
                                       {isPublished ? (
                                         <ShieldCheck className="w-3 h-3 text-emerald-500" />
@@ -856,11 +855,10 @@ export default function RecordsPage() {
                                             : `/dashboard/teacher/records/preview?id=${res.id}`
                                         )
                                       }
-                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${
-                                        canEdit
+                                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm active:scale-95 ${canEdit
                                           ? 'border-emerald-200 dark:border-emerald-800/50 bg-emerald-500 text-white hover:bg-emerald-600'
                                           : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-800'
-                                      }`}
+                                        }`}
                                     >
                                       <span>{canEdit ? 'Edit Sheet' : 'Preview'}</span>
                                       <ArrowRight className="w-3.5 h-3.5" />
@@ -1086,6 +1084,19 @@ export default function RecordsPage() {
         isLoadingSubjects={isLoadingTeacherSubjects}
         isLoadingDepartments={isLoadingTeacherSubjects || isLoadingDepartments}
         isLoadingSessions={isLoadingSessions}
+      />
+
+      {/* Multi-Format Academic Records Export Modal */}
+      <RecordsExportModal
+        isOpen={isExportPopupOpen}
+        onClose={() => setIsExportPopupOpen(false)}
+        activeTab={activeTab}
+        dataToExport={activeTab === 'student' ? filteredTeacherStudents : filteredSubjectResults}
+        classes={classes}
+        sessions={sessions}
+        schoolProfile={schoolProfile}
+        schoolId={effectiveSchoolId}
+        actorRole="TEACHER"
       />
     </div>
   );

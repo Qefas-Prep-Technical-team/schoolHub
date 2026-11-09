@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Plus, Camera, FileUp, Settings2 } from "lucide-react";
+import { Plus, Camera, FileUp, Settings2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { HeaderTooltip } from "@/app/dashboard/teacher/components/dashboard/HeaderTooltip";
@@ -11,6 +11,7 @@ interface PageHeaderProps {
   onOCRClick: () => void;
   onUploadClick: () => void;
   onSettingsClick?: () => void;
+  onExportClick?: () => void;
   hasOCRAccess: boolean;
   hasCSVAccess: boolean;
   selectedSchoolName: string;
@@ -22,6 +23,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   onOCRClick, 
   onUploadClick, 
   onSettingsClick,
+  onExportClick,
   hasOCRAccess, 
   hasCSVAccess,
   selectedSchoolName, 
@@ -53,23 +55,18 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             whileTap={{ scale: 0.98 }}
             className="flex-1 sm:flex-none"
           >
-            <Button 
+            <Button
+              variant="outline"
+              className="h-10 sm:h-11 rounded-xl px-3 sm:px-3.5 border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-xs font-bold w-full sm:w-auto group relative cursor-pointer"
               onClick={onOCRClick}
-              variant="outline" 
-              className="relative rounded-xl h-10 sm:h-11 w-full sm:w-11 p-0 font-bold border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10 shadow-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all duration-200 flex items-center justify-center group cursor-pointer"
-              title={hasOCRAccess ? 'AI Vision Grade Scanner' : 'Upgrade to unlock AI Vision Scanner'}
+              title={hasOCRAccess ? "Scan Physical Mark Sheet via AI" : "AI Scanner (Locked - Upgrade Required)"}
             >
-              {hasOCRAccess ? (
-                <Camera size={18} className="text-slate-600 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
-              ) : (
-                <>
-                  <Camera size={18} className="text-slate-400 dark:text-slate-600" />
-                  <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-amber-400 border-2 border-white dark:border-slate-900 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="7" height="7" viewBox="0 0 24 24" fill="white">
-                      <path d="M12 1C8.676 1 6 3.676 6 7v2H4v14h16V9h-2V7c0-3.324-2.676-6-6-6zm0 2c2.276 0 4 1.724 4 4v2H8V7c0-2.276 1.724-4 4-4zm0 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/>
-                    </svg>
-                  </span>
-                </>
+              <Camera size={18} className="mr-1.5 text-amber-500 group-hover:scale-110 transition-transform" />
+              <span>AI Scanner</span>
+              {!hasOCRAccess && (
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-amber-500 text-[9px] font-black uppercase text-white shadow-xs">
+                  PRO
+                </span>
               )}
             </Button>
           </motion.div>
@@ -80,11 +77,11 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             whileTap={{ scale: 0.98 }}
             className="flex-1 sm:flex-none"
           >
-            <Button 
+            <Button
+              variant="outline"
+              className="h-10 sm:h-11 rounded-xl px-3 sm:px-3.5 border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-xs font-bold w-full sm:w-auto group relative cursor-pointer"
               onClick={onUploadClick}
-              variant="outline" 
-              className="relative rounded-xl h-10 sm:h-11 w-full sm:w-11 p-0 font-bold border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10 shadow-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all duration-200 flex items-center justify-center group cursor-pointer"
-              title={hasCSVAccess ? 'Batch Upload' : 'Upgrade to unlock Batch Upload'}
+              title={hasCSVAccess ? "Upload CSV Scores" : "CSV Upload (Locked - Upgrade Required)"}
             >
               {hasCSVAccess ? (
                 <FileUp size={18} className="text-slate-600 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
@@ -110,12 +107,31 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             >
               <Button
                 variant="outline"
-                className="h-10 sm:h-11 rounded-xl px-3 sm:px-3.5 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 backdrop-blur-sm text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors text-xs font-bold w-full sm:w-auto"
+                className="h-10 sm:h-11 rounded-xl px-3 sm:px-3.5 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 backdrop-blur-sm text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors text-xs font-bold w-full sm:w-auto cursor-pointer"
                 onClick={onSettingsClick}
                 title="Grading Scale Settings"
               >
                 <Settings2 className="mr-1.5 h-4 w-4" />
                 Settings
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Export Grade Pad Button */}
+          {onExportClick && (
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="flex-1 sm:flex-none"
+            >
+              <Button
+                variant="outline"
+                className="h-10 sm:h-11 rounded-xl px-3 sm:px-3.5 border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-xs font-bold w-full sm:w-auto cursor-pointer"
+                onClick={onExportClick}
+                title="Export Grade Pad"
+              >
+                <Download className="mr-1.5 h-4 w-4 text-emerald-600" />
+                Export
               </Button>
             </motion.div>
           )}

@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 import {
   Document,
   Page,
@@ -199,8 +200,9 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
   hasPerformanceAccess = false
 }) => {
   const percent = Math.round((result.totalScore / result.totalMarks) * 100);
-  const gradeLabel = percent >= 75 ? 'A' : percent >= 60 ? 'B' : percent >= 50 ? 'C' : percent >= 40 ? 'D' : 'F';
-  const remark = percent >= 75 ? 'EXCELLENT' : percent >= 60 ? 'VERY GOOD' : percent >= 50 ? 'GOOD' : percent >= 40 ? 'PASS' : 'FAIL';
+  const evaluation = getGradeEvaluation(percent, school?.gradingSystem);
+  const gradeLabel = evaluation.grade;
+  const remark = evaluation.remark;
 
   // Robust student class name resolution
   const resolvedClassName =
@@ -329,8 +331,9 @@ export const ReportPageContent: React.FC<{ result: any; school: any; isComprehen
             {/* Table Body */}
             {result.subjects?.map((sub: any, i: number) => {
               const subPercent = Math.round((sub.score / sub.totalMarks) * 100);
-              const subGrade = subPercent >= 75 ? 'A' : subPercent >= 60 ? 'B' : subPercent >= 50 ? 'C' : subPercent >= 40 ? 'D' : 'F';
-              const subRemark = subPercent >= 75 ? 'EXCELLENT' : subPercent >= 60 ? 'VERY GOOD' : subPercent >= 50 ? 'GOOD' : subPercent >= 40 ? 'PASS' : 'FAIL';
+              const subEval = getGradeEvaluation(subPercent, school?.gradingSystem);
+              const subGrade = subEval.grade;
+              const subRemark = subEval.remark;
 
               if (isComprehensive) {
                 // Mocking CA/Exam split until fully integrated

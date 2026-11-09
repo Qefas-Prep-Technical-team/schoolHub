@@ -15,16 +15,18 @@ interface PageHeaderProps {
   activeTab?: 'all' | 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment';
   onExportPDF?: () => void;
   onExportCSV?: () => void;
+  onExport?: () => void;
   isExporting?: boolean;
 }
 
-export default function PageHeader({ 
-  title, 
-  onCreateNew, 
-  onAddPaper, 
+export default function PageHeader({
+  title,
+  onCreateNew,
+  onAddPaper,
   activeTab,
   onExportPDF,
   onExportCSV,
+  onExport,
   isExporting = false
 }: PageHeaderProps) {
   const baseItemStyle = "flex items-center gap-2 cursor-pointer text-xs font-semibold py-2";
@@ -37,14 +39,28 @@ export default function PageHeader({
         </h1>
         <HeaderTooltip content="Centralized assessment command center for authoring, scheduling, and reviewing single-paper examinations, quizzes, continuous assessments (CA), and assignments across your classes." />
       </div>
-      
+
       <div className="w-full sm:w-auto flex flex-wrap items-center gap-2.5">
-        {/* Admin-Style Export Dropdown */}
-        {(onExportPDF || onExportCSV) && (
+        {/* Direct Modal Export Trigger (Recommended) */}
+        {onExport ? (
+          <button
+            type="button"
+            onClick={onExport}
+            disabled={isExporting}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl h-10 px-4 text-xs font-bold transition-all duration-300 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-95"
+          >
+            {isExporting ? (
+              <div className="w-3.5 h-3.5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Download size={15} strokeWidth={2.5} />
+            )}
+            <span>Export</span>
+          </button>
+        ) : (onExportPDF || onExportCSV) ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button 
-                disabled={isExporting} 
+              <button
+                disabled={isExporting}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl h-10 px-4 text-xs font-bold transition-all duration-300 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-95"
               >
                 {isExporting ? (
@@ -71,7 +87,7 @@ export default function PageHeader({
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
+        ) : null}
 
         {/* Create New Dropdown */}
         <DropdownMenu>

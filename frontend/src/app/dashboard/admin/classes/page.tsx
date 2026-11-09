@@ -38,6 +38,7 @@ import { Tooltip as UITooltip, TooltipTrigger, TooltipContent, TooltipProvider }
 import { Input } from '@/components/ui/input';
 import ClassGrid from './components/ClassGrid';
 import ClassModal from './components/ClassModal';
+import { ClassExportModal } from './components/export/ClassExportModal';
 import Pagination from '@/components/ui/Pagination';
 import { ClassData } from './components/types';
 import { cn } from '@/lib/utils';
@@ -92,9 +93,6 @@ export default function ClassesOverviewPage() {
     const itemsPerPage = 6;
 
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-    const [exportDepartmentId, setExportDepartmentId] = useState('');
-    const [exportClassId, setExportClassId] = useState('');
-    const [isExporting, setIsExporting] = useState<'csv' | 'pdf' | null>(null);
 
     // Reset page to 1 when search query changes
     useEffect(() => {
@@ -111,7 +109,7 @@ export default function ClassesOverviewPage() {
     const { data: departmentsData = [] } = useSchoolDepartments(schoolId);
     const { data: schoolProfile } = useSchoolProfile(schoolId);
     const { data: subUsage } = useSubscriptionUsage();
-    
+
     const isFreePlan = subUsage?.planName?.toUpperCase() === 'FREE';
 
     const { data: fetchClassesData, isLoading: loading, refetch: fetchClasses } = useClasses(schoolId);
@@ -136,7 +134,7 @@ export default function ClassesOverviewPage() {
         return classes.map((c: Class) => {
             const todayPeriods = (c.timetablePeriods?.filter((p: any) => p.day?.toUpperCase() === currentDay) || []).sort((a: any, b: any) => parseTime(a.startTime) - parseTime(b.startTime));
             const currentPeriod = todayPeriods.find((p: any) => currentMinutes >= parseTime(p.startTime) && currentMinutes <= parseTime(p.endTime));
-            
+
             let activityStatus = 'Study Session';
             let isLiveStatus = false;
             if (c.status === 'ACTIVE') {
@@ -161,29 +159,30 @@ export default function ClassesOverviewPage() {
             }
 
             return {
-            id: c.id,
-            name: c.name,
-            section: c.section || 'N/A',
-            level: c.level,
-            term: c.term,
-            session: c.session,
-            teacher: {
-                name: c.teachers?.[0]?.teacher?.name || 'No Teacher Assigned',
-                avatarUrl: c.teachers?.[0]?.teacher?.avatarUrl || '',
-            },
-            teachers: c.teachers,
-            _count: c._count,
-            studentCount: c._count?.enrollments ?? c.enrollments?.length ?? 0,
-            subjectCount: c._count?.subjects ?? c.subjects?.length ?? 0,
-            timetableStatus: c.status === 'ACTIVE' ? 'complete' : 'pending',
-            classCode: c.classCode,
-            departments: c.departments?.map((d: any) => ({
-                id: d.department.id,
-                name: d.department.name
-            })),
-            isLive: isLiveStatus,
-            currentActivity: c.status === 'ACTIVE' ? activityStatus : undefined,
-        };});
+                id: c.id,
+                name: c.name,
+                section: c.section || 'N/A',
+                level: c.level,
+                term: c.term,
+                session: c.session,
+                teacher: {
+                    name: c.teachers?.[0]?.teacher?.name || 'No Teacher Assigned',
+                    avatarUrl: c.teachers?.[0]?.teacher?.avatarUrl || '',
+                },
+                teachers: c.teachers,
+                _count: c._count,
+                studentCount: c._count?.enrollments ?? c.enrollments?.length ?? 0,
+                subjectCount: c._count?.subjects ?? c.subjects?.length ?? 0,
+                timetableStatus: c.status === 'ACTIVE' ? 'complete' : 'pending',
+                classCode: c.classCode,
+                departments: c.departments?.map((d: any) => ({
+                    id: d.department.id,
+                    name: d.department.name
+                })),
+                isLive: isLiveStatus,
+                currentActivity: c.status === 'ACTIVE' ? activityStatus : undefined,
+            };
+        });
     }, [classes]);
 
     const filteredClasses = useMemo(() => {
@@ -243,176 +242,6 @@ export default function ClassesOverviewPage() {
             },
         ];
     }, [classes, mappedClassData, primaryColor]);
-
-    const handleExport = async (format: 'csv' | 'pdf') => {
-        setIsExporting(format);
-        try {
-            if (isFreePlan) {
-                toast.error("Export feature is only available for paid subscription tiers.");
-                setIsExporting(null);
-                setIsExportModalOpen(false);
-                return;
-            }
-
-            let exportData = mappedClassData;
-            
-            if (searchQuery) {
-                const query = searchQuery.toLowerCase();
-                exportData = exportData.filter(c => c.name.toLowerCase().includes(query) || c.section?.toLowerCase().includes(query));
-            }
-            if (exportDepartmentId) {
-                exportData = exportData.filter(c => c.departments?.some((d: any) => d.id === exportDepartmentId));
-            }
-            if (exportClassId) {
-                exportData = exportData.filter(c => c.id === exportClassId);
-            }
-            
-            if (!exportData.length) {
-                toast.info("No classes found to export.");
-                setIsExporting(null);
-                return;
-            }
-
-            const headers = ["#", "Class Name", "Code", "Section", "Lead Teacher", "Departments", "Students", "Subjects"];
-            const tableRows = exportData.map((c, i) => [
-                (i + 1).toString(),
-                c.name,
-                c.classCode || '',
-                c.section || '',
-                c.teacher?.name || 'Unassigned',
-                c.departments?.map((d: any) => d.name).join(', ') || '',
-                c.studentCount?.toString() || '0',
-                c.subjectCount?.toString() || '0'
-            ]);
-
-            const schoolNameStr = (schoolProfile?.name || user?.schools?.[0]?.name || 'School').replace(/\s+/g, '_');
-            const dateStr = new Date().toISOString().split("T")[0];
-            let fileNameBase = `${schoolNameStr}_classes_${dateStr}`;
-            
-            if (exportClassId) {
-                const cls = classes.find((c: any) => c.id === exportClassId);
-                if (cls) {
-                    fileNameBase = `${schoolNameStr}_${cls.name.replace(/\s+/g, '_')}_${dateStr}`;
-                }
-            }
-
-            if (format === 'csv') {
-                const csv = [
-                    headers.join(","),
-                    ...tableRows.map((row: any[]) => row.map((cell: any) => `"${cell}"`).join(","))
-                ].join("\n");
-                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = `${fileNameBase}.csv`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            } else {
-                // Formal PDF Export using Utility
-                try {
-                    if (exportClassId) {
-                        const detailedClass = await classService.getSingleClass(exportClassId);
-                        
-                        const metaData = [
-                            { label: 'Class Name', value: detailedClass.name },
-                            { label: 'Class Code', value: detailedClass.classCode || 'N/A' },
-                            { label: 'Section', value: detailedClass.section || 'N/A' },
-                            { label: 'Scope', value: detailedClass.scope },
-                            { label: 'Status', value: detailedClass.status },
-                            { label: 'Departments', value: detailedClass.departments?.map((d: any) => d.department.name).join(', ') || 'N/A' }
-                        ];
-
-                        const additionalTables = [];
-                        
-                        if (detailedClass.teachers && detailedClass.teachers.length > 0) {
-                            additionalTables.push({
-                                title: 'Assigned Teachers',
-                                headers: [['#', 'Teacher Name', 'Role']],
-                                data: detailedClass.teachers.map((t: any, idx: number) => [
-                                    (idx + 1).toString(), 
-                                    t.teacher?.name || 'Unknown', 
-                                    t.isLead ? 'Lead Teacher' : 'Assistant'
-                                ])
-                            });
-                        }
-
-                        if (detailedClass.subjects && detailedClass.subjects.length > 0) {
-                            additionalTables.push({
-                                title: 'Assigned Subjects',
-                                headers: [['#', 'Subject Name', 'Code']],
-                                data: detailedClass.subjects.map((s: any, idx: number) => [
-                                    (idx + 1).toString(), 
-                                    s.subject?.name || 'Unknown', 
-                                    s.subject?.code || '-'
-                                ])
-                            });
-                        }
-
-                        let mainTableHeaders = [['Rank', 'Student Name', 'Student ID', 'Avg Score']];
-                        let mainTableData = [];
-
-                        if (detailedClass.enrollments && detailedClass.enrollments.length > 0) {
-                            mainTableData = detailedClass.enrollments.map((e: any, idx: number) => {
-                                const realScore = e.score ?? e.totalScore ?? e.student?.score ?? e.student?.totalScore;
-                                const stableScore = typeof realScore === 'number' ? realScore : (e.student?.name ? (e.student.name.length * 7) % 45 + 50 : 75);
-                                return [
-                                    (idx + 1).toString(),
-                                    e.student?.name || 'N/A',
-                                    e.student?.studentCode || 'N/A',
-                                    `${stableScore}%`
-                                ];
-                            });
-                        } else {
-                            mainTableData = [['-', 'No Students Enrolled', '-', '-']];
-                        }
-
-                        await generatePDF({
-                            title: `Class Report: ${detailedClass.name}`,
-                            filename: `${fileNameBase}.pdf`,
-                            schoolProfile,
-                            metaData,
-                            tableHeaders: mainTableHeaders,
-                            tableData: mainTableData,
-                            additionalTables
-                        });
-
-                    } else {
-                        // General Classes Table
-                        await generatePDF({
-                            title: 'Master Classes List',
-                            filename: `${fileNameBase}.pdf`,
-                            schoolProfile,
-                            metaData: [
-                                { label: 'Total Classes', value: exportData.length.toString() },
-                                { label: 'Date Generated', value: new Date().toLocaleDateString() }
-                            ],
-                            tableHeaders: [headers],
-                            tableData: exportData.map((c, i) => [
-                                (i + 1).toString(),
-                                c.name,
-                                c.classCode || '-',
-                                c.section || '-',
-                                c.teacher?.name || 'Unassigned',
-                                c.departments?.map((d: any) => d.name).join(', ') || '-',
-                                (c.studentCount || 0).toString(),
-                                (c.subjectCount || 0).toString()
-                            ])
-                        });
-                    }
-                } catch (error) {
-                    console.error('PDF Export failed:', error);
-                    toast.error('Failed to export PDF.');
-                }
-            }
-            setIsExportModalOpen(false);
-        } catch {
-            toast.error("Failed to export classes");
-        } finally {
-            setIsExporting(null);
-        }
-    };
 
     const handleEditClass = (classId: string) => {
         const cls = classes.find(c => c.id === classId);
@@ -485,10 +314,10 @@ export default function ClassesOverviewPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {stat.label === 'Active Now' && (
-                                     <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                         <TrendingUp size={10} /> Live
-                                     </div>
-                                )}
+                                        <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            <TrendingUp size={10} /> Live
+                                        </div>
+                                    )}
                                     <TooltipProvider>
                                         <UITooltip>
                                             <TooltipTrigger asChild>
@@ -636,8 +465,8 @@ export default function ClassesOverviewPage() {
                                             </tr>
                                         ) : (
                                             paginatedClasses.map((cls, index) => (
-                                                <tr 
-                                                    key={cls.id || index} 
+                                                <tr
+                                                    key={cls.id || index}
                                                     onClick={() => router.push(`/dashboard/admin/classes/${cls.id}`)}
                                                     className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
                                                 >
@@ -747,56 +576,18 @@ export default function ClassesOverviewPage() {
                 schoolId={schoolId}
             />
 
-            <AnimatePresence>
-                {isExportModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-                        <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-gray-100 dark:border-white/10">
-                            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Export Classes</h2>
-                            <p className="text-sm text-gray-500 mb-5">Filter which classes you want to export.</p>
-
-                            {isFreePlan && (
-                                <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-lg">
-                                    <p className="text-xs text-rose-700 dark:text-rose-400 font-medium">
-                                        <span className="font-bold">Premium Feature:</span> Data export is only available on paid plans. Upgrade to unlock this feature.
-                                    </p>
-                                </div>
-                            )}
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Class Filter</label>
-                                    <select disabled={isFreePlan} value={exportClassId} onChange={(e) => setExportClassId(e.target.value)} className="w-full h-9 px-2 text-sm border border-gray-200 dark:border-white/10 rounded-md bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 disabled:opacity-50">
-                                        <option value="">All Classes</option>
-                                        {classes.map((c: any) => (
-                                            <option key={c.id} value={c.id}>{c.name} {c.section || ''}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Department Filter</label>
-                                    <select disabled={isFreePlan} value={exportDepartmentId} onChange={(e) => setExportDepartmentId(e.target.value)} className="w-full h-9 px-2 text-sm border border-gray-200 dark:border-white/10 rounded-md bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 disabled:opacity-50">
-                                        <option value="">All Departments</option>
-                                        {departmentsData.map((dept: any) => (
-                                            <option key={dept.id} value={dept.id}>{dept.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="flex gap-2 pt-2">
-                                    <button onClick={() => handleExport('csv')} disabled={isExporting !== null || isFreePlan} className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-sm font-semibold transition-colors disabled:opacity-50">
-                                        {isExporting === 'csv' ? <span className="animate-spin h-4 w-4 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full" /> : <Download size={16} />} CSV
-                                    </button>
-                                    <button onClick={() => handleExport('pdf')} disabled={isExporting !== null || isFreePlan} className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-sm font-semibold transition-colors disabled:opacity-50">
-                                        {isExporting === 'pdf' ? <span className="animate-spin h-4 w-4 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full" /> : <Download size={16} />} PDF
-                                    </button>
-                                </div>
-                            </div>
-                            <Button variant="outline" className="w-full mt-4 rounded-xl font-semibold text-sm" onClick={() => setIsExportModalOpen(false)} disabled={isExporting !== null}>Cancel</Button>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+            <ClassExportModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                classes={classes}
+                mappedClassData={mappedClassData}
+                schoolId={schoolId}
+                schoolProfile={schoolProfile}
+                departmentsData={departmentsData}
+                searchQuery={searchQuery}
+                userName={user?.name}
+                userRole={user?.role || 'ADMIN'}
+            />
         </div>
     );
 }

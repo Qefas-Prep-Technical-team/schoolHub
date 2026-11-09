@@ -160,7 +160,7 @@ export default function OfflineGradesCSVModal({
         if (!codeVal && !idVal && !nameVal) continue;
 
         // Match priority: 1. Student Code, 2. Database ID, 3. Student Name
-        const matchedStudent = 
+        const matchedStudent =
           (codeVal ? roster.find(s => s.studentCode && s.studentCode.toLowerCase().trim() === codeVal.toLowerCase()) : null) ||
           (idVal ? roster.find(s => s.studentId && s.studentId.trim() === idVal) : null) ||
           (nameVal ? roster.find(s => s.studentName.toLowerCase().trim() === nameVal.toLowerCase()) : null);
@@ -256,7 +256,7 @@ export default function OfflineGradesCSVModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[90vw] sm:w-full max-w-2xl rounded-2xl dark:bg-slate-900 dark:border-slate-800 p-5 sm:p-6">
+      <DialogContent className="w-[90vw] sm:w-full max-w-2xl rounded-2xl dark:bg-slate-900 dark:border-slate-800 p-5 sm:p-6 sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">
         <DialogHeader>
           <div className={`size-11 rounded-2xl ${isTeacher ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60' : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-800/60'} flex items-center justify-center mb-2 shadow-xs`}>
             <FileSpreadsheet size={22} />
@@ -312,13 +312,12 @@ export default function OfflineGradesCSVModal({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`p-5 rounded-xl border-2 border-dashed transition-all text-center ${
-              isDragging
+            className={`p-5 rounded-xl border-2 border-dashed transition-all text-center ${isDragging
                 ? isTeacher
                   ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30'
                   : 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30'
                 : 'border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-900/40 hover:border-slate-400'
-            }`}
+              }`}
           >
             <input
               ref={fileInputRef}

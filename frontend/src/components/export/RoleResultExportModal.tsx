@@ -32,7 +32,7 @@ export interface RoleResultExportModalProps {
   sessionName?: string;
   term?: string;
   school?: unknown;
-  role: 'STUDENT' | 'PARENT' | 'TEACHER';
+  role: 'STUDENT' | 'PARENT' | 'TEACHER' | 'ADMIN';
 }
 
 /**
@@ -139,8 +139,8 @@ export const RoleResultExportModal: React.FC<RoleResultExportModalProps> = ({
             </div>
           ) : (
             <div className={`p-3 rounded-xl border text-xs space-y-1 ${isFreeExhausted
-                ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300'
-                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+              ? 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300'
+              : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
               }`}>
               <div className="flex items-center justify-between">
                 <span className="font-semibold flex items-center gap-1.5">

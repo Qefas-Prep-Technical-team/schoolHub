@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { AssignmentExportModal } from "./components/AssignmentExportModal";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Assignment } from "./components/types";
@@ -59,84 +60,10 @@ export default function AssignmentsPage() {
   const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(
     null,
   );
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const { data: schoolProfile } = useSchoolProfile(selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || "");
 
-  const handleExport = async (targetFormat: 'csv' | 'pdf') => {
-    setIsExporting(true);
-    try {
-      const dataToExport = filteredAssignments || [];
-      if (!dataToExport || dataToExport.length === 0) {
-        toast.info("No assignments to export.");
-        return;
-      }
-      
-      const headers = ["#", "Title", "Subject", "Class", "Deadline", "Progress", "Status"];
-      const rows = dataToExport.map((assignment: any, index: number) => {
-        const totalStudents = typeof assignment.totalTargetedStudents === "number" ? assignment.totalTargetedStudents : typeof assignment.class === "object" && assignment.class?._count?.enrollments ? assignment.class._count.enrollments : 0;
-        const submitted = assignment._count?.submissions || 0;
-        const progress = totalStudents > 0 ? Math.round((submitted / totalStudents) * 100) : 0;
-        return [
-          (index + 1).toString(),
-          assignment.title || "N/A",
-          typeof assignment.subject === "string" ? assignment.subject : assignment.subject?.name || "General",
-          typeof assignment.class === "string" ? assignment.class : assignment.class?.name || "All Classes",
-          assignment.dueDate ? format(new Date(assignment.dueDate), "yyyy-MM-dd") : "No Deadline",
-          progress + "%",
-          assignment.status || "draft"
-        ];
-      });
-
-      const dateStr = format(new Date(), "yyyy-MM-dd");
-      const schoolName = schoolProfile?.name || user?.schools?.[0]?.name || (user as any)?.tenant?.name || "School";
-      const sanitizedSchoolName = schoolName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      const fileNameBase = `${sanitizedSchoolName}_assignments_export_${dateStr}`;
-
-      if (targetFormat === 'csv') {
-        const csvContent = [];
-        csvContent.push(`"${schoolName.toUpperCase()}"`);
-        if (schoolProfile?.motto) csvContent.push(`"${schoolProfile.motto}"`);
-        csvContent.push("");
-        csvContent.push(`"Assignments Report"`);
-        csvContent.push(`"Generated on: ${dateStr}"`);
-        csvContent.push("");
-        
-        csvContent.push(headers.join(","));
-        rows.forEach((r: any[]) => {
-            const safeRow = r.map((item: any) => `"${String(item).replace(/"/g, '""')}"`);
-            csvContent.push(safeRow.join(","));
-        });
-
-        const csv = csvContent.join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${fileNameBase}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } else {
-        await generatePDF({
-          title: `${schoolName} Assignments Report`,
-          filename: `${fileNameBase}.pdf`,
-          schoolProfile: schoolProfile,
-          metaData: [
-            { label: 'Date', value: dateStr },
-            { label: 'Total Assignments', value: dataToExport.length.toString() }
-          ],
-          tableHeaders: [headers],
-          tableData: rows
-        });
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error(`Failed to export assignments as ${targetFormat.toUpperCase()}.`);
-    } finally {
-      setIsExporting(false);
-    }
-  };
 
   const itemsPerPage = 8;
 
@@ -286,37 +213,15 @@ export default function AssignmentsPage() {
           description={"School-wide classroom tasks."}
           action={
             <div className="flex items-center gap-3">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <motion.button 
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    disabled={isExporting}
-                    className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200 disabled:opacity-50"
-                  >
-                    {isExporting ? (
-                      <div className="w-4 h-4 rounded-full border-2 border-slate-400 border-t-transparent animate-spin" />
-                    ) : (
-                      <Download size={18} strokeWidth={2} />
-                    )}
-                    {isExporting ? "Generating..." : "Export"}
-                  </motion.button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl p-2 shadow-xl">
-                  <DropdownMenuItem 
-                    onClick={() => handleExport('csv')}
-                    className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3"
-                  >
-                    Export as CSV
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => handleExport('pdf')}
-                    className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3 mt-1"
-                  >
-                    Export as PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setIsExportModalOpen(true)}
+                className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200 cursor-pointer"
+              >
+                <Download size={18} strokeWidth={2} />
+                <span>Export Assignments</span>
+              </motion.button>
 
               <Link href="/dashboard/admin/assignments/create-assignment">
                 <motion.button
@@ -681,6 +586,14 @@ export default function AssignmentsPage() {
           </div>
         )}
       </AnimatePresence>
+
+      <AssignmentExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        assignments={filteredAssignments || []}
+        schoolProfile={schoolProfile}
+        schoolId={selectedSchoolId || user?.schools?.[0]?.schoolId || user?.tenantId || ""}
+      />
     </main>
   );
 }

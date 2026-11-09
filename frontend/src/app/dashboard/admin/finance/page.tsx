@@ -15,9 +15,13 @@ import {
     TranscriptFeeConfigModal,
 } from "./components/FinanceModals"
 import { ConnectBankAccountModal } from "./components/ConnectBankAccountModal"
+import { FinanceExportModal } from "./components/FinanceExportModal"
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool"
 
 export default function AdminFinancePage() {
     const f = useAdminFinance()
+    const [isExportModalOpen, setIsExportModalOpen] = React.useState(false)
+    const { data: schoolProfile } = useSchoolProfile(f.schoolId || "")
 
     if (f.loading) {
         return (
@@ -56,7 +60,7 @@ export default function AdminFinancePage() {
                 averageTransaction={averageTransaction}
                 onBack={() => f.router.push("/dashboard/admin")}
                 onOpenManualModal={() => f.setIsManualModalOpen(true)}
-                onExportCSV={f.handleExportCSV}
+                onOpenExportModal={() => setIsExportModalOpen(true)}
                 onOpenAddBankModal={() => f.setIsAddBankModalOpen(true)}
             />
 
@@ -120,7 +124,7 @@ export default function AdminFinancePage() {
                         totalPages={f.totalPages}
                         totalTransactions={f.totalTransactions}
                         onPageChange={f.loadTransactions}
-                        onExportCSV={f.handleExportCSV}
+                        onOpenExportModal={() => setIsExportModalOpen(true)}
                         onOpenReceipt={f.openReceipt}
                     />
                 </TabsContent>
@@ -195,6 +199,14 @@ export default function AdminFinancePage() {
                 isSchoolPaidPlan={f.isSchoolPaidPlan}
                 schoolPlanName={f.schoolPlanName}
                 onSave={f.handleSaveTranscriptFee}
+            />
+
+            <FinanceExportModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                transactions={f.transactions.length > 0 ? f.transactions : f.analytics?.recentTransactions || []}
+                schoolProfile={schoolProfile}
+                schoolId={f.schoolId || undefined}
             />
 
             <ConnectBankAccountModal

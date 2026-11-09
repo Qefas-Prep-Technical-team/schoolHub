@@ -76,10 +76,23 @@ export default function BatchUploadGrades() {
         setShowPreview(true);
     };
 
-    const handleDownloadTemplate = () => {
-        // console.log('Downloading template...');
-        // Implement template download logic
-        // This would typically generate and download a CSV/Excel file
+    const handleDownloadTemplate = async () => {
+        try {
+            const XLSX = await import('xlsx');
+            const wsData = [
+                ['Student ID', 'Student Name', 'Subject Code', 'Grade', 'Comments'],
+                ['S001', 'Alice Johnson', 'MATH-101', '85', 'Good effort.'],
+                ['S002', 'Bob Williams', 'HIST-202', '72', 'Consistent improvement'],
+                ['S003', 'Charlie Brown', 'SCI-105', '91', 'Excellent work!'],
+            ];
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            ws['!cols'] = [{ wch: 14 }, { wch: 22 }, { wch: 16 }, { wch: 10 }, { wch: 30 }];
+            XLSX.utils.book_append_sheet(wb, ws, 'Grades Template');
+            XLSX.writeFile(wb, 'batch_grades_upload_template.xlsx');
+        } catch (err) {
+            console.error('Failed to generate template:', err);
+        }
     };
 
     const handleCancel = () => {

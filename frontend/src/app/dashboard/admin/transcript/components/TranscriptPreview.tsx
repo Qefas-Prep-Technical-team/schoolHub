@@ -65,6 +65,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { generatePDF } from "@/utils/pdfGenerator";
+import { isSchoolOnPayingPlan } from "@/utils/subscriptionPlanCheck";
+import { getMonthlyExportUsage, incrementMonthlyExportUsage, FREE_TIER_MONTHLY_EXPORT_LIMIT } from "@/utils/exportQuotaManager";
+import { dispatchExportLeadershipNotification } from "@/lib/api/services/exportNotificationService";
+import { ExportQuotaBanner } from "@/app/dashboard/admin/grades/components/export/ExportQuotaBanner";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
@@ -1243,7 +1247,7 @@ export function TranscriptPreview({
             if (uid) ids.add(uid);
           }
         }
-      } catch {}
+      } catch { }
     }
 
     return Array.from(ids);
@@ -1295,7 +1299,7 @@ export function TranscriptPreview({
             const parsed = JSON.parse(direct);
             if (parsed && (parsed.signedUrl || parsed.dataUrl)) return parsed;
           }
-        } catch {}
+        } catch { }
       }
       return null;
     };
@@ -1345,7 +1349,7 @@ export function TranscriptPreview({
               }
             }
           }
-        } catch {}
+        } catch { }
       }
       if (approvalInfo?.signature) {
         const raw = String(approvalInfo.signature).trim();
@@ -1437,8 +1441,8 @@ export function TranscriptPreview({
           adminRole: isVicePrincipal(uRole)
             ? "VICE_PRINCIPAL"
             : isSchoolOwner(uRole)
-            ? "SCHOOL_OWNER"
-            : "PRINCIPAL",
+              ? "SCHOOL_OWNER"
+              : "PRINCIPAL",
         };
       } else {
         const adminFallback = adminCandidates.find((a) => a.id !== "admin-system") || {
@@ -1457,10 +1461,10 @@ export function TranscriptPreview({
     const headRoleTitle = isPrincipal(chosenRole)
       ? "Principal / Head of Institution"
       : isVicePrincipal(chosenRole)
-      ? "Vice Principal / Academic Director"
-      : isSchoolOwner(chosenRole)
-      ? "School Owner / Proprietor"
-      : "Principal / Head of Institution";
+        ? "Vice Principal / Academic Director"
+        : isSchoolOwner(chosenRole)
+          ? "School Owner / Proprietor"
+          : "Principal / Head of Institution";
 
     let rawHeadSig =
       chosenHeadSig?.signedUrl ||
@@ -1583,11 +1587,11 @@ export function TranscriptPreview({
               s.quizScore != null ||
               s.caScore != null ||
               s.examScore != null
-            ? (s.assignmentScore || 0) +
+              ? (s.assignmentScore || 0) +
               (s.quizScore || 0) +
               (s.caScore || 0) +
               (s.examScore || 0)
-            : null;
+              : null;
 
         if (s.scoresRevealed && effectiveTotal != null) {
           totalMarksSum += effectiveTotal;
@@ -1656,6 +1660,17 @@ export function TranscriptPreview({
     const exportTarget = filteredResults.length > 0 ? filteredResults : results;
     if (exportTarget.length === 0) {
       toast.warning("No published records available to export as PDF.");
+      return;
+    }
+
+    const isPaying = Boolean(
+      isSchoolOnPayingPlan(school) || (user?.plan && user.plan.toUpperCase() !== 'FREE')
+    );
+    const quotaContextId = effectiveSchoolId || user?.id || 'admin_transcript';
+    const quota = getMonthlyExportUsage(quotaContextId);
+
+    if (!isPaying && quota.used >= FREE_TIER_MONTHLY_EXPORT_LIMIT) {
+      toast.error(`Monthly export limit reached (${FREE_TIER_MONTHLY_EXPORT_LIMIT}/month). Upgrade to Pro for unlimited exports.`);
       return;
     }
 
@@ -1760,15 +1775,32 @@ export function TranscriptPreview({
           left: {
             label: registrarSlot.roleTitle,
             name: registrarSlot.subtitle,
-            signatureUrl: registrarSlot.signatureUrl || undefined,
+            signatureUrl: isPaying ? (registrarSlot.signatureUrl || undefined) : undefined,
+            subLabel: isPaying ? undefined : "—",
           },
           right: {
             label: principalSlot.roleTitle,
             name: principalSlot.subtitle,
-            signatureUrl: principalSlot.signatureUrl || undefined,
+            signatureUrl: isPaying ? (principalSlot.signatureUrl || undefined) : undefined,
+            subLabel: isPaying ? undefined : "—",
           },
         },
       });
+
+      if (!isPaying) {
+        incrementMonthlyExportUsage(quotaContextId);
+      }
+
+      if (effectiveSchoolId) {
+        dispatchExportLeadershipNotification({
+          schoolId: effectiveSchoolId,
+          actorName: user?.name || "School Administrator",
+          actorRole: "ADMIN",
+          resourceTitle: `Official Academic Transcript - ${studentProfile?.name || "Scholar"}`,
+          recordCount: exportTarget.reduce((acc, g) => acc + (g.subjectResults?.length || 0), 0),
+          format: "PDF",
+        }).catch((err) => console.warn("Leadership notification dispatch error:", err));
+      }
 
       toast.success("Official Multi-Page Transcript PDF generated successfully!");
     } catch (err) {
@@ -2909,19 +2941,19 @@ export function TranscriptPreview({
                                 (score ?? 5) >= 5
                                   ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
                                   : (score ?? 5) === 4
-                                  ? "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800"
-                                  : (score ?? 5) === 3
-                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800"
-                                  : "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800"
+                                    ? "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                                    : (score ?? 5) === 3
+                                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                                      : "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800"
                               )}
                             >
                               {(score ?? 5) >= 5
                                 ? "Excellent"
                                 : (score ?? 5) === 4
-                                ? "High / Good"
-                                : (score ?? 5) === 3
-                                ? "Acceptable"
-                                : "Needs Guidance"}
+                                  ? "High / Good"
+                                  : (score ?? 5) === 3
+                                    ? "Acceptable"
+                                    : "Needs Guidance"}
                             </span>
                           </td>
                         </tr>
@@ -2988,19 +3020,19 @@ export function TranscriptPreview({
                                 (score ?? 5) >= 5
                                   ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
                                   : (score ?? 5) === 4
-                                  ? "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800"
-                                  : (score ?? 5) === 3
-                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800"
-                                  : "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800"
+                                    ? "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                                    : (score ?? 5) === 3
+                                      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                                      : "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800"
                               )}
                             >
                               {(score ?? 5) >= 5
                                 ? "Excellent"
                                 : (score ?? 5) === 4
-                                ? "High / Good"
-                                : (score ?? 5) === 3
-                                ? "Acceptable"
-                                : "Needs Guidance"}
+                                  ? "High / Good"
+                                  : (score ?? 5) === 3
+                                    ? "Acceptable"
+                                    : "Needs Guidance"}
                             </span>
                           </td>
                         </tr>

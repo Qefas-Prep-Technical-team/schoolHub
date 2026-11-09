@@ -22,7 +22,7 @@ interface FinanceTransactionsTabProps {
   totalPages: number;
   totalTransactions: number;
   onPageChange: (page: number) => void;
-  onExportCSV: () => void;
+  onOpenExportModal: () => void;
   onOpenReceipt: (tx: FinanceTransaction) => void;
 }
 
@@ -39,7 +39,7 @@ export function FinanceTransactionsTab({
   totalPages,
   totalTransactions,
   onPageChange,
-  onExportCSV,
+  onOpenExportModal,
   onOpenReceipt,
 }: FinanceTransactionsTabProps) {
   const dateGroups = useMemo(() => {
@@ -91,7 +91,7 @@ export function FinanceTransactionsTab({
 
           <Button
             variant="outline"
-            onClick={onExportCSV}
+            onClick={onOpenExportModal}
             className="h-11 rounded-2xl font-bold text-xs gap-1.5"
           >
             <Download size={14} />

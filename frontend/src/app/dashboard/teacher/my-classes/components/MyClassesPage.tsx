@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Class } from './type';
 import PageHeader from './PageHeader';
+import { TeacherClassExportModal } from './TeacherClassExportModal';
 import FilterChips from './FilterChips';
 import ClassGrid from './ClassGrid';
 import ClassList from './ClassList';
@@ -24,6 +25,7 @@ export default function MyClassesPage() {
     const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
     const { user } = useAuthStore();
     const [viewType, setViewType] = useState<ViewType>('List View');
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
     useEffect(() => {
         if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -230,6 +232,13 @@ export default function MyClassesPage() {
                     </AnimatePresence>
                 </div>
             </div>
+            <TeacherClassExportModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                classes={filteredClasses}
+                schoolProfile={schoolProfile}
+                schoolId={effectiveSchoolId}
+            />
         </main>
     );
 }

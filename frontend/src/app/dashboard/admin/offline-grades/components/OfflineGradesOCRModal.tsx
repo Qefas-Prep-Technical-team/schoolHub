@@ -112,7 +112,7 @@ export default function OfflineGradesOCRModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[90vw] sm:w-full max-w-2xl rounded-2xl dark:bg-slate-900 dark:border-slate-800 p-6">
+      <DialogContent className="w-[90vw] sm:w-full max-w-2xl rounded-2xl dark:bg-slate-900 dark:border-slate-800 p-6 sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">
         <DialogHeader>
           <div className={`size-10 rounded-xl ${isTeacher ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400' : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400'} flex items-center justify-center mb-2`}>
             <Camera size={20} />

@@ -24,7 +24,7 @@ interface PaymentsHeaderAndStatsProps {
   refreshing: boolean;
   onBack: () => void;
   onRefresh: () => void;
-  onExportCSV: () => void;
+  onOpenExportModal: () => void;
   onOpenStatement: () => void;
 }
 
@@ -37,7 +37,7 @@ export function PaymentsHeaderAndStats({
   refreshing,
   onBack,
   onRefresh,
-  onExportCSV,
+  onOpenExportModal,
   onOpenStatement,
 }: PaymentsHeaderAndStatsProps) {
   return (
@@ -78,11 +78,11 @@ export function PaymentsHeaderAndStats({
           </Button>
           <Button
             variant="outline"
-            onClick={onExportCSV}
+            onClick={onOpenExportModal}
             className="h-11 px-4 rounded-xl border-slate-200 dark:border-slate-800 font-bold text-xs gap-2"
           >
             <Download size={14} />
-            Export CSV
+            Export Collections
           </Button>
           <Button
             onClick={onOpenStatement}

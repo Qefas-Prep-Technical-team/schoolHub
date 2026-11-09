@@ -15,9 +15,7 @@ interface GradesTableProps {
   onSearchChange: (query: string) => void;
   onFilter: () => void;
   onSort: () => void;
-  onExport?: () => void;
-  onExportPDF?: () => void;
-  onExportCSV?: () => void;
+  onExport: () => void;
   isExporting?: boolean;
   onEditGrade: (grade: StudentGrade) => void;
   onPublishGrade: (grade: StudentGrade) => void;
@@ -29,6 +27,8 @@ interface GradesTableProps {
   currentPage: number;
   totalPages: number;
   totalItems: number;
+  pageSize?: number;
+  onPageSizeChange?: (size: number) => void;
   onPageChange: (page: number) => void;
   isLoading?: boolean;
   viewMode?: 'grid' | 'table';
@@ -63,8 +63,6 @@ const GradesTable: React.FC<GradesTableProps> = ({
   onFilter,
   onSort,
   onExport,
-  onExportPDF,
-  onExportCSV,
   isExporting,
   onEditGrade,
   onPublishGrade,
@@ -76,20 +74,22 @@ const GradesTable: React.FC<GradesTableProps> = ({
   currentPage,
   totalPages,
   totalItems,
+  pageSize = 10,
+  onPageSizeChange,
   onPageChange,
   isLoading = false,
   viewMode = 'table',
   onViewModeChange
 }) => {
-  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * 10 + 1;
-  const endItem = Math.min(currentPage * 10, totalItems);
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
 
   const dateGroups = React.useMemo(() => {
     const map = new Map<string, { item: StudentGrade; globalIndex: number }[]>();
     const order: string[] = [];
 
     grades.forEach((grade, index) => {
-      const globalIndex = (currentPage - 1) * 10 + index + 1;
+      const globalIndex = (currentPage - 1) * pageSize + index + 1;
       const label = getDateGroupLabel(grade.createdAt || grade.updatedAt);
       if (!map.has(label)) {
         map.set(label, []);
@@ -99,7 +99,7 @@ const GradesTable: React.FC<GradesTableProps> = ({
     });
 
     return order.map((label) => ({ label, items: map.get(label)! }));
-  }, [grades, currentPage]);
+  }, [grades, currentPage, pageSize]);
 
   return (
     <div className="flex flex-col rounded-2xl sm:rounded-3xl border border-emerald-100 dark:border-emerald-800/50 bg-white/60 dark:bg-emerald-950/20 backdrop-blur-md overflow-hidden shadow-sm">
@@ -109,15 +109,13 @@ const GradesTable: React.FC<GradesTableProps> = ({
         onFilter={onFilter}
         onSort={onSort}
         onExport={onExport}
-        onExportPDF={onExportPDF}
-        onExportCSV={onExportCSV}
         isExporting={isExporting}
         onPublishAll={onPublishAll}
         isPublishingAll={isPublishingAll}
         viewMode={viewMode}
         onViewModeChange={onViewModeChange}
       />
-      
+
       {viewMode === 'grid' ? (
         <div className="p-3 sm:p-5">
           {isLoading ? (
@@ -227,6 +225,8 @@ const GradesTable: React.FC<GradesTableProps> = ({
         totalItems={totalItems}
         startItem={startItem}
         endItem={endItem}
+        itemsPerPage={pageSize}
+        onPageSizeChange={onPageSizeChange}
         onPageChange={onPageChange}
       />
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 import {
   Document,
   Page,
@@ -343,8 +344,9 @@ export const TranscriptPDF: React.FC<TranscriptPDFProps> = ({ student, school, g
 
                   {/* List of Papers */}
                   {section.papers.map((paper, pIdx) => {
-                      const p = Math.round((paper.score / paper.maxMarks) * 100);
-                      const g = p >= 75 ? 'A1' : p >= 70 ? 'B2' : p >= 65 ? 'B3' : p >= 60 ? 'C4' : p >= 55 ? 'C5' : p >= 50 ? 'C6' : p >= 45 ? 'D7' : p >= 40 ? 'E8' : 'F9';
+                      const p = paper.maxMarks > 0 ? Math.round((paper.score / paper.maxMarks) * 100) : 0;
+                      const evalRes = getGradeEvaluation(p, school?.gradingSystem);
+                      const g = evalRes.grade;
                       return (
                           <View key={pIdx} style={{ flexDirection: 'row', padding: 12, borderBottomWidth: 0.5, borderBottomColor: '#F1F5F9', alignItems: 'center' }}>
                               <View style={{ flex: 4 }}>

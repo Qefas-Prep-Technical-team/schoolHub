@@ -28,6 +28,7 @@ import { sessionService } from '@/lib/api/services/sessionService';
 import { useGradeSettingsStore } from '@/lib/api/hooks/useGradeSettingsStore';
 import { calculateGrade } from '../utils/gradeCalculator';
 import GradeSettingsModal from './GradeSettingsModal';
+import { TeacherGradeExportModal } from './TeacherGradeExportModal';
 import EditGradeModal from './EditGradeModal';
 import GradeDetailsModal from './GradeDetailsModal';
 import { Button } from '@/components/ui/button';
@@ -50,11 +51,13 @@ const GradesOverview: React.FC = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingGrade, setEditingGrade] = useState<StudentGrade | null>(null);
   const [gradeToDelete, setGradeToDelete] = useState<StudentGrade | null>(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Standalone Grade options modal states
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
@@ -145,7 +148,7 @@ const GradesOverview: React.FC = () => {
   });
 
   const { data: response, isLoading, error } = useQuery({
-    queryKey: ['teacher-grades', selectedSchoolId, currentPage, searchQuery, selectedClassId, selectedSessionId, selectedCategory],
+    queryKey: ['teacher-grades', selectedSchoolId, currentPage, pageSize, searchQuery, selectedClassId, selectedSessionId, selectedCategory],
     queryFn: async () => {
       try {
         const result = await gradeService.getGradeHub(filterId || '', {
@@ -155,7 +158,7 @@ const GradesOverview: React.FC = () => {
           classId: selectedClassId !== 'all' ? selectedClassId : undefined,
           sessionId: selectedSessionId !== 'all' ? selectedSessionId : undefined,
           category: selectedCategory !== 'all' ? selectedCategory : undefined,
-          limit: 10
+          limit: pageSize
         });
         return result;
       } catch (err) {
@@ -163,6 +166,29 @@ const GradesOverview: React.FC = () => {
         throw err;
       }
     },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: exportResponse, isLoading: isExportLoading } = useQuery({
+    queryKey: ['teacher-grades-export', selectedSchoolId, searchQuery, selectedClassId, selectedSessionId, selectedCategory],
+    queryFn: async () => {
+      try {
+        const result = await gradeService.getGradeHub(filterId || '', {
+          page: '1',
+          search: searchQuery,
+          teacherId: isPersonal ? user?.id : undefined,
+          classId: selectedClassId !== 'all' ? selectedClassId : undefined,
+          sessionId: selectedSessionId !== 'all' ? selectedSessionId : undefined,
+          category: selectedCategory !== 'all' ? selectedCategory : undefined,
+          limit: 1000
+        });
+        return result;
+      } catch (err) {
+        console.error("Error fetching export grades:", err);
+        throw err;
+      }
+    },
+    enabled: isExportModalOpen,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -303,6 +329,48 @@ const GradesOverview: React.FC = () => {
 
     return grades;
   }, [rawData, activeGradingScale, sortConfig]);
+
+  const exportRawData = useMemo(() => exportResponse?.data || [], [exportResponse?.data]);
+
+  const mappedExportGrades: StudentGrade[] = useMemo(() => {
+    if (!exportRawData || !Array.isArray(exportRawData)) return [];
+
+    return exportRawData.map((item: {
+      id?: string | number;
+      score?: number;
+      maxMarks?: number;
+      student?: { name?: string; studentCode?: string; profileImage?: string; avatar?: string };
+      name?: string;
+      studentId?: string;
+      subjectPaper?: { title?: string };
+      subject?: string;
+      category?: string;
+      status?: string;
+      remarks?: string;
+    }) => {
+      const score = item.score || 0;
+      const maxMarks = item.maxMarks || 100;
+      const percentage = (score / maxMarks) * 100;
+
+      return {
+        id: String(item.id || Math.random()),
+        studentId: item.studentId || (item.student as any)?.id || '',
+        name: item.student?.name || item.name || 'Unknown Student',
+        studentCode: item.student?.studentCode || item.studentId || 'S-0000',
+        subjectPaper: item.subjectPaper?.title || item.subject || '-',
+        assessmentType: item.category || 'Assignment',
+        score: `${score}/${maxMarks}`,
+        rawScore: score,
+        maxMarks: maxMarks,
+        totalScore: `${percentage.toFixed(1)}%`,
+        grade: calculateGrade(score, maxMarks, activeGradingScale) as GradeLetter,
+        status: (item.status || 'Graded') as GradeStatus,
+        profilePicture: item.student?.profileImage || item.student?.avatar || '',
+        createdAt: (item as any)?.createdAt,
+        updatedAt: (item as any)?.updatedAt
+      };
+    });
+  }, [exportRawData, activeGradingScale]);
 
   const filters: FilterOption[] = useMemo(() => {
     const activeFilters: FilterOption[] = [];
@@ -484,6 +552,7 @@ const GradesOverview: React.FC = () => {
               onOCRClick={handleOpenOCR}
               onUploadClick={handleOpenUploadModal}
               onSettingsClick={() => setIsSettingsOpen(true)}
+              onExportClick={() => setIsExportModalOpen(true)}
               hasOCRAccess={!!hasOCRAccess}
               hasCSVAccess={hasCSVAccess}
               selectedSchoolName={selectedSchoolName}
@@ -576,8 +645,7 @@ const GradesOverview: React.FC = () => {
                     onSearchChange={setSearchQuery}
                     onFilter={() => setShowFilters(!showFilters)}
                     onSort={handleSortToggle}
-                    onExportPDF={handleExportPDF}
-                    onExportCSV={handleExportCSV}
+                    onExport={() => setIsExportModalOpen(true)}
                     isExporting={isExporting}
                     onPublishAll={() => bulkPublishMutation.mutate()}
                     isPublishingAll={bulkPublishMutation.isPending}
@@ -589,6 +657,11 @@ const GradesOverview: React.FC = () => {
                     currentPage={currentPage}
                     totalPages={apiPagination.totalPages || 1}
                     totalItems={apiPagination.total || mappedGrades.length}
+                    pageSize={pageSize}
+                    onPageSizeChange={(newSize) => {
+                      setPageSize(newSize);
+                      setCurrentPage(1);
+                    }}
                     onPageChange={handlePageChange}
                     isLoading={isLoading}
                     viewMode={viewMode}
@@ -600,6 +673,22 @@ const GradesOverview: React.FC = () => {
           </motion.div>
         </div>
       </main>
+
+      {/* Multi-Format Grade Export Modal */}
+      <TeacherGradeExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        grades={mappedExportGrades.length > 0 ? mappedExportGrades : mappedGrades}
+        isLoading={isExportLoading}
+        totalAvailable={apiPagination.total || mappedGrades.length}
+        sessionName={(sessionsData as any[])?.find((s: any) => s.id === selectedSessionId)?.name}
+        className={(classesData as any[])?.find((c: any) => c.id === selectedClassId)?.name}
+        categoryLabel={selectedCategory !== 'all' ? selectedCategory : undefined}
+        schoolProfile={schoolProfile}
+        schoolId={modalSchoolId}
+        teacherName={user?.name || user?.email || 'Teacher'}
+        teacherId={user?.id}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!gradeToDelete} onOpenChange={(open) => { if (!open) { setGradeToDelete(null); setDeleteConfirmName(''); } }}>

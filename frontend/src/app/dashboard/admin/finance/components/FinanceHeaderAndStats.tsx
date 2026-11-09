@@ -29,7 +29,7 @@ interface FinanceHeaderAndStatsProps {
     averageTransaction: number
     onBack: () => void
     onOpenManualModal: () => void
-    onExportCSV: () => void
+    onOpenExportModal: () => void
     onOpenAddBankModal: () => void
 }
 
@@ -43,7 +43,7 @@ export function FinanceHeaderAndStats({
     averageTransaction,
     onBack,
     onOpenManualModal,
-    onExportCSV,
+    onOpenExportModal,
     onOpenAddBankModal,
 }: FinanceHeaderAndStatsProps) {
     const stats = [
@@ -161,7 +161,7 @@ export function FinanceHeaderAndStats({
 
                     <Button
                         variant="outline"
-                        onClick={onExportCSV}
+                        onClick={onOpenExportModal}
                         className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 h-12 px-5 rounded-2xl font-bold shadow-sm gap-2"
                     >
                         <Download size={16} />

@@ -1,69 +1,117 @@
-"use client"
+"use client";
 
-import React from 'react'
-import dynamic from 'next/dynamic'
+import React, { useState } from 'react';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
     DialogDescription,
-} from '@/components/ui/dialog'
-import { FileText, Download, Loader2, Award, ShieldCheck, Calendar, BookOpen } from 'lucide-react'
-import { cn } from '@/lib/utils'
-
-
-import { TranscriptPDF } from './TranscriptPDF'
+} from '@/components/ui/dialog';
+import { FileText, Download, Loader2, Award, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { TranscriptPDF } from './TranscriptPDF';
+import { ExportQuotaBanner } from '@/app/dashboard/admin/grades/components/export/ExportQuotaBanner';
+import { getMonthlyExportUsage, incrementMonthlyExportUsage } from '@/utils/exportQuotaManager';
+import { dispatchExportLeadershipNotification } from '@/lib/api/services/exportNotificationService';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { toast } from 'react-toastify';
 
 interface TranscriptModalProps {
-    isOpen: boolean
-    onClose: () => void
-    student: any
-    school: any
-    grades: any[]
-    className: string
-    primaryColor: string
+    isOpen: boolean;
+    onClose: () => void;
+    student: any;
+    school: any;
+    grades: any[];
+    className: string;
+    primaryColor: string;
 }
 
-export function TranscriptModal({ isOpen, onClose, student, school, grades, className, primaryColor }: TranscriptModalProps) {
-    if (!student) return null
+export function TranscriptModal({
+    isOpen,
+    onClose,
+    student,
+    school,
+    grades,
+    className,
+    primaryColor,
+}: TranscriptModalProps) {
+    if (!student) return null;
 
-    const [isGenerating, setIsGenerating] = React.useState(false)
-    const totalAssessments = grades.length
+    const { user } = useAuthStore();
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const schoolId = school?.id || school?.schoolId || user?.schools?.[0]?.schoolId || user?.tenantId || '';
+    const isPaying = Boolean(
+        school?.plan && school.plan.toUpperCase() !== 'FREE'
+    );
+
+    const quotaContextId = schoolId || 'school_context';
+    const quota = getMonthlyExportUsage(quotaContextId);
+    const isQuotaReached = !isPaying && quota.remaining <= 0;
 
     const handleDownload = async () => {
-        try {
-            setIsGenerating(true)
-            const { pdf } = await import('@react-pdf/renderer')
-            const blob = await pdf(
-                <TranscriptPDF 
-                    student={student} 
-                    school={school} 
-                    grades={grades} 
-                    className={className} 
-                />
-            ).toBlob()
-            
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement('a')
-            link.href = url
-            link.download = `${student.name}_Transcript_${new Date().getFullYear()}.pdf`
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-            URL.revokeObjectURL(url)
-        } catch (error) {
-            console.error('Failed to generate PDF:', error)
-        } finally {
-            setIsGenerating(false)
+        if (isQuotaReached) {
+            toast.error('Monthly export quota reached (10/10). Please upgrade for unlimited transcript generation.');
+            return;
         }
-    }
+
+        try {
+            setIsGenerating(true);
+            const { pdf } = await import('@react-pdf/renderer');
+            const blob = await pdf(
+                <TranscriptPDF
+                    student={student}
+                    school={school}
+                    grades={grades}
+                    className={className}
+                />
+            ).toBlob();
+
+            const schoolName = (school?.name || 'School').replace(/\s+/g, '_');
+            const studentName = (student.name || 'Student').replace(/\s+/g, '_');
+            const fileName = `${schoolName}-${studentName}-Official_Transcript_${new Date().getFullYear()}.pdf`;
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            // Quota decrement for free tier
+            if (!isPaying) {
+                incrementMonthlyExportUsage(quotaContextId);
+            }
+
+            // Dispatch leadership notification
+            if (schoolId) {
+                await dispatchExportLeadershipNotification({
+                    schoolId,
+                    actorName: user?.name || 'Administrator',
+                    actorRole: user?.role || 'ADMIN',
+                    resourceTitle: `Official Academic Transcript (${student.name})`,
+                    recordCount: 1,
+                    format: 'PDF',
+                }).catch(() => undefined);
+            }
+
+            toast.success('Official Transcript generated successfully');
+            onClose();
+        } catch (error) {
+            console.error('Failed to generate PDF:', error);
+            toast.error('Failed to generate transcript PDF');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     // Grouping logic for preview
     const sectionsMap: Record<string, { title: string; papers: any[] }> = {};
-    grades.forEach(g => {
+    grades.forEach((g) => {
         if (g.exam) {
-            // Filter out totals for the preview as well
             const subjectName = g.subject?.toLowerCase() || '';
             const examTitle = g.exam.title?.toLowerCase() || '';
             if (subjectName.includes('(total)') || subjectName === examTitle || g.assessmentType === 'TOTAL') return;
@@ -75,121 +123,130 @@ export function TranscriptModal({ isOpen, onClose, student, school, grades, clas
             sectionsMap[examId].papers.push(g);
         }
     });
+
     const sections = Object.values(sectionsMap);
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none bg-slate-50 dark:bg-slate-950 rounded-[2.5rem]">
-                {/* Header Section */}
-                <div className="relative p-8 pb-32 overflow-hidden" style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)` }}>
-                    <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                        <Award size={160} strokeWidth={1} />
-                    </div>
-                    
-                    <DialogHeader className="relative z-10 text-white">
-                        <div className="size-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-6 border border-white/20">
-                            <FileText size={28} className="text-white" />
+            <DialogContent className="max-w-2xl bg-white dark:bg-slate-900 border-none rounded-[2rem] p-0 overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+                <div className="p-8 pb-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-200/50">
+                                Official Record
+                            </span>
+                            {isPaying ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-200/50">
+                                    <Sparkles size={11} /> PRO
+                                </span>
+                            ) : (
+                                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
+                                    FREE
+                                </span>
+                            )}
                         </div>
-                        <DialogTitle className="text-3xl font-black uppercase tracking-tight leading-none mb-2">Academic Record</DialogTitle>
-                        <DialogDescription className="text-white/70 font-bold uppercase text-[10px] tracking-widest">
-                            Reviewing reports for {student.name}
+                        <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-2">
+                            Academic Transcript Preview
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                            {student?.name} • Admission: {student?.studentCode || 'N/A'}
                         </DialogDescription>
-                    </DialogHeader>
+                    </div>
                 </div>
 
-                {/* Content Section */}
-                <div className="p-8 -mt-24 relative z-20">
-                    <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl border border-slate-100 dark:border-white/5 space-y-6">
-                        
-                        {/* Summary Stats */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
-                                <div className="flex items-center gap-2 mb-1 text-slate-400">
-                                    <BookOpen size={12} />
-                                    <span className="text-[8px] font-black uppercase tracking-widest">Total Exams</span>
-                                </div>
-                                <p className="text-xl font-black text-slate-900 dark:text-white">{sections.length}</p>
-                            </div>
-                            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
-                                <div className="flex items-center gap-2 mb-1 text-slate-400">
-                                    <Calendar size={12} />
-                                    <span className="text-[8px] font-black uppercase tracking-widest">Papers Recorded</span>
-                                </div>
-                                <p className="text-xl font-black text-slate-900 dark:text-white">{totalAssessments}</p>
-                            </div>
+                <div className="p-8 pt-4 space-y-5 overflow-y-auto flex-1">
+                    <ExportQuotaBanner
+                        isPaying={isPaying}
+                        used={quota.used}
+                        limit={quota.limit}
+                        remaining={quota.remaining}
+                        userRole="ADMIN"
+                    />
+
+                    {/* Preview Content */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-wider">
+                                Transcript Assessment Breakdown
+                            </h4>
+                            <span className="text-xs font-bold text-slate-500">{sections.length} Academic Periods</span>
                         </div>
 
-                        {/* Detailed Reports List */}
-                        <div className="space-y-4">
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 pl-2">Exam History & Components</h4>
-                            <div className="max-h-[300px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/10">
-                                {sections.length > 0 ? (
-                                    sections.map((section, idx) => (
-                                        <div key={idx} className="p-5 rounded-[1.5rem] bg-slate-50/50 dark:bg-white/[0.01] border border-slate-100 dark:border-white/5 space-y-3">
-                                            <div className="flex justify-between items-start">
-                                                <h5 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{section.title}</h5>
-                                                <span className="text-[8px] font-black px-2 py-1 bg-white dark:bg-white/5 rounded-lg shadow-sm text-slate-500 border border-slate-100 dark:border-white/10">
-                                                    {section.papers.length} PAPERS
-                                                </span>
-                                            </div>
-                                            <div className="space-y-2">
-                                                {section.papers.map((paper, pIdx) => (
-                                                    <div key={pIdx} className="flex justify-between items-center text-[10px]">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="size-1.5 rounded-full" style={{ backgroundColor: primaryColor }} />
-                                                            <span className="font-bold text-slate-600 dark:text-slate-400">{paper.subject}</span>
-                                                        </div>
-                                                        <span className="font-black text-slate-900 dark:text-white">{paper.score}/{paper.maxMarks}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
+                        <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
+                            {sections.length > 0 ? (
+                                sections.map((sec, idx) => (
+                                    <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-white/5 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                                {sec.title}
+                                            </span>
+                                            <span className="text-[10px] font-bold text-slate-400">
+                                                {sec.papers.length} Papers Included
+                                            </span>
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="py-12 text-center space-y-3">
-                                        <div className="size-12 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto opacity-50">
-                                            <FileText size={20} className="text-slate-400" />
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            {sec.papers.map((p, pIdx) => (
+                                                <div key={pIdx} className="flex justify-between items-center bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-100 dark:border-white/5">
+                                                    <span className="truncate text-slate-600 dark:text-slate-400 font-medium">{p.subject}</span>
+                                                    <span className="font-bold text-slate-900 dark:text-white">{p.score}/{p.maxMarks}</span>
+                                                </div>
+                                            ))}
                                         </div>
-                                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">No exam records found</p>
                                     </div>
-                                )}
-                            </div>
+                                ))
+                            ) : (
+                                <div className="py-8 text-center space-y-2">
+                                    <FileText size={24} className="mx-auto text-slate-400 opacity-60" />
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">No completed exam records found</p>
+                                </div>
+                            )}
                         </div>
+                    </div>
 
-                        {/* Action Buttons */}
-                        <div className="space-y-4 pt-4">
-                            <button
-                                onClick={handleDownload}
-                                disabled={isGenerating || sections.length === 0}
-                                className={cn(
-                                    "w-full h-16 rounded-[1.5rem] text-white font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50",
-                                    isGenerating ? "bg-slate-400 cursor-not-allowed" : ""
-                                )}
-                                style={!isGenerating && sections.length > 0 ? { backgroundColor: primaryColor } : {}}
-                            >
-                                {isGenerating ? (
-                                    <>
-                                        <Loader2 className="animate-spin" size={18} />
-                                        Generating Official PDF...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Download size={18} strokeWidth={3} />
-                                        Generate Official Transcript
-                                    </>
-                                )}
-                            </button>
-                            
-                            <button 
-                                onClick={onClose}
-                                className="w-full text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors py-2"
-                            >
-                                Close Preview
-                            </button>
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-white/5 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                            <ShieldCheck size={16} className="text-emerald-500" />
+                            <span>Leadership Endorsement</span>
                         </div>
+                        <span className="font-bold text-slate-900 dark:text-white">
+                            {isPaying ? 'Official Digital Stamp' : 'Standard Dash Line'}
+                        </span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 h-12 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleDownload}
+                            disabled={isGenerating || sections.length === 0}
+                            className={cn(
+                                "flex-1 h-12 rounded-xl text-white font-bold uppercase tracking-wider text-xs shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50",
+                                isGenerating ? "bg-slate-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"
+                            )}
+                            style={!isGenerating && sections.length > 0 && primaryColor ? { backgroundColor: primaryColor } : {}}
+                        >
+                            {isGenerating ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={15} />
+                                    <span>Generating...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Download size={15} />
+                                    <span>Download Official Transcript</span>
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             </DialogContent>
         </Dialog>
-    )
+    );
 }

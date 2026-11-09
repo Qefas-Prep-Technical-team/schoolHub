@@ -18,6 +18,7 @@ import { useTeacherProfile, useTeacherLinkedSchools } from '@/lib/api/hooks/useT
 import { GradeBatchSummary, OfflineAssessmentCategory } from '../types';
 import { generatePDF } from '@/utils/pdfGenerator';
 import { computeGradePill } from '@/utils/gradingSystem';
+import { OfflineGradesExportModal } from './OfflineGradesExportModal';
 
 export function normalizeOfflineCategory(rawCategory?: string, assessmentType?: string): OfflineAssessmentCategory {
   const cat = (rawCategory || '').toUpperCase().trim();
@@ -302,7 +303,7 @@ export default function OfflineGradesDashboard({
         const classObj = classes.find((c: any) => c.id === g.classId);
         const resolvedClassName = classObj?.name
           ? `${classObj.name} ${classObj.section || ''}`.trim()
-          : (g.class?.name ? `${g.class.name} ${g.class.section || ''}`.trim() : 'General Cohort');
+          : (g.class?.name ? `${g.class.name} ${g.class.section || ''}`.trim() : 'General Class');
 
         const resolvedCategory = normalizeOfflineCategory(g.category, g.assessmentType);
         const assessmentTitle = g.assessmentType || `${resolvedCategory} Assessment`;
@@ -381,9 +382,11 @@ export default function OfflineGradesDashboard({
 
   const records = recordsData || [];
 
-  // Modal State for Entering/Editing Grades & Sync Pop-up
+  // Modal State for Entering/Editing Grades, Sync Pop-up & Institutional Export
   const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [recordForExport, setRecordForExport] = useState<GradeBatchSummary | null>(null);
   const [selectedRecordForEdit, setSelectedRecordForEdit] = useState<GradeBatchSummary | null>(null);
   const [defaultCategoryForNew, setDefaultCategoryForNew] = useState<OfflineAssessmentCategory | undefined>();
   const [defaultClassIdForNew, setDefaultClassIdForNew] = useState<string | undefined>();
@@ -457,7 +460,7 @@ export default function OfflineGradesDashboard({
         schoolProfile,
         orientation: 'portrait',
         metaData: [
-          { label: 'Class Cohort', value: record.className },
+          { label: 'Class', value: record.className },
           { label: 'Subject Curriculum', value: record.subject },
           { label: 'Assessment Category', value: record.category },
           { label: 'Max Score Marks', value: String(record.maxMarks) },
@@ -558,6 +561,10 @@ export default function OfflineGradesDashboard({
         onExportPDF={handleExportPDF}
         onExportCSV={handleExportCSV}
         onOpenSyncModal={() => setIsSyncModalOpen(true)}
+        onOpenExportModal={(rec) => {
+          setRecordForExport(rec || null);
+          setIsExportModalOpen(true);
+        }}
       />
 
       {/* Offline Grade Sheet Sync Pop-up Modal (Hidden by default, shows on button click) */}
@@ -605,6 +612,24 @@ export default function OfflineGradesDashboard({
           }}
         />
       )}
+
+      {/* Institutional Offline Grades Export Modal */}
+      <OfflineGradesExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => {
+          setIsExportModalOpen(false);
+          setRecordForExport(null);
+        }}
+        records={records}
+        singleRecord={recordForExport}
+        className={classes.find((c: { id?: string; name?: string }) => c.id === activeClassId)?.name}
+        schoolProfile={schoolProfile}
+        schoolId={schoolId}
+        teacherName={user?.name || user?.email || 'Teacher'}
+        teacherId={user?.id}
+        isTeacher={isTeacher}
+        gradingSystem={schoolProfile?.gradingSystem}
+      />
     </div>
   );
 }

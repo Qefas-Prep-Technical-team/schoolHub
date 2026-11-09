@@ -9,6 +9,7 @@ import { EditConfigModal } from "./components/EditConfigModal";
 import { ScoreBreakdownModal } from "./components/ScoreBreakdownModal";
 import { SyncProgressModal } from "./components/SyncProgressModal";
 import { SummaryPanel } from "./components/SummaryPanel";
+import { ResultEntryExportModal } from "@/app/dashboard/admin/records/new/components/ResultEntryExportModal";
 import { useClassSubjectResult, useStudentSubjectResults, useBulkSaveStudentSubjectResults, useUpdatePaperLinks, useCalculatePaperSync, usePublishClassSubjectResult, useUnpublishClassSubjectResult } from "@/lib/api/hooks/useRecords";
 import { useSubjectPapers } from "@/lib/api/hooks/useExams";
 import { useTeacherAssignments } from "@/lib/api/hooks/useAssignments";
@@ -51,7 +52,7 @@ export default function NewFinalResultDataEntryPage() {
   const { data: config, isLoading: isLoadingConfig } = useClassSubjectResult(id || undefined);
   const effectiveSchoolId = config?.schoolId || user?.schools?.[0]?.schoolId || (user as any)?.school?.id || user?.tenantId || "";
   const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
-  
+
   const { data: studentsData, isLoading: isLoadingStudents } = useStudents(
     effectiveSchoolId,
     { classId: config?.classId, limit: 500 },
@@ -93,7 +94,8 @@ export default function NewFinalResultDataEntryPage() {
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
-  
+  const [isExportPopupOpen, setIsExportPopupOpen] = useState(false);
+
   const [breakdownModal, setBreakdownModal] = useState<{
     isOpen: boolean;
     studentId: string;
@@ -106,15 +108,15 @@ export default function NewFinalResultDataEntryPage() {
   const { mutate: savePaperLinks, isPending: isSavingLinks } = useUpdatePaperLinks();
 
   const { data: subjectPapersResult, isLoading: isLoadingPapers } = useSubjectPapers(
-    config?.subjectId ? { 
+    config?.subjectId ? {
       subjectId: config.subjectId,
       classId: config.classId,
       sessionId: config.sessionId,
       term: config.term
     } : undefined
   );
-  const subjectPapers: any[] = Array.isArray(subjectPapersResult) 
-    ? subjectPapersResult 
+  const subjectPapers: any[] = Array.isArray(subjectPapersResult)
+    ? subjectPapersResult
     : (subjectPapersResult as any)?.data || [];
 
   const { data: assignmentsResult, isLoading: isLoadingAssignments } = useTeacherAssignments(effectiveSchoolId);
@@ -173,7 +175,7 @@ export default function NewFinalResultDataEntryPage() {
   const handleUploadComplete = (mappedData: any[], category: UploadCategory) => {
     setStudents(prev => {
       let newStudents = [...prev];
-      
+
       mappedData.forEach(row => {
         if (row.matched && row.studentId) {
           // If it's a new student, append it to the table
@@ -204,34 +206,34 @@ export default function NewFinalResultDataEntryPage() {
 
           const idx = newStudents.findIndex(s => s.id === row.studentId);
           if (idx !== -1) {
-             if (category === "all") {
-                const updates: any = {};
-                const sources: any = { ...(newStudents[idx].scoreSources || {}) };
-                if (row.assignment !== undefined && row.assignment !== "") { updates.assignment = String(row.assignment); sources.assignment = "CSV/AI"; }
-                if (row.quiz !== undefined && row.quiz !== "") { updates.quiz = String(row.quiz); sources.quiz = "CSV/AI"; }
-                if (row.ca !== undefined && row.ca !== "") { updates.ca = String(row.ca); sources.ca = "CSV/AI"; }
-                if (row.exam !== undefined && row.exam !== "") { updates.exam = String(row.exam); sources.exam = "CSV/AI"; }
-                newStudents[idx] = { ...newStudents[idx], ...updates, scoreSources: sources };
-             } else {
-                if (row.score !== undefined && row.score !== "") {
-                  newStudents[idx] = { 
-                    ...newStudents[idx], 
-                    [category]: String(row.score),
-                    scoreSources: { ...(newStudents[idx].scoreSources || {}), [category]: "CSV/AI" }
-                  };
-                }
-             }
+            if (category === "all") {
+              const updates: any = {};
+              const sources: any = { ...(newStudents[idx].scoreSources || {}) };
+              if (row.assignment !== undefined && row.assignment !== "") { updates.assignment = String(row.assignment); sources.assignment = "CSV/AI"; }
+              if (row.quiz !== undefined && row.quiz !== "") { updates.quiz = String(row.quiz); sources.quiz = "CSV/AI"; }
+              if (row.ca !== undefined && row.ca !== "") { updates.ca = String(row.ca); sources.ca = "CSV/AI"; }
+              if (row.exam !== undefined && row.exam !== "") { updates.exam = String(row.exam); sources.exam = "CSV/AI"; }
+              newStudents[idx] = { ...newStudents[idx], ...updates, scoreSources: sources };
+            } else {
+              if (row.score !== undefined && row.score !== "") {
+                newStudents[idx] = {
+                  ...newStudents[idx],
+                  [category]: String(row.score),
+                  scoreSources: { ...(newStudents[idx].scoreSources || {}), [category]: "CSV/AI" }
+                };
+              }
+            }
           }
         }
       });
       return newStudents;
     });
-    
+
     const count = mappedData.filter(d => d.matched).length;
     if (category === "all") {
-       toast.success(`Successfully applied ${count} combined records`);
+      toast.success(`Successfully applied ${count} combined records`);
     } else {
-       toast.success(`Successfully applied ${count} scores to ${category.toUpperCase()}`);
+      toast.success(`Successfully applied ${count} scores to ${category.toUpperCase()}`);
     }
   };
 
@@ -296,8 +298,8 @@ export default function NewFinalResultDataEntryPage() {
 
   const isLoading = isLoadingConfig || isLoadingStudents || isLoadingMarks;
 
-  const filteredStudents = students.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredStudents = students.filter(s =>
+    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
   const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE));
@@ -311,10 +313,10 @@ export default function NewFinalResultDataEntryPage() {
         // Validate total score
         const student = students.find(s => s.id === id);
         if (student) {
-          const total = (parseFloat(student.assignment) || 0) + 
-                        (parseFloat(student.quiz) || 0) + 
-                        (parseFloat(student.ca) || 0) + 
-                        (parseFloat(student.exam) || 0);
+          const total = (parseFloat(student.assignment) || 0) +
+            (parseFloat(student.quiz) || 0) +
+            (parseFloat(student.ca) || 0) +
+            (parseFloat(student.exam) || 0);
           if (total > 100) {
             toast.error(`Total score cannot exceed 100 marks! Current total is ${total}.`);
             return prev; // keep editing
@@ -335,7 +337,7 @@ export default function NewFinalResultDataEntryPage() {
 
   const scoresEntered = students.filter(s => !!s.assignment || !!s.quiz || !!s.ca || !!s.exam).length;
   const pendingEntry = students.length - scoresEntered;
-  
+
   // Calculate class average
   let totalClassScore = 0;
   let studentsWithScores = 0;
@@ -353,8 +355,8 @@ export default function NewFinalResultDataEntryPage() {
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Link 
-            href="/dashboard/teacher/records" 
+          <Link
+            href="/dashboard/teacher/records"
             className="p-2 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-slate-400"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -377,10 +379,22 @@ export default function NewFinalResultDataEntryPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-transparent border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50">
+          <button
+            onClick={() => setIsExportPopupOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-transparent border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+          >
             <Download className="w-4 h-4" />
             Export data
           </button>
+
+          <ResultEntryExportModal
+            isOpen={isExportPopupOpen}
+            onClose={() => setIsExportPopupOpen(false)}
+            config={config}
+            filteredStudents={filteredStudents}
+            schoolProfile={schoolProfile}
+            schoolId={effectiveSchoolId || ''}
+          />
         </div>
       </div>
 
@@ -413,7 +427,7 @@ export default function NewFinalResultDataEntryPage() {
           {/* Summary Cards Overview */}
           <div className="mt-6 mb-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              
+
               {/* Card 1 */}
               <div className="bg-white dark:bg-[#1a1b2e] p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800/50 flex flex-col justify-between">
                 <div className="w-8 h-8 rounded-full bg-[#4a8df5]/10 flex items-center justify-center mb-3">
@@ -475,33 +489,30 @@ export default function NewFinalResultDataEntryPage() {
           <div className="flex gap-6 mt-8 mb-4 border-b border-slate-200 dark:border-slate-800">
             <button
               onClick={() => setActiveTab("academic")}
-              className={`pb-3 text-sm font-semibold transition-colors relative ${
-                activeTab === "academic"
+              className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === "academic"
                   ? "text-[#5B5CE6]"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-              }`}
+                }`}
             >
               Academic Scores
               {activeTab === "academic" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5B5CE6] rounded-t-full" />}
             </button>
             <button
               onClick={() => setActiveTab("evaluation")}
-              className={`pb-3 text-sm font-semibold transition-colors relative ${
-                activeTab === "evaluation"
+              className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === "evaluation"
                   ? "text-[#5B5CE6]"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-              }`}
+                }`}
             >
               Behavioral Evaluations & Remarks
               {activeTab === "evaluation" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5B5CE6] rounded-t-full" />}
             </button>
             <button
               onClick={() => setActiveTab("details")}
-              className={`pb-3 text-sm font-semibold transition-colors relative ${
-                activeTab === "details"
+              className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === "details"
                   ? "text-[#5B5CE6]"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-              }`}
+                }`}
             >
               Configuration Details
               {activeTab === "details" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#5B5CE6] rounded-t-full" />}
@@ -510,194 +521,193 @@ export default function NewFinalResultDataEntryPage() {
 
           {/* Data Entry Grid - Academic */}
           {activeTab === "academic" && (
-          <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden mt-4">
-            
-            {/* Search Bar & Actions */}
-            <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/50 gap-4 bg-white dark:bg-[#1a1b2e]">
-              <div className="relative w-full max-w-sm flex-1">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search students..." 
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full bg-[#f8f9fa] dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-[#5B5CE6] transition-all"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-              </div>
-            </div>
+            <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden mt-4">
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead>
-                  <tr className="bg-slate-50/50 dark:bg-slate-900/20 border-b border-slate-100 dark:border-slate-800/50">
-                    <th className="px-6 py-4 w-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">#</th>
-                    <th className="px-4 py-4 min-w-[200px] text-[10px] font-black uppercase tracking-widest text-slate-400 text-left">Student</th>
-                    <th className="px-4 py-4 w-24 text-[10px] font-black uppercase tracking-widest text-slate-400 text-left">Class ID</th>
-                    {config?.assignmentMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Assignment<br/><span className="text-[9px] font-medium opacity-70">(Max {config.assignmentMax})</span></th>}
-                    {config?.quizMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Quiz/Test<br/><span className="text-[9px] font-medium opacity-70">(Max {config.quizMax})</span></th>}
-                    {config?.caMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">CA<br/><span className="text-[9px] font-medium opacity-70">(Max {config.caMax})</span></th>}
-                    {config?.examMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Exam<br/><span className="text-[9px] font-medium opacity-70">(Max {config.examMax})</span></th>}
-                    <th className="px-6 py-4 w-24 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
-                  {filteredStudents.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="px-6 py-8 text-center text-slate-500">No students found.</td>
-                    </tr>
-                  ) : paginatedStudents.map((student, idx) => {
-                    
-                    const assignNum = parseFloat(student.assignment) || 0;
-                    const quizNum = parseFloat(student.quiz) || 0;
-                    const caNum = parseFloat(student.ca) || 0;
-                    const examNum = parseFloat(student.exam) || 0;
-                    const total = assignNum + quizNum + caNum + examNum;
-                    const globalIdx = (currentPage - 1) * PAGE_SIZE + idx;
-                    
-                    return (
-                      <tr key={student.id} className="group transition-colors border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                        <td className="px-6 py-4 text-center text-slate-400 font-normal text-sm">{String(globalIdx + 1).padStart(2, '0')}</td>
-                        <td className="px-4 py-4 flex items-center gap-3">
-                          <StudentAvatar name={student.name} profileImage={student.profileImage} />
-                          <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{student.name}</span>
-                        </td>
-                        <td className="px-4 py-4 text-slate-400 font-normal text-sm">{student.code}</td>
-                        {config?.assignmentMax != null && (
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "assignment", categoryMax: config?.assignmentMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
-                              {student.assignment !== "" && student.assignment != null ? student.assignment : <span className="text-slate-300">-</span>}
-                            </button>
-                        </td>
-                        )}
-                        {config?.quizMax != null && (
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "quiz", categoryMax: config?.quizMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
-                              {student.quiz !== "" && student.quiz != null ? student.quiz : <span className="text-slate-300">-</span>}
-                            </button>
-                        </td>
-                        )}
-                        {config?.caMax != null && (
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "ca", categoryMax: config?.caMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
-                              {student.ca !== "" && student.ca != null ? student.ca : <span className="text-slate-300">-</span>}
-                            </button>
-                        </td>
-                        )}
-                        {config?.examMax != null && (
-                        <td className="px-4 py-3 text-center">
-                          <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "exam", categoryMax: config?.examMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
-                              {student.exam !== "" && student.exam != null ? student.exam : <span className="text-slate-300">-</span>}
-                            </button>
-                        </td>
-                        )}
-                        <td className="px-6 py-4 text-center">
-                          {student.assignment || student.quiz || student.ca || student.exam ? (
-                            <div className="flex items-center justify-center gap-1.5">
-                              <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-bold ${total < 40 ? "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400" : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"}`}>{total}</span>
-                              {(() => {
-                                const maxPossible = (config?.assignmentMax || 0) + (config?.quizMax || 0) + (config?.caMax || 0) + (config?.examMax || 0);
-                                const pct = maxPossible > 0 ? (total / maxPossible) * 100 : total;
-                                const pill = computeGradePill(pct, schoolProfile?.gradingSystem);
-                                return (
-                                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`} title={pill.remark}>
-                                    {pill.label}
-                                  </span>
-                                );
-                              })()}
-                            </div>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="px-6 py-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/20">
-                <span className="text-xs text-slate-400 font-medium">
-                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredStudents.length)} of {filteredStudents.length} students
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-500 transition-colors"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-7 h-7 rounded text-xs font-semibold transition-colors ${
-                        page === currentPage 
-                          ? "bg-[#5B5CE6] text-white" 
-                          : "text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-500 transition-colors"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+              {/* Search Bar & Actions */}
+              <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/50 gap-4 bg-white dark:bg-[#1a1b2e]">
+                <div className="relative w-full max-w-sm flex-1">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search students..."
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="w-full bg-[#f8f9fa] dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-[#5B5CE6] transition-all"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead>
+                    <tr className="bg-slate-50/50 dark:bg-slate-900/20 border-b border-slate-100 dark:border-slate-800/50">
+                      <th className="px-6 py-4 w-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">#</th>
+                      <th className="px-4 py-4 min-w-[200px] text-[10px] font-black uppercase tracking-widest text-slate-400 text-left">Student</th>
+                      <th className="px-4 py-4 w-24 text-[10px] font-black uppercase tracking-widest text-slate-400 text-left">Class ID</th>
+                      {config?.assignmentMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Assignment<br /><span className="text-[9px] font-medium opacity-70">(Max {config.assignmentMax})</span></th>}
+                      {config?.quizMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Quiz/Test<br /><span className="text-[9px] font-medium opacity-70">(Max {config.quizMax})</span></th>}
+                      {config?.caMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">CA<br /><span className="text-[9px] font-medium opacity-70">(Max {config.caMax})</span></th>}
+                      {config?.examMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Exam<br /><span className="text-[9px] font-medium opacity-70">(Max {config.examMax})</span></th>}
+                      <th className="px-6 py-4 w-24 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
+                    {filteredStudents.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="px-6 py-8 text-center text-slate-500">No students found.</td>
+                      </tr>
+                    ) : paginatedStudents.map((student, idx) => {
+
+                      const assignNum = parseFloat(student.assignment) || 0;
+                      const quizNum = parseFloat(student.quiz) || 0;
+                      const caNum = parseFloat(student.ca) || 0;
+                      const examNum = parseFloat(student.exam) || 0;
+                      const total = assignNum + quizNum + caNum + examNum;
+                      const globalIdx = (currentPage - 1) * PAGE_SIZE + idx;
+
+                      return (
+                        <tr key={student.id} className="group transition-colors border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                          <td className="px-6 py-4 text-center text-slate-400 font-normal text-sm">{String(globalIdx + 1).padStart(2, '0')}</td>
+                          <td className="px-4 py-4 flex items-center gap-3">
+                            <StudentAvatar name={student.name} profileImage={student.profileImage} />
+                            <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{student.name}</span>
+                          </td>
+                          <td className="px-4 py-4 text-slate-400 font-normal text-sm">{student.code}</td>
+                          {config?.assignmentMax != null && (
+                            <td className="px-4 py-3 text-center">
+                              <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "assignment", categoryMax: config?.assignmentMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
+                                {student.assignment !== "" && student.assignment != null ? student.assignment : <span className="text-slate-300">-</span>}
+                              </button>
+                            </td>
+                          )}
+                          {config?.quizMax != null && (
+                            <td className="px-4 py-3 text-center">
+                              <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "quiz", categoryMax: config?.quizMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
+                                {student.quiz !== "" && student.quiz != null ? student.quiz : <span className="text-slate-300">-</span>}
+                              </button>
+                            </td>
+                          )}
+                          {config?.caMax != null && (
+                            <td className="px-4 py-3 text-center">
+                              <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "ca", categoryMax: config?.caMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
+                                {student.ca !== "" && student.ca != null ? student.ca : <span className="text-slate-300">-</span>}
+                              </button>
+                            </td>
+                          )}
+                          {config?.examMax != null && (
+                            <td className="px-4 py-3 text-center">
+                              <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "exam", categoryMax: config?.examMax || null })} className="text-slate-500 font-medium hover:text-[#5B5CE6] transition-colors px-2 py-1 rounded text-sm">
+                                {student.exam !== "" && student.exam != null ? student.exam : <span className="text-slate-300">-</span>}
+                              </button>
+                            </td>
+                          )}
+                          <td className="px-6 py-4 text-center">
+                            {student.assignment || student.quiz || student.ca || student.exam ? (
+                              <div className="flex items-center justify-center gap-1.5">
+                                <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-bold ${total < 40 ? "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400" : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"}`}>{total}</span>
+                                {(() => {
+                                  const maxPossible = (config?.assignmentMax || 0) + (config?.quizMax || 0) + (config?.caMax || 0) + (config?.examMax || 0);
+                                  const pct = maxPossible > 0 ? (total / maxPossible) * 100 : total;
+                                  const pill = computeGradePill(pct, schoolProfile?.gradingSystem);
+                                  return (
+                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`} title={pill.remark}>
+                                      {pill.label}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/20">
+                  <span className="text-xs text-slate-400 font-medium">
+                    Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredStudents.length)} of {filteredStudents.length} students
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-500 transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-7 h-7 rounded text-xs font-semibold transition-colors ${page === currentPage
+                            ? "bg-[#5B5CE6] text-white"
+                            : "text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
+                          }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-500 transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
 
           {/* Data Entry Grid - Evaluation */}
           {activeTab === "evaluation" && (
-          <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden mt-4">
-            
-            {/* Search Bar */}
-            <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/50 gap-4 bg-slate-50/50 dark:bg-slate-900/20">
-              <div className="relative w-full max-w-md">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search students..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all"
-                />
-              </div>
-            </div>
+            <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden mt-4">
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead>
-                  <tr className="text-xs capitalize font-medium text-slate-400 border-b border-slate-100 dark:border-slate-800/50">
-                    <th className="px-6 py-5 w-12 text-center">#</th>
-                    <th className="px-4 py-5 min-w-[200px]">Name</th>
-                    <th className="px-4 py-5 w-24 text-center">Politeness<br/><span className="text-[10px] text-slate-400">(1-5)</span></th>
-                    <th className="px-4 py-5 w-24 text-center">Punctuality<br/><span className="text-[10px] text-slate-400">(1-5)</span></th>
-                    <th className="px-4 py-5 w-24 text-center">Handwriting<br/><span className="text-[10px] text-slate-400">(1-5)</span></th>
-                    <th className="px-4 py-5 w-64 text-left">Teacher Remark</th>
-                    <th className="px-4 py-5 w-64 text-left">Principal Remark</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
-                  {filteredStudents.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-slate-500">No students found.</td>
+              {/* Search Bar */}
+              <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/50 gap-4 bg-slate-50/50 dark:bg-slate-900/20">
+                <div className="relative w-full max-w-md">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search students..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead>
+                    <tr className="text-xs capitalize font-medium text-slate-400 border-b border-slate-100 dark:border-slate-800/50">
+                      <th className="px-6 py-5 w-12 text-center">#</th>
+                      <th className="px-4 py-5 min-w-[200px]">Name</th>
+                      <th className="px-4 py-5 w-24 text-center">Politeness<br /><span className="text-[10px] text-slate-400">(1-5)</span></th>
+                      <th className="px-4 py-5 w-24 text-center">Punctuality<br /><span className="text-[10px] text-slate-400">(1-5)</span></th>
+                      <th className="px-4 py-5 w-24 text-center">Handwriting<br /><span className="text-[10px] text-slate-400">(1-5)</span></th>
+                      <th className="px-4 py-5 w-64 text-left">Teacher Remark</th>
+                      <th className="px-4 py-5 w-64 text-left">Principal Remark</th>
                     </tr>
-                  ) : filteredStudents.map((student, idx) => (
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
+                    {filteredStudents.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-8 text-center text-slate-500">No students found.</td>
+                      </tr>
+                    ) : filteredStudents.map((student, idx) => (
                       <tr key={student.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors group">
                         <td className="px-6 py-5 text-center text-slate-400 font-normal">{String(idx + 1).padStart(2, '0')}</td>
                         <td className="px-4 py-5 flex items-center gap-3">
@@ -705,7 +715,7 @@ export default function NewFinalResultDataEntryPage() {
                           <span className="text-slate-800 dark:text-slate-100 font-medium">{student.name}</span>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <select 
+                          <select
                             value={student.politeness}
                             onChange={(e) => handleScoreChange(student.id, "politeness", e.target.value)}
                             className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#5B5CE6] focus:ring-1 focus:ring-[#5B5CE6] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
@@ -719,7 +729,7 @@ export default function NewFinalResultDataEntryPage() {
                           </select>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <select 
+                          <select
                             value={student.punctuality}
                             onChange={(e) => handleScoreChange(student.id, "punctuality", e.target.value)}
                             className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#5B5CE6] focus:ring-1 focus:ring-[#5B5CE6] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
@@ -733,7 +743,7 @@ export default function NewFinalResultDataEntryPage() {
                           </select>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <select 
+                          <select
                             value={student.handwriting}
                             onChange={(e) => handleScoreChange(student.id, "handwriting", e.target.value)}
                             className="w-16 mx-auto bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#5B5CE6] focus:ring-1 focus:ring-[#5B5CE6] rounded px-2 py-1 outline-none transition-all text-center font-semibold text-slate-800 dark:text-slate-200 cursor-pointer"
@@ -747,8 +757,8 @@ export default function NewFinalResultDataEntryPage() {
                           </select>
                         </td>
                         <td className="px-4 py-3">
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             value={student.teacherRemark}
                             onChange={(e) => handleScoreChange(student.id, "teacherRemark", e.target.value)}
                             placeholder="Add remark..."
@@ -756,8 +766,8 @@ export default function NewFinalResultDataEntryPage() {
                           />
                         </td>
                         <td className="px-4 py-3">
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             value={student.principalRemark}
                             onChange={(e) => handleScoreChange(student.id, "principalRemark", e.target.value)}
                             placeholder="Add remark..."
@@ -765,11 +775,11 @@ export default function NewFinalResultDataEntryPage() {
                           />
                         </td>
                       </tr>
-                  ))}
-                </tbody>
-              </table>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
           )}
 
           {/* Configuration Details Tab */}
@@ -787,32 +797,32 @@ export default function NewFinalResultDataEntryPage() {
                   Edit Configuration
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* General Info */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">General Information</h3>
-                  
+
                   <div className="flex flex-col">
                     <span className="text-xs text-slate-400">Result Name</span>
                     <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{config.name}</span>
                   </div>
-                  
+
                   <div className="flex flex-col">
                     <span className="text-xs text-slate-400">Subject</span>
                     <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{config.subject?.name || "N/A"}</span>
                   </div>
-                  
+
                   <div className="flex flex-col">
                     <span className="text-xs text-slate-400">Class</span>
                     <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{config.class?.name || "N/A"}</span>
                   </div>
-                  
+
                   <div className="flex flex-col">
                     <span className="text-xs text-slate-400">Department</span>
                     <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{config.department?.name || "All Departments"}</span>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col">
                       <span className="text-xs text-slate-400">Term</span>
@@ -828,7 +838,7 @@ export default function NewFinalResultDataEntryPage() {
                 {/* Score Configuration & Dates */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Assessment Limits & Dates</h3>
-                  
+
                   <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-100 dark:border-slate-800">
                     <div className="flex flex-col items-center justify-center p-2 bg-white dark:bg-slate-800 rounded shadow-sm">
                       <span className="text-[10px] uppercase text-slate-400 font-bold mb-1">Assignment Max</span>
@@ -869,7 +879,7 @@ export default function NewFinalResultDataEntryPage() {
         </>
       )}
 
-      <SummaryPanel 
+      <SummaryPanel
         students={students}
         config={config}
         subjectPapers={subjectPapers}
@@ -902,7 +912,7 @@ export default function NewFinalResultDataEntryPage() {
         categoryMax={breakdownModal.categoryMax}
       />
 
-      <SyncProgressModal 
+      <SyncProgressModal
         isOpen={isSyncModalOpen}
         onClose={() => setIsSyncModalOpen(false)}
         resultId={config?.id || ""}
@@ -921,7 +931,7 @@ export default function NewFinalResultDataEntryPage() {
               if (syncedData.quiz !== undefined) { updates.quiz = syncedData.quiz?.toString() || "0"; sources.quiz = "SYNC"; }
               if (syncedData.ca !== undefined) { updates.ca = syncedData.ca?.toString() || "0"; sources.ca = "SYNC"; }
               if (syncedData.exam !== undefined) { updates.exam = syncedData.exam?.toString() || "0"; sources.exam = "SYNC"; }
-              
+
               return {
                 ...student,
                 ...updates,
@@ -947,7 +957,7 @@ export default function NewFinalResultDataEntryPage() {
                 Cancel
               </button>
             </DialogClose>
-            <button 
+            <button
               onClick={handlePublish}
               disabled={isPublishing}
               className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center min-w-[100px] disabled:opacity-70"
@@ -972,7 +982,7 @@ export default function NewFinalResultDataEntryPage() {
                 Cancel
               </button>
             </DialogClose>
-            <button 
+            <button
               onClick={handleUnpublish}
               disabled={isUnpublishing}
               className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center min-w-[100px] disabled:opacity-70"

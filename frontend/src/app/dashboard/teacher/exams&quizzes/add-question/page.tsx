@@ -18,6 +18,7 @@ import EditPaperModal from "@/app/dashboard/admin/exams/[examId]/papers/[paperId
 import React, { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { computeGradePill } from "@/utils/gradingSystem";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import SubjectPaperReport from './components/SubjectPaperReport';
 
@@ -87,7 +88,7 @@ export default function TeacherAddQuestionDashboard() {
     isOpen: false,
     title: "",
     description: "",
-    onConfirm: () => {},
+    onConfirm: () => { },
     variant: "danger",
     confirmText: "Confirm",
   });
@@ -108,7 +109,7 @@ export default function TeacherAddQuestionDashboard() {
   const paperSchoolId = paper?.schoolId as string | undefined;
   const fallbackSchoolId = (user as Record<string, any>)?.schools?.[0]?.schoolId || (user as Record<string, any>)?.tenantId || "";
   const { data: school } = useSchoolProfile(paperSchoolId || fallbackSchoolId);
-  
+
   const { data: subjects = [] } = useQuery({
     queryKey: ["subjects", paperSchoolId],
     queryFn: async () => {
@@ -165,11 +166,11 @@ export default function TeacherAddQuestionDashboard() {
       <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
         <div className="w-full xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4 truncate">
-            <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => router.push('/dashboard/teacher/exams&quizzes')}
-                className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push('/dashboard/teacher/exams&quizzes')}
+              className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
@@ -183,16 +184,16 @@ export default function TeacherAddQuestionDashboard() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {paper.status === "PUBLISHED" ? (
               <div className="flex items-center gap-2">
                 <div className="hidden md:flex bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full text-[10px] font-bold border border-emerald-100 dark:border-emerald-500/20 items-center gap-1.5 shadow-sm">
                   <Check size={12} /> Published
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="h-8 rounded-lg text-amber-600 border-amber-200 hover:bg-amber-50 text-xs px-3 font-bold"
                   onClick={() => openConfirmDialog({
                     title: "Unpublish Paper",
@@ -207,8 +208,8 @@ export default function TeacherAddQuestionDashboard() {
                 </Button>
               </div>
             ) : (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 className="h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 px-4 text-xs font-bold"
                 onClick={() => publishPaperMutation.mutate()}
                 disabled={publishPaperMutation.isPending}
@@ -221,7 +222,7 @@ export default function TeacherAddQuestionDashboard() {
                 Publish
               </Button>
             )}
-            
+
             <Button
               variant="outline"
               size="sm"
@@ -232,13 +233,13 @@ export default function TeacherAddQuestionDashboard() {
               {paper.readingContent ? "Edit Reading Content" : "Add Reading Content"}
             </Button>
 
-            <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 rounded-lg text-slate-600 border-slate-200 hover:bg-slate-50 text-xs px-3 font-bold flex items-center gap-1.5"
-                onClick={() => setIsEditModalOpen(true)}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-lg text-slate-600 border-slate-200 hover:bg-slate-50 text-xs px-3 font-bold flex items-center gap-1.5"
+              onClick={() => setIsEditModalOpen(true)}
             >
-                <SettingsIcon size={14} /> Settings
+              <SettingsIcon size={14} /> Settings
             </Button>
 
             <Button
@@ -250,7 +251,7 @@ export default function TeacherAddQuestionDashboard() {
               <Eye size={12} />
               Preview Mode
             </Button>
-            
+
             <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 hidden sm:block mx-1"></div>
             <div className="flex flex-col items-end shrink-0">
               <span className="text-xs font-black text-slate-900 dark:text-white leading-none">
@@ -277,11 +278,11 @@ export default function TeacherAddQuestionDashboard() {
 
           <TabsContent value="questions">
             <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden min-h-[70vh] p-6 md:p-8 lg:p-10">
-                <QuestionManager 
-                    paperId={paperId} 
-                    examId={examId}
-                    paper={paper}
-                />
+              <QuestionManager
+                paperId={paperId}
+                examId={examId}
+                paper={paper}
+              />
             </div>
           </TabsContent>
 
@@ -299,19 +300,19 @@ export default function TeacherAddQuestionDashboard() {
               const manualResults = (paper.grades as Record<string, any>[] || [])
                 .filter((g: Record<string, any>) => !g.examAttemptId && !g.subjectExamAttemptId)
                 .map((g: Record<string, any>) => ({
-                id: g.id,
-                studentName: g.student?.name,
-                studentCode: g.student?.studentCode,
-                score: g.score,
-                maxMarks: g.maxMarks,
-                type: 'MANUAL',
-                gradeId: g.id
-              }));
+                  id: g.id,
+                  studentName: g.student?.name,
+                  studentCode: g.student?.studentCode,
+                  score: g.score,
+                  maxMarks: g.maxMarks,
+                  type: 'MANUAL',
+                  gradeId: g.id
+                }));
 
               const allResults = [...onlineResults, ...manualResults];
               const hasResults = allResults.length > 0;
 
-              const avgScore = hasResults 
+              const avgScore = hasResults
                 ? (allResults.reduce((sum, r) => sum + r.score, 0) / allResults.length).toFixed(1)
                 : '0.0';
               const highBox = hasResults ? Math.max(...allResults.map(r => r.score)).toFixed(1) : '0.0';
@@ -335,7 +336,7 @@ export default function TeacherAddQuestionDashboard() {
                         fileName={`${paper.title?.replace(/\s+/g, '_')}_Report.pdf`}
                       >
                         {({ loading }: { loading: boolean }) => (
-                          <Button 
+                          <Button
                             className="bg-primary text-white font-black px-6 rounded-2xl shadow-xl shadow-primary/20 gap-2 uppercase tracking-widest text-[10px]"
                             disabled={loading}
                           >
@@ -405,14 +406,21 @@ export default function TeacherAddQuestionDashboard() {
                                         <div className={`h-full ${isPass ? 'bg-emerald-500' : 'bg-red-500'}`} style={{ width: `${percentage}%` }} />
                                       </div>
                                       <span className="text-[10px] font-black text-slate-600">{percentage.toFixed(0)}%</span>
+                                      {(() => {
+                                        const pill = computeGradePill(percentage, (school as any)?.gradingSystem);
+                                        return (
+                                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`} title={pill.remark}>
+                                            {pill.label}
+                                          </span>
+                                        );
+                                      })()}
                                     </div>
                                   </td>
                                   <td className="px-8 py-5 text-right">
-                                    <span className={`px-3 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase ${
-                                        result.type === 'MANUAL' ? 'bg-blue-50 text-blue-600' : 'bg-indigo-50 text-indigo-600'
+                                    <span className={`px-3 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase ${result.type === 'MANUAL' ? 'bg-blue-50 text-blue-600' : 'bg-indigo-50 text-indigo-600'
                                       }`}>
-                                        {result.type}
-                                      </span>
+                                      {result.type}
+                                    </span>
                                   </td>
                                 </tr>
                               );

@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
-import { generatePDF } from "@/utils/pdfGenerator";
+import ExportResultScopeModal, { ExportStudentOption, ExportScopeMode, ExportFileFormat } from "@/app/dashboard/admin/grades/components/ExportResultScopeModal";
+import { executeExportWorkflow } from "@/app/dashboard/admin/grades/components/export/exportWorkflowHandler";
 import { computeGradePill, getGradeEvaluation } from "@/utils/gradingSystem";
 import { groupByDate } from "@/app/dashboard/teacher/utils/dateSectioning";
 import { Download } from "lucide-react";
@@ -30,84 +31,63 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
   const { user } = useAuthStore();
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
 
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const rawSchoolId = schoolId || user?.schools?.[0]?.schoolId || user?.tenantId || "";
   const effectiveSchoolId = rawSchoolId === "default-tenant-id" || rawSchoolId === "personal" ? "" : rawSchoolId;
   const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
 
-  const handleExport = async (targetFormat: 'csv' | 'pdf') => {
+  const submissionsList: ExportStudentOption[] = useMemo(() => {
+    const maxScoreVal = assignment.maxScore || 100;
+    return (assignment.submissions || []).map((sub: any) => ({
+      id: sub.id,
+      name: sub.student?.name || "Student",
+      studentCode: sub.student?.studentCode || sub.student?.email || "N/A",
+      className: assignment.class?.name || "Class",
+      score: sub.score ?? 0,
+      totalMarks: maxScoreVal,
+      rawItem: {
+        score: sub.score ?? 0,
+        maxScore: maxScoreVal,
+        student: {
+          name: sub.student?.name,
+          studentCode: sub.student?.studentCode,
+        }
+      }
+    }));
+  }, [assignment]);
+
+  const handleExecuteExport = async (
+    mode: ExportScopeMode,
+    selectedList: ExportStudentOption[],
+    format?: ExportFileFormat,
+    isPaying?: boolean
+  ) => {
     setIsExporting(true);
     try {
-      if (!submissions || submissions.length === 0) {
-        toast.info("No submissions to export.");
-        return;
-      }
-
-      const maxScoreVal = assignment.maxScore || 100;
-      const headers = ["#", "Student Name", "Student Email", "Submitted At", "Status", "Score", "Max Score", "Grade", "Remark"];
-      const rows = submissions.map((sub: any, index: number) => {
-        const hasScore = sub.score !== null && sub.score !== undefined;
-        const pct = hasScore && maxScoreVal > 0 ? (sub.score / maxScoreVal) * 100 : 0;
-        const evalRes = hasScore ? getGradeEvaluation(pct, schoolProfile?.gradingSystem) : null;
-        return [
-          (index + 1).toString(),
-          sub.student?.name || "Unknown Student",
-          sub.student?.email || "No email",
-          sub.submittedAt ? format(new Date(sub.submittedAt), "MMM d, yyyy h:mm a") : "Unknown",
-          sub.status || "Unknown",
-          (sub.score ?? 0).toString(),
-          maxScoreVal.toString(),
-          evalRes ? evalRes.grade : "N/A",
-          evalRes ? evalRes.remark : "N/A"
-        ];
+      await executeExportWorkflow({
+        selectedFormat: format || 'pdf',
+        scopeMode: mode,
+        exportItems: selectedList,
+        examTitle: assignment.title,
+        title: `Assignment Submissions - ${assignment.title}`,
+        schoolId: effectiveSchoolId,
+        schoolName: schoolProfile?.name || 'School',
+        className: assignment.class?.name || 'Class',
+        userName: user?.name || 'Administrator',
+        userRole: 'ADMIN',
+        gradingSystem: schoolProfile?.gradingSystem,
+        isPaying: Boolean(isPaying),
+        quotaContextId: effectiveSchoolId || 'admin_assignment_submissions',
+        onExport: async () => {},
+        onSuccess: () => {
+          setIsExportModalOpen(false);
+          toast.success('Assignment submissions exported successfully.');
+        }
       });
-
-      const dateStr = format(new Date(), "yyyy-MM-dd");
-      const schoolName = schoolProfile?.name || user?.schools?.[0]?.name || (user as any)?.tenant?.name || "School";
-      const sanitizedSchoolName = schoolName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      const fileNameBase = `${sanitizedSchoolName}_assignment_submissions_${dateStr}`;
-
-      if (targetFormat === 'csv') {
-        const csvContent = [];
-        csvContent.push(`"${schoolName.toUpperCase()}"`);
-        if (schoolProfile?.motto) csvContent.push(`"${schoolProfile.motto}"`);
-        csvContent.push("");
-        csvContent.push(`"Assignment: ${(assignment.title || '').replace(/"/g, '""')}"`);
-        csvContent.push(`"Generated on: ${dateStr}"`);
-        csvContent.push("");
-
-        csvContent.push(headers.join(","));
-        rows.forEach((r: any[]) => {
-          const safeRow = r.map((item: any) => `"${String(item).replace(/"/g, '""')}"`);
-          csvContent.push(safeRow.join(","));
-        });
-
-        const csv = csvContent.join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${fileNameBase}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } else {
-        await generatePDF({
-          title: `Assignment Submissions: ${assignment.title}`,
-          filename: `${fileNameBase}.pdf`,
-          schoolProfile: schoolProfile,
-          metaData: [
-            { label: 'Date', value: dateStr },
-            { label: 'Total Submissions', value: submissions.length.toString() }
-          ],
-          tableHeaders: [headers],
-          tableData: rows
-        });
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error(`Failed to export submissions as ${targetFormat.toUpperCase()}.`);
+    } catch (err) {
+      console.error('Assignment submission export error:', err);
+      toast.error('Failed to export assignment submissions.');
     } finally {
       setIsExporting(false);
     }
@@ -163,37 +143,16 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
           )}
         </h3>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={isExporting}
-              className="h-9 px-4 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700"
-            >
-              {isExporting ? (
-                <div className="w-4 h-4 mr-2 rounded-full border-2 border-slate-400 border-t-transparent animate-spin" />
-              ) : (
-                <Download className="w-4 h-4 mr-2 text-slate-400" />
-              )}
-              {isExporting ? "Exporting..." : "Export"}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl p-2 shadow-xl">
-            <DropdownMenuItem
-              onClick={() => handleExport('csv')}
-              className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3"
-            >
-              Export as CSV
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleExport('pdf')}
-              className="rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-slate-700 dark:text-slate-300 py-2.5 px-3 mt-1"
-            >
-              Export as PDF
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsExportModalOpen(true)}
+          disabled={submissions.length === 0}
+          className="h-9 px-4 rounded-xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
+        >
+          <Download className="w-4 h-4 mr-2 text-slate-400" />
+          Export Submissions
+        </Button>
       </div>
 
       <div className="hidden md:block overflow-x-auto">
@@ -383,6 +342,20 @@ export default function SubmissionList({ assignment, schoolId, readOnly = false 
           </div>
         ))}
       </div>
+
+      <ExportResultScopeModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExport={handleExecuteExport}
+        isExporting={isExporting}
+        students={submissionsList}
+        title="Export Assignment Submissions"
+        description="Download submissions in PDF, Excel (.xlsx), or CSV (.csv) with verified grading evaluations."
+        school={schoolProfile}
+        examTitle={assignment.title}
+        className={assignment.class?.name}
+        role="ADMIN"
+      />
 
       {selectedSubmission && (
         <SubmissionReviewModal

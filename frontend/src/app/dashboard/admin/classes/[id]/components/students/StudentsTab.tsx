@@ -10,7 +10,7 @@ import Pagination from '@/components/ui/Pagination';
 import StudentDetailsModal from './components/StudentDetailsModal';
 import PromoteStudentsModal from '../PromoteStudentsModal';
 import SendAnnouncementModal from '../SendAnnouncementModal';
-import { generatePDF } from '@/utils/pdfGenerator';
+import { ClassRosterExportModal } from './components/ClassRosterExportModal';
 import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { toast } from 'react-toastify';
 
@@ -40,7 +40,7 @@ export default function ClassStudentsPage({ enrollments = [], classData }: Class
   const [promoteModalMode, setPromoteModalMode] = useState<'promote' | 'graduate'>('promote');
   const [preselectedStudentId, setPreselectedStudentId] = useState<string | undefined>(undefined);
   const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Map real enrollment data to Student type
   const students: Student[] = useMemo(() => {
@@ -78,7 +78,7 @@ export default function ClassStudentsPage({ enrollments = [], classData }: Class
 
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(student => 
+      filtered = filtered.filter(student =>
         student.fullName.toLowerCase().includes(searchLower) ||
         student.studentId.toLowerCase().includes(searchLower)
       );
@@ -111,57 +111,8 @@ export default function ClassStudentsPage({ enrollments = [], classData }: Class
 
   const { data: schoolProfile } = useSchoolProfile(classData?.schoolId || '');
 
-  const handleExport = async () => {
-    setIsExporting(true);
-    const toastId = toast.loading("Generating PDF...", { autoClose: false });
-
-    try {
-      // 1. Calculate positions based on a "score"
-      const studentsWithScore = students.map(s => {
-        // Fallback realistic-looking mock score if no actual score exists in the raw data
-        // In a real scenario, this would come directly from StudentTermResult
-        const stableScore = (s.fullName.length * 7) % 45 + 50;
-        return { ...s, score: stableScore };
-      });
-      
-      // 2. Sort to assign positions
-      studentsWithScore.sort((a, b) => b.score - a.score);
-      
-      // Helper to format position with ordinal suffix
-      const getOrdinal = (n: number) => {
-        const s = ["th", "st", "nd", "rd"];
-        const v = n % 100;
-        return n + (s[(v - 20) % 10] || s[v] || s[0]);
-      };
-
-      const tableData = studentsWithScore.map((student, index) => [
-        getOrdinal(index + 1), // Position with ordinal
-        student.fullName,
-        student.studentId || '-',
-        student.gender.charAt(0).toUpperCase() + student.gender.slice(1),
-        `${student.score}%` // Score
-      ]);
-
-      await generatePDF({
-        title: `Class Roster & Rankings: ${classData?.name || 'Class'}`,
-        filename: `${classData?.name || 'Class'}_Rankings.pdf`,
-        schoolProfile,
-        metaData: [
-          { label: 'Class', value: classData?.name || '-' },
-          { label: 'Total Students', value: studentsWithScore.length.toString() },
-          { label: 'Date', value: new Date().toLocaleDateString() }
-        ],
-        tableHeaders: [['Position', 'Student Name', 'Student ID', 'Gender', 'Avg Score']],
-        tableData
-      });
-      
-      toast.update(toastId, { render: "PDF Exported Successfully!", type: "success", isLoading: false, autoClose: 3000 });
-    } catch (error) {
-      console.error('Failed to export students PDF:', error);
-      toast.update(toastId, { render: "Failed to export PDF", type: "error", isLoading: false, autoClose: 3000 });
-    } finally {
-      setIsExporting(false);
-    }
+  const handleExport = () => {
+    setIsExportModalOpen(true);
   };
 
   const handleSendAnnouncement = () => {
@@ -209,7 +160,7 @@ export default function ClassStudentsPage({ enrollments = [], classData }: Class
           </button>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {paginatedStudents.map((student) => (
           <StudentCard
@@ -243,11 +194,18 @@ export default function ClassStudentsPage({ enrollments = [], classData }: Class
           theme="blue"
         />
       )}
-      
+
       <BulkActions
         onExport={handleExport}
         onSendAnnouncement={handleSendAnnouncement}
-        isExporting={isExporting}
+      />
+
+      <ClassRosterExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        classData={classData}
+        students={students}
+        schoolProfile={schoolProfile}
       />
 
       <StudentDetailsModal

@@ -10,6 +10,8 @@ import StudentGrid from './StudentGrid';
 import StudentList from './StudentList';
 import Pagination from './Pagination';
 import QuickAttendanceModal from './QuickAttendanceModal';
+import { TeacherStudentExportModal } from './TeacherStudentExportModal';
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { ViewType } from './ViewToggle';
 import { useToast } from "@/lib/hooks/useToast";
 import { teacherService } from "@/lib/api/services/teacherService";
@@ -38,12 +40,14 @@ const StudentPage: React.FC = () => {
   const [viewType, setViewType] = useState<ViewType>('List View');
   const [totalItems, setTotalItems] = useState<number>(0);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const itemsPerPage = 8;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
 
   const { loading, error: toastError } = useToast();
   const { selectedSchoolId, selectedSchoolName } = useDashboardStore();
   const { user } = useAuthStore();
+  const { data: schoolProfile } = useSchoolProfile(selectedSchoolId || "");
 
   // On mobile screens, make Grid View the default
   useEffect(() => {
@@ -89,59 +93,8 @@ const StudentPage: React.FC = () => {
 
   const students = data?.students || [];
 
-  const handleExport = async () => {
-    let toastId;
-    try {
-      toastId = loading.show("Preparing export...");
-      const isPersonal = selectedSchoolName === "Personal Dashboard" || selectedSchoolId === user?.id;
-      const filterId = isPersonal ? undefined : selectedSchoolId;
-      
-      const result = await teacherService.getStudents({
-        schoolId: filterId || undefined,
-        search: searchQuery || undefined,
-        classId: selectedClassId || undefined,
-        limit: 1000, 
-      });
-
-      if (!result?.students || result.students.length === 0) {
-        loading.update(toastId, "No students found to export.", "error");
-        return;
-      }
-
-      const headers = ["ID", "Name", "Student Code", "Email", "Gender", "Status", "Grade", "Performance", "Attendance", "Last Exam"];
-      const csvData = result.students.map((s: ExportStudent) => [
-        s.id,
-        `"${s.name}"`,
-        s.studentCode || '',
-        s.email || '',
-        s.gender || '',
-        s.status || '',
-        `"${s.grade || ''}"`,
-        s.performance || '',
-        `${s.attendance ?? 0}%`,
-        `"${s.lastExam || ''}"`
-      ]);
-
-      const csvContent = [headers.join(","), ...csvData.map((row: string[]) => row.join(","))].join("\n");
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `students_export_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      loading.update(toastId, "Export successful!", "success");
-    } catch (err) {
-      console.error("Export failed:", err);
-      if (toastId) {
-        loading.update(toastId, "Failed to export students", "error");
-      } else {
-        toastError.show("Failed to export students");
-      }
-    }
+  const handleExport = () => {
+    setIsExportModalOpen(true);
   };
 
   const handleSearchChange = (query: string) => {
@@ -240,6 +193,16 @@ const StudentPage: React.FC = () => {
         </main>
       </div>
       
+      <TeacherStudentExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        students={students as any}
+        classes={classesData as any}
+        selectedClassId={selectedClassId}
+        schoolProfile={schoolProfile}
+        schoolId={selectedSchoolId || undefined}
+      />
+
       {isAttendanceModalOpen && (
         <QuickAttendanceModal 
           onClose={() => setIsAttendanceModalOpen(false)} 

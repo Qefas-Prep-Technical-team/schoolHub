@@ -16,6 +16,7 @@ import QuickActions from './components/dashboard/QuickActions';
 import UsageLimitsCard from '@/components/subscription/UsageLimitsCard';
 import AdminTodayGlance from './components/dashboard/AdminTodayGlance';
 import AdminStatsGrid from './components/dashboard/AdminStatsGrid';
+import AdminHeroBanner from './components/dashboard/AdminHeroBanner';
 
 // Charts & Modals
 import DashboardCharts from './components/dashboard/DashboardCharts';
@@ -26,8 +27,11 @@ import { AdminRole, canAdminRoleAccessFeature } from './components/adminFeatureF
 
 export default function AdminDashboard() {
   const { user } = useAuthStore();
-  const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
-  const schoolName = user?.schools?.[0]?.name || user?.name || 'Future Academy';
+  const userSchools = (user as any)?.schools as Array<any> | undefined;
+  const schoolId = userSchools?.[0]?.schoolId || (user as any)?.schoolId || user?.tenantId || '';
+  const { data: stats, isLoading: statsLoading } = useSchoolStats(schoolId);
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const schoolName = schoolProfile?.name || userSchools?.[0]?.name || userSchools?.[0]?.schoolName || (user as any)?.tenant?.name || 'Future Academy';
   const userName = user?.name || 'Admin';
   const adminRole = (user?.adminRole || user?.role) as AdminRole | undefined;
   const canViewFinance = canAdminRoleAccessFeature(adminRole, 'finance');
@@ -35,9 +39,6 @@ export default function AdminDashboard() {
 
   const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
   const [isWeeklyReportOpen, setIsWeeklyReportOpen] = useState(false);
-
-  const { data: stats, isLoading: statsLoading } = useSchoolStats(schoolId);
-  const { data: schoolProfile } = useSchoolProfile(schoolId);
   const { data: rawClasses = [] } = useClasses(schoolId);
 
   const classesList: ClassItem[] = Array.isArray(rawClasses)
@@ -77,46 +78,24 @@ export default function AdminDashboard() {
         </div>
 
         {/* Top Hero & Glance Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Hero Banner */}
-          <div className="lg:col-span-2 relative overflow-hidden rounded-[2rem] bg-slate-900 shadow-sm">
-            <div
-              className="absolute inset-0 bg-cover bg-center opacity-60 mix-blend-overlay"
-              style={{ backgroundImage: "url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop')" }}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          {/* Hero Banner Subcomponent */}
+          <div className="lg:col-span-2">
+            <AdminHeroBanner
+              schoolName={schoolName}
+              adminName={userName}
+              currentTerm={currentTerm}
+              currentSession={currentSession}
+              analysis={analysis}
+              onOpenWeeklyReport={() => setIsWeeklyReportOpen(true)}
+              onOpenAnnouncement={() => setIsAnnouncementOpen(true)}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
-
-            <div className="relative z-10 p-8 h-full flex flex-col justify-end min-h-[280px]">
-              <div className="inline-flex items-center bg-white/20 backdrop-blur-md rounded-full px-3 py-1 mb-4 w-fit">
-                <span className="text-xs font-semibold text-white tracking-wide">{currentTerm} • {currentSession}</span>
-              </div>
-
-              <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Welcome back to {schoolName}</h2>
-              <p className="text-slate-200 text-sm max-w-xl mb-6 leading-relaxed">
-                {analysis?.insight || "System running smoothly. All services are fully operational."}
-              </p>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsWeeklyReportOpen(true)}
-                  className="bg-white text-slate-900 hover:bg-slate-50 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
-                >
-                  View weekly report
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAnnouncementOpen(true)}
-                  className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 px-5 py-2.5 rounded-full text-sm font-semibold transition-all cursor-pointer hover:scale-105 active:scale-95"
-                >
-                  Announce
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Today at a Glance Subcomponent */}
-          <AdminTodayGlance stats={stats} />
+          <div className="lg:col-span-1 flex flex-col">
+            <AdminTodayGlance stats={stats} />
+          </div>
         </div>
 
         {/* 4 Stat Cards Subcomponent */}

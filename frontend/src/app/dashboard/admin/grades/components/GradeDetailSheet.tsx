@@ -9,9 +9,11 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 
 interface GradeDetailSheetProps {
   grade: any | null;
+  gradingSystem?: unknown;
   onClose: () => void;
   onEdit?: (grade: any) => void;
   onPublish?: (grade: any) => void;

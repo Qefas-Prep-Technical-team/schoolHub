@@ -6,6 +6,7 @@ import MarkAttendanceForm from './MarkAttendanceForm'
 import AttendanceStats from './AttendanceStats'
 import { useTeacherAttendance, useMarkTeacherAttendance } from '@/lib/api/hooks/useAdmin'
 import { format, subMonths, addMonths } from 'date-fns'
+import { IndividualAttendanceExportModal } from './components/IndividualAttendanceExportModal'
 
 const mockTeacherData = {
     id: '1',
@@ -58,9 +59,10 @@ export default function PerformancePage({ teacher }: PerformancePageProps) {
     const [activeTab, setActiveTab] = useState('attendance')
     const [currentDate, setCurrentDate] = useState(new Date())
     const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false)
 
     const currentMonthStr = format(currentDate, 'yyyy-MM')
-    
+
     // Fallback to activeSchoolId or resolvedSchoolId depending on what page.tsx passed, or tenant
     const schoolId = teacher?.resolvedSchoolId || teacher?.schoolId;
 
@@ -117,28 +119,6 @@ export default function PerformancePage({ teacher }: PerformancePageProps) {
         })
     }
 
-    const handleExportReport = () => {
-        const headers = ["Date", "Status", "Note"];
-        const csvContent = [
-            headers.join(","),
-            ...attendanceData.map((a: any) => [
-                `="${format(new Date(a.date), 'yyyy-MM-dd')}"`,
-                `"${a.status}"`,
-                `"${(a.note || '').replace(/"/g, '""')}"`
-            ].join(","))
-        ].join("\n");
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `attendance_report_${teacher?.name?.replace(/\s+/g, '_') || 'teacher'}_${currentMonthStr}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
     return (
         <ProtectedAdminRoute>
             <main className="flex-1 p-6 lg:p-10 overflow-auto">
@@ -156,7 +136,7 @@ export default function PerformancePage({ teacher }: PerformancePageProps) {
                             </p>
                         </div>
                         <button
-                            onClick={handleExportReport}
+                            onClick={() => setIsExportModalOpen(true)}
                             className="flex items-center justify-center gap-2 rounded-xl h-11 px-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-sm font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 hover:shadow-md transition-all active:scale-95"
                         >
                             <span className="material-symbols-outlined text-lg">download</span>
@@ -181,6 +161,16 @@ export default function PerformancePage({ teacher }: PerformancePageProps) {
                             onAttendanceSubmit={handleAttendanceSubmit}
                         />
                     </div>
+
+                    <IndividualAttendanceExportModal
+                        isOpen={isExportModalOpen}
+                        onClose={() => setIsExportModalOpen(false)}
+                        teacher={teacher}
+                        schoolId={schoolId}
+                        currentMonthStr={currentMonthStr}
+                        attendanceData={attendanceData}
+                        dynamicStats={dynamicStats}
+                    />
 
                 </div>
             </main>

@@ -27,8 +27,6 @@ interface TableToolbarProps {
   onFilter: () => void;
   onSort: () => void;
   onExport?: () => void;
-  onExportPDF?: () => void;
-  onExportCSV?: () => void;
   isExporting?: boolean;
   onPublishAll?: () => void;
   isPublishingAll?: boolean;
@@ -42,8 +40,6 @@ const TableToolbar: React.FC<TableToolbarProps> = ({
   onFilter,
   onSort,
   onExport,
-  onExportPDF,
-  onExportCSV,
   isExporting = false,
   onPublishAll,
   isPublishingAll,
@@ -137,44 +133,18 @@ const TableToolbar: React.FC<TableToolbarProps> = ({
             <span className="whitespace-nowrap">Publish All</span>
           </button>
         )}
-        {onExportPDF || onExportCSV ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                disabled={isExporting}
-                className="flex-1 sm:flex-none flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 sm:px-4 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-all active:scale-95 shadow-sm cursor-pointer disabled:opacity-50"
-              >
-                {isExporting ? (
-                  <Loader2 className="animate-spin" size={14} />
-                ) : (
-                  <Download size={14} />
-                )}
-                <span className="whitespace-nowrap">{isExporting ? 'Exporting...' : 'Export'}</span>
-                <ChevronDown className="w-3.5 h-3.5 opacity-60" strokeWidth={2.5} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl p-1.5 z-50">
-              {onExportPDF && (
-                <DropdownMenuItem onClick={onExportPDF} className="cursor-pointer flex items-center gap-2.5 text-xs font-semibold py-2 px-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                  <FileText size={15} className="text-rose-500 shrink-0" />
-                  <span>Export as PDF</span>
-                </DropdownMenuItem>
-              )}
-              {onExportCSV && (
-                <DropdownMenuItem onClick={onExportCSV} className="cursor-pointer flex items-center gap-2.5 text-xs font-semibold py-2 px-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                  <FileSpreadsheet size={15} className="text-emerald-500 shrink-0" />
-                  <span>Export as CSV</span>
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
+        {onExport && (
           <button
             onClick={onExport}
-            className="flex-1 sm:flex-none flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 sm:px-4 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-all active:scale-95 shadow-sm cursor-pointer"
+            disabled={isExporting}
+            className="flex-1 sm:flex-none flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 sm:px-4 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-all active:scale-95 shadow-sm cursor-pointer disabled:opacity-50"
           >
-            <Download size={14} />
-            <span className="whitespace-nowrap">Export</span>
+            {isExporting ? (
+              <Loader2 className="animate-spin" size={14} />
+            ) : (
+              <Download size={14} className="text-emerald-600 dark:text-emerald-400" />
+            )}
+            <span className="whitespace-nowrap">{isExporting ? 'Exporting...' : 'Export'}</span>
           </button>
         )}
       </div>

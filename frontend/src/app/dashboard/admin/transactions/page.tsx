@@ -5,6 +5,8 @@ import { useSchoolBilling } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import AdminTransactionsLoading from "./loading";
 import { BillingStatementModal, BillingTransaction } from "./components/BillingStatementModal";
+import { TransactionExportModal } from "./components/TransactionExportModal";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { TransactionsSectionedTable, TransactionItem } from "./components/TransactionsSectionedTable";
 import { groupByDate } from "@/utils/dateSectioning";
 import {
@@ -42,6 +44,8 @@ export default function AdminTransactionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [isStatementOpen, setIsStatementOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const { data: schoolProfile } = useSchoolProfile(schoolId as string);
 
   const { data: billingData, isLoading, refetch, isRefetching } = useSchoolBilling(
     schoolId as string,
@@ -164,11 +168,11 @@ export default function AdminTransactionsPage() {
           </Button>
           <Button
             variant="outline"
-            onClick={handleExportCSV}
+            onClick={() => setIsExportModalOpen(true)}
             className="h-11 px-4 rounded-xl border-slate-200 dark:border-slate-800 font-bold text-xs gap-2"
           >
             <Download size={14} />
-            Export CSV
+            Export History
           </Button>
           <Button
             variant="default"
@@ -280,6 +284,15 @@ export default function AdminTransactionsPage() {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
+      />
+
+      {/* Multi-Format Export Modal */}
+      <TransactionExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        transactions={rawTransactions}
+        schoolProfile={schoolProfile}
+        schoolId={schoolId as string}
       />
 
       {/* Official Billing Statement Modal */}

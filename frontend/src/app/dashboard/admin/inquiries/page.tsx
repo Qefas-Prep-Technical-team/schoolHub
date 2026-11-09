@@ -3,12 +3,12 @@
 import React, { useState } from "react";
 import { useSchoolInquiries, useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
-import { 
-  MessageSquare, 
-  Mail, 
-  Phone, 
-  Search, 
-  ChevronLeft, 
+import {
+  MessageSquare,
+  Mail,
+  Phone,
+  Search,
+  ChevronLeft,
   ChevronRight,
   Inbox,
   Clock,
@@ -34,16 +34,17 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { InquiryExportModal } from "./components/InquiryExportModal";
 
 export default function AdminInquiriesPage() {
   const { user } = useAuthStore();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
-  
+
   const [page, setPage] = useState(1);
   const limit = 10;
-  
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  
+
   const { data: response, isLoading } = useSchoolInquiries(schoolId, { page, limit });
   const { data: schoolProfile } = useSchoolProfile(schoolId);
   const rawInquiries = response?.data || [];
@@ -98,7 +99,7 @@ export default function AdminInquiriesPage() {
     setIsDeleting(true);
     // Simulate network delay to show the deleting state
     await new Promise((resolve) => setTimeout(resolve, 800));
-    
+
     // Optimistic UI update to remove them immediately
     setDeletedIds(prev => {
       const newSet = new Set(prev);
@@ -113,195 +114,43 @@ export default function AdminInquiriesPage() {
     setIsDeleteDialogOpen(false);
   };
 
-  const [isExporting, setIsExporting] = useState<'csv' | 'pdf' | null>(null);
-  const handleExport = async (exportFormat: 'csv' | 'pdf') => {
-    setIsExporting(exportFormat);
-    try {
-      if (inquiries.length === 0) {
-        toast.info("No inquiries to export.");
-        return;
-      }
-      
-      const headers = ["#", "Name", "Email", "Phone", "Message", "Status", "Date"];
-      const rows = inquiries.map((iq: any, index: number) => [
-        (index + 1).toString(),
-        iq.name || "N/A",
-        iq.email || "N/A",
-        iq.phone || "N/A",
-        iq.message || "",
-        iq.status || "UNREAD",
-        format(new Date(iq.createdAt), "yyyy-MM-dd HH:mm:ss")
-      ]);
-
-      const dateStr = format(new Date(), "yyyy-MM-dd");
-      const schoolName = schoolProfile?.name || user?.schools?.[0]?.name || (user as any)?.tenant?.name || "School";
-      const sanitizedSchoolName = schoolName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      const fileNameBase = `${sanitizedSchoolName}_inquiries_export_${dateStr}`;
-
-      if (exportFormat === 'csv') {
-        const csvContent = [];
-        
-        csvContent.push(`"${schoolName.toUpperCase()}"`);
-        if (schoolProfile?.motto) csvContent.push(`"${schoolProfile.motto}"`);
-        if (schoolProfile?.address) csvContent.push(`"${schoolProfile.address}"`);
-        if (schoolProfile?.phone || schoolProfile?.schoolEmail) csvContent.push(`"${[schoolProfile?.phone, schoolProfile?.schoolEmail].filter(Boolean).join(' | ')}"`);
-        csvContent.push("");
-        csvContent.push(`"Website Inquiries Report"`);
-        csvContent.push(`"Generated on: ${dateStr}"`);
-        csvContent.push("");
-        
-        const csvRows = inquiries.map((iq: any, index: number) => [
-          index + 1,
-          `"${(iq.name || "").replace(/"/g, '""')}"`,
-          `"${(iq.email || "").replace(/"/g, '""')}"`,
-          `="${iq.phone || ""}"`, // Wrap phone in ="" to force Excel to treat it as text
-          `"${(iq.message || "").replace(/"/g, '""')}"`,
-          iq.status || "UNREAD",
-          `="${format(new Date(iq.createdAt), "yyyy-MM-dd HH:mm:ss")}"` // Force string to stop ### in Excel
-        ]);
-        
-        csvContent.push(headers.join(","));
-        csvRows.forEach((r: any[]) => csvContent.push(r.join(",")));
-
-        const csv = csvContent.join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${fileNameBase}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } else {
-        const { jsPDF } = await import('jspdf');
-        const { default: autoTable } = await import('jspdf-autotable');
-        
-        const doc = new jsPDF('landscape');
-        const pageWidth = doc.internal.pageSize.getWidth();
-        
-        let startY = 15;
-
-        // Try adding the logo
-        if (schoolProfile?.logo) {
-          try {
-            // Top left corner logo
-            doc.addImage(schoolProfile.logo, 'PNG', 14, 15, 25, 25);
-          } catch (error) {
-            console.error("Could not load logo for PDF:", error);
-          }
-        }
-
-        // Proper School Heading
-        doc.setFontSize(22);
-        doc.setTextColor(30, 41, 59); // text-slate-800
-        doc.text(schoolName.toUpperCase(), pageWidth / 2, startY, { align: 'center' });
-        startY += 8;
-
-        if (schoolProfile?.motto) {
-          doc.setFontSize(12);
-          doc.setTextColor(71, 85, 105); // text-slate-600
-          doc.text(schoolProfile.motto, pageWidth / 2, startY, { align: 'center', renderingMode: 'fill' });
-          startY += 6;
-        }
-
-        if (schoolProfile?.address) {
-          doc.setFontSize(10);
-          doc.setTextColor(100, 116, 139); // text-slate-500
-          doc.text(schoolProfile.address, pageWidth / 2, startY, { align: 'center' });
-          startY += 5;
-        }
-
-        if (schoolProfile?.phone || schoolProfile?.schoolEmail) {
-          doc.setFontSize(10);
-          doc.setTextColor(100, 116, 139); // text-slate-500
-          const contactStr = [schoolProfile?.phone, schoolProfile?.schoolEmail].filter(Boolean).join(' | ');
-          doc.text(contactStr, pageWidth / 2, startY, { align: 'center' });
-          startY += 5;
-        }
-        
-        // Ensure startY clears the logo if it's placed on the left
-        if (startY < 45 && schoolProfile?.logo) {
-          startY = 45;
-        } else {
-          startY += 6;
-        }
-
-        doc.setFontSize(16);
-        doc.setTextColor(30, 41, 59); // text-slate-800
-        doc.text("Website Inquiries Report", pageWidth / 2, startY, { align: 'center' });
-        startY += 6;
-        
-        doc.setFontSize(10);
-        doc.setTextColor(100, 116, 139);
-        doc.text(`Generated on: ${dateStr}`, pageWidth / 2, startY, { align: 'center' });
-        startY += 8;
-
-        autoTable(doc, {
-          head: [headers],
-          body: rows,
-          startY: startY,
-          theme: 'grid',
-          styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
-          headStyles: { fillColor: [59, 130, 246], textColor: [255, 255, 255] },
-          columnStyles: {
-            4: { cellWidth: 80 } // Make the message column wider
-          }
-        });
-
-        doc.save(`${fileNameBase}.pdf`);
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error(`Failed to export inquiries as ${exportFormat.toUpperCase()}.`);
-    } finally {
-      setIsExporting(null);
-    }
-  };
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   return (
     <div className="p-4 sm:p-6 w-full lg:w-[90%] lg:max-w-[90%] mx-auto min-h-screen">
       <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-        <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-            <MessageSquare className="w-8 h-8 text-blue-600 dark:text-blue-500" />
-            Website Inquiries
-          </h1>
-          <TooltipProvider>
-            <UITooltip delayDuration={300}>
-              <TooltipTrigger asChild>
-                <button type="button" className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 focus:outline-none transition-colors mt-1">
-                  <Info size={24} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
-                Manage and respond to messages submitted through your public school landing page's contact form.
-              </TooltipContent>
-            </UITooltip>
-          </TooltipProvider>
-        </div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+              <MessageSquare className="w-8 h-8 text-blue-600 dark:text-blue-500" />
+              Website Inquiries
+            </h1>
+            <TooltipProvider>
+              <UITooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-500 focus:outline-none transition-colors mt-1">
+                    <Info size={24} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs p-3 text-sm leading-relaxed bg-slate-900 text-white dark:bg-slate-800 border-none shadow-xl">
+                  Manage and respond to messages submitted through your public school landing page's contact form.
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+          </div>
           <p className="text-slate-600 dark:text-slate-400 mt-2 text-sm">
             Manage and respond to messages submitted through your public school landing page.
           </p>
         </div>
-        
+
         <div className="flex gap-2">
           <button
-            onClick={() => handleExport('csv')}
-            disabled={isExporting !== null || inquiries.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+            onClick={() => setIsExportModalOpen(true)}
+            disabled={inquiries.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 dark:text-blue-400 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
           >
-            {isExporting === 'csv' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Export CSV
-          </button>
-          <button
-            onClick={() => handleExport('pdf')}
-            disabled={isExporting !== null || inquiries.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:text-indigo-400 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
-          >
-            {isExporting === 'pdf' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Export PDF
+            <Download className="w-4 h-4" />
+            Export Inquiries
           </button>
         </div>
       </div>
@@ -382,9 +231,9 @@ export default function AdminInquiriesPage() {
               </span>
             )}
           </div>
-          
+
           {selectedIds.length > 0 && (
-            <button 
+            <button
               onClick={() => confirmDelete(selectedIds)}
               className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 dark:text-red-500 rounded-xl text-sm font-bold transition-colors"
             >
@@ -396,90 +245,90 @@ export default function AdminInquiriesPage() {
 
         {isLoading ? (
           <>
-          {/* Mobile Skeleton View */}
-          <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="p-4 bg-white dark:bg-slate-900 flex flex-col gap-3 animate-pulse">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="w-4 h-4 rounded" />
-                    <div>
-                      <Skeleton className="h-4 w-32 mb-1" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Skeleton className="w-8 h-8 rounded-xl" />
-                    <Skeleton className="w-8 h-8 rounded-xl" />
-                  </div>
-                </div>
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-5/6" />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Desktop Skeleton View */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <th className="px-6 py-4 font-semibold w-12">
-                    <input 
-                      type="checkbox" 
-                      disabled
-                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 dark:bg-slate-900"
-                    />
-                  </th>
-                  <th className="px-6 py-4 font-semibold w-16">#</th>
-                  <th className="px-6 py-4 font-semibold">Contact Info</th>
-                  <th className="px-6 py-4 font-semibold">Message</th>
-                  <th className="px-6 py-4 font-semibold">Date</th>
-                  <th className="px-6 py-4 font-semibold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <tr key={i} className="animate-pulse bg-white dark:bg-slate-900">
-                    <td className="px-6 py-5 align-top">
-                      <Skeleton className="h-4 w-4 rounded" />
-                    </td>
-                    <td className="px-6 py-5 align-top">
-                      <Skeleton className="h-4 w-6" />
-                    </td>
-                    <td className="px-6 py-5 align-top">
-                      <div className="flex flex-col gap-2">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-40" />
-                        <Skeleton className="h-3 w-28" />
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 align-top max-w-md">
-                      <div className="space-y-2">
-                        <Skeleton className="h-3 w-full" />
-                        <Skeleton className="h-3 w-full" />
-                        <Skeleton className="h-3 w-2/3" />
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 align-top">
-                      <div className="flex flex-col gap-2">
-                        <Skeleton className="h-4 w-24" />
+            {/* Mobile Skeleton View */}
+            <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-4 bg-white dark:bg-slate-900 flex flex-col gap-3 animate-pulse">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="w-4 h-4 rounded" />
+                      <div>
+                        <Skeleton className="h-4 w-32 mb-1" />
                         <Skeleton className="h-3 w-20" />
                       </div>
-                    </td>
-                    <td className="px-6 py-5 align-top text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Skeleton className="h-8 w-8 rounded-lg" />
-                        <Skeleton className="h-8 w-8 rounded-lg" />
-                      </div>
-                    </td>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Skeleton className="w-8 h-8 rounded-xl" />
+                      <Skeleton className="w-8 h-8 rounded-xl" />
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-5/6" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Skeleton View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <th className="px-6 py-4 font-semibold w-12">
+                      <input
+                        type="checkbox"
+                        disabled
+                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 dark:bg-slate-900"
+                      />
+                    </th>
+                    <th className="px-6 py-4 font-semibold w-16">#</th>
+                    <th className="px-6 py-4 font-semibold">Contact Info</th>
+                    <th className="px-6 py-4 font-semibold">Message</th>
+                    <th className="px-6 py-4 font-semibold">Date</th>
+                    <th className="px-6 py-4 font-semibold text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i} className="animate-pulse bg-white dark:bg-slate-900">
+                      <td className="px-6 py-5 align-top">
+                        <Skeleton className="h-4 w-4 rounded" />
+                      </td>
+                      <td className="px-6 py-5 align-top">
+                        <Skeleton className="h-4 w-6" />
+                      </td>
+                      <td className="px-6 py-5 align-top">
+                        <div className="flex flex-col gap-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-40" />
+                          <Skeleton className="h-3 w-28" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 align-top max-w-md">
+                        <div className="space-y-2">
+                          <Skeleton className="h-3 w-full" />
+                          <Skeleton className="h-3 w-full" />
+                          <Skeleton className="h-3 w-2/3" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 align-top">
+                        <div className="flex flex-col gap-2">
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 align-top text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Skeleton className="h-8 w-8 rounded-lg" />
+                          <Skeleton className="h-8 w-8 rounded-lg" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         ) : inquiries.length === 0 ? (
           <div className="p-16 text-center flex flex-col items-center">
@@ -493,161 +342,161 @@ export default function AdminInquiriesPage() {
           </div>
         ) : (
           <>
-          {/* Mobile List View */}
-          <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
-            {inquiries.map((iq: any, index: number) => (
-              <div key={iq.id} className="p-4 bg-white dark:bg-slate-900 flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <input 
-                      type="checkbox" 
-                      checked={selectedIds.includes(iq.id)}
-                      onChange={() => handleSelectOne(iq.id)}
-                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 dark:bg-slate-900 cursor-pointer"
-                    />
-                    <span className="text-xs font-black text-slate-400 select-none">
-                      #{(page - 1) * limit + index + 1}
-                    </span>
-                    <div>
-                      <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
-                        {iq.name}
-                        {iq.status === "UNREAD" && (
-                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                        )}
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{formatDistanceToNow(new Date(iq.createdAt), { addSuffix: true })}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button 
-                      onClick={() => handleEmail(iq.email)}
-                      className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl"
-                    >
-                      <Mail className="w-4 h-4" />
-                    </button>
-                    {iq.phone && (
-                      <button 
-                        onClick={() => handleWhatsApp(iq.phone)}
-                        className="p-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl"
-                      >
-                        <Phone className="w-4 h-4" />
-                      </button>
-                    )}
-                    <button 
-                      onClick={() => confirmDelete([iq.id])}
-                      className="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                  <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-3">
-                    {iq.message}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <th className="px-6 py-4 font-semibold w-12">
-                    <input 
-                      type="checkbox" 
-                      checked={inquiries.length > 0 && selectedIds.length === inquiries.length}
-                      onChange={handleSelectAll}
-                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 dark:bg-slate-900 cursor-pointer"
-                    />
-                  </th>
-                  <th className="px-6 py-4 font-semibold w-16">#</th>
-                  <th className="px-6 py-4 font-semibold">Contact Info</th>
-                  <th className="px-6 py-4 font-semibold">Message</th>
-                  <th className="px-6 py-4 font-semibold">Date</th>
-                  <th className="px-6 py-4 font-semibold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {inquiries.map((iq: any, index: number) => (
-                  <tr key={iq.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
-                    <td className="px-6 py-5 align-top">
-                      <input 
-                        type="checkbox" 
+            {/* Mobile List View */}
+            <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+              {inquiries.map((iq: any, index: number) => (
+                <div key={iq.id} className="p-4 bg-white dark:bg-slate-900 flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
                         checked={selectedIds.includes(iq.id)}
                         onChange={() => handleSelectOne(iq.id)}
                         className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 dark:bg-slate-900 cursor-pointer"
                       />
-                    </td>
-                    <td className="px-6 py-5 align-top font-medium text-slate-500 dark:text-slate-400">
-                      {(page - 1) * limit + index + 1}
-                    </td>
-                    <td className="px-6 py-5 align-top">
-                      <div className="flex flex-col gap-1">
-                        <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                      <span className="text-xs font-black text-slate-400 select-none">
+                        #{(page - 1) * limit + index + 1}
+                      </span>
+                      <div>
+                        <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
                           {iq.name}
                           {iq.status === "UNREAD" && (
                             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                           )}
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                          <Mail className="w-3 h-3" /> {iq.email}
-                        </div>
-                        {iq.phone && (
-                          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
-                            <Phone className="w-3 h-3" /> {iq.phone}
-                          </div>
-                        )}
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{formatDistanceToNow(new Date(iq.createdAt), { addSuffix: true })}</p>
                       </div>
-                    </td>
-                    <td className="px-6 py-5 align-top max-w-md">
-                      <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-3">
-                        {iq.message}
-                      </p>
-                    </td>
-                    <td className="px-6 py-5 align-top whitespace-nowrap">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                          {format(new Date(iq.createdAt), "MMM d, yyyy")}
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {formatDistanceToNow(new Date(iq.createdAt), { addSuffix: true })}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 align-top">
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => handleEmail(iq.email)}
-                          className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-xl transition-colors tooltip-trigger"
-                          title="Send Email"
-                        >
-                          <Mail className="w-4 h-4" />
-                        </button>
-                        <button 
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleEmail(iq.email)}
+                        className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl"
+                      >
+                        <Mail className="w-4 h-4" />
+                      </button>
+                      {iq.phone && (
+                        <button
                           onClick={() => handleWhatsApp(iq.phone)}
-                          className="p-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 rounded-xl transition-colors tooltip-trigger"
-                          title="Send WhatsApp Message"
+                          className="p-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl"
                         >
                           <Phone className="w-4 h-4" />
                         </button>
-                        <button 
-                          onClick={() => confirmDelete([iq.id])}
-                          className="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-xl transition-colors tooltip-trigger"
-                          title="Delete Inquiry"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+                      )}
+                      <button
+                        onClick={() => confirmDelete([iq.id])}
+                        className="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-3">
+                      {iq.message}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <th className="px-6 py-4 font-semibold w-12">
+                      <input
+                        type="checkbox"
+                        checked={inquiries.length > 0 && selectedIds.length === inquiries.length}
+                        onChange={handleSelectAll}
+                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 dark:bg-slate-900 cursor-pointer"
+                      />
+                    </th>
+                    <th className="px-6 py-4 font-semibold w-16">#</th>
+                    <th className="px-6 py-4 font-semibold">Contact Info</th>
+                    <th className="px-6 py-4 font-semibold">Message</th>
+                    <th className="px-6 py-4 font-semibold">Date</th>
+                    <th className="px-6 py-4 font-semibold text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                  {inquiries.map((iq: any, index: number) => (
+                    <tr key={iq.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                      <td className="px-6 py-5 align-top">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(iq.id)}
+                          onChange={() => handleSelectOne(iq.id)}
+                          className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 dark:bg-slate-900 cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-6 py-5 align-top font-medium text-slate-500 dark:text-slate-400">
+                        {(page - 1) * limit + index + 1}
+                      </td>
+                      <td className="px-6 py-5 align-top">
+                        <div className="flex flex-col gap-1">
+                          <div className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                            {iq.name}
+                            {iq.status === "UNREAD" && (
+                              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <Mail className="w-3 h-3" /> {iq.email}
+                          </div>
+                          {iq.phone && (
+                            <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                              <Phone className="w-3 h-3" /> {iq.phone}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 align-top max-w-md">
+                        <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-3">
+                          {iq.message}
+                        </p>
+                      </td>
+                      <td className="px-6 py-5 align-top whitespace-nowrap">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            {format(new Date(iq.createdAt), "MMM d, yyyy")}
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {formatDistanceToNow(new Date(iq.createdAt), { addSuffix: true })}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 align-top">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleEmail(iq.email)}
+                            className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-xl transition-colors tooltip-trigger"
+                            title="Send Email"
+                          >
+                            <Mail className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleWhatsApp(iq.phone)}
+                            className="p-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 rounded-xl transition-colors tooltip-trigger"
+                            title="Send WhatsApp Message"
+                          >
+                            <Phone className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => confirmDelete([iq.id])}
+                            className="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-xl transition-colors tooltip-trigger"
+                            title="Delete Inquiry"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
 
@@ -712,6 +561,14 @@ export default function AdminInquiriesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <InquiryExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        inquiries={inquiries}
+        schoolProfile={schoolProfile}
+        schoolId={schoolId}
+      />
     </div>
   );
 }

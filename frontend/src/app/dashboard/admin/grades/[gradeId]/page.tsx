@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { GradeScoreAndDetails } from "./components/GradeScoreAndDetails";
 import { GradeSidebar } from "./components/GradeSidebar";
+import { RoleResultExportModal } from "@/components/export/RoleResultExportModal";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { getGradeEvaluation } from "@/utils/gradingSystem";
 import { useGradeEndorsementSignatures } from "../hooks/useGradeEndorsementSignatures";
@@ -59,7 +60,7 @@ export default function GradeDetailsPage() {
   );
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Loading Skeleton State
   if (isLoading) {
@@ -119,16 +120,13 @@ export default function GradeDetailsPage() {
   const isPassed = percent >= 50;
   const isPublished = grade.status === "PUBLISHED" || !!grade.examAttemptId || !!grade.subjectExamAttemptId;
 
-  const getLetterGrade = (pct: number) => {
-    if (pct >= 90) return { letter: "A+", label: "Outstanding", color: "#10b981", bg: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800" };
-    if (pct >= 80) return { letter: "A", label: "Excellent", color: "#10b981", bg: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800" };
-    if (pct >= 70) return { letter: "B", label: "Very Good", color: "#3b82f6", bg: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800" };
-    if (pct >= 60) return { letter: "C", label: "Good", color: "#f59e0b", bg: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800" };
-    if (pct >= 50) return { letter: "D", label: "Pass", color: "#f97316", bg: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800" };
-    return { letter: "F", label: "Needs Improvement", color: "#ef4444", bg: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800" };
+  const evaluation = getGradeEvaluation(percent, schoolProfile?.gradingSystem);
+  const letterGrade = {
+    letter: evaluation.grade,
+    label: evaluation.remark,
+    color: evaluation.color,
+    bg: evaluation.bg,
   };
-
-  const letterGrade = getLetterGrade(percent);
   const initials = grade.student?.name?.substring(0, 2).toUpperCase() || "ST";
   const assessmentLabel = (grade.assessmentType && grade.assessmentType !== "NULL" ? grade.assessmentType : grade.category) || "General Assessment";
 
@@ -153,75 +151,95 @@ export default function GradeDetailsPage() {
     }
   };
 
-  // Official PDF Export complying strictly with pdf_export_design skill & digital signatures
-  const handleExportPDF = async () => {
-    setIsExportingPdf(true);
-    try {
-      const evaluation = getGradeEvaluation(percent, schoolProfile?.gradingSystem);
-      const studentClass = grade.class?.name
-        ? `${grade.class.name}${grade.class.section ? ` (${grade.class.section})` : ""}`
-        : ((grade.student as any)?.class?.name || (grade.student?.gradeLevel ? `Class ${grade.student.gradeLevel}` : "General Class"));
+  // Format student result for standard RoleResultExportModal
+  const studentResultRecord = {
+    id: grade.id,
+    studentId: grade.student?.id || grade.studentId || '',
+    studentName: grade.student?.name || 'Student',
+    studentCode: grade.student?.studentCode || 'N/A',
+    className: grade.class?.name
+      ? `${grade.class.name}${grade.class.section ? ` (${grade.class.section})` : ''}`
+      : ((grade.student as any)?.class?.name || (grade.student?.gradeLevel ? `Class ${grade.student.gradeLevel}` : 'General Class')),
+    sessionName: grade.session?.name || 'Current Session',
+    term: grade.term || 'Current Term',
+    subjects: [
+      {
+        subjectName: grade.subject || 'Subject',
+        score: score,
+        maxScore: maxMarks,
+        percentage: percent,
+        grade: letterGrade.letter,
+        remark: letterGrade.label,
+        status: (isPassed ? 'PASS' : 'FAIL') as 'PASS' | 'FAIL',
+      }
+    ],
+    totalScore: score,
+    maxTotalScore: maxMarks,
+    averageScore: percent,
+    overallGrade: letterGrade.letter,
+    overallRemark: letterGrade.label,
+    secondarySignatory: secondarySignatory,
+    primarySignatory: primarySignatory,
+  };
 
-      // Digital signatures resolution: teacher & authorized institutional signoff (Principal / Owner / Registrar)
-      const teacherSigUrl = secondarySignatory.signatureUrl || (grade.teacher as any)?.signatureUrl;
-      const principalSigUrl = primarySignatory.signatureUrl || schoolProfile?.primarySignature;
+  const handleExportPdf = async (isPaying: boolean) => {
+    const evaluation = getGradeEvaluation(percent, schoolProfile?.gradingSystem);
+    const studentClass = grade.class?.name
+      ? `${grade.class.name}${grade.class.section ? ` (${grade.class.section})` : ''}`
+      : ((grade.student as any)?.class?.name || (grade.student?.gradeLevel ? `Class ${grade.student.gradeLevel}` : 'General Class'));
 
-      await generatePDF({
-        title: "Official Assessment Grade Report",
-        filename: `${(grade.student?.name || "Student").replace(/\s+/g, "_")}_${grade.subject || "Grade"}_Report.pdf`,
-        schoolProfile: {
-          ...schoolProfile,
-          name: schoolProfile?.name || schoolProfile?.schoolName || "QEFAS ACADEMIC HUB",
-          address: schoolProfile?.address || "Institutional Assessment & Evaluation Division",
-          phone: schoolProfile?.phone || schoolProfile?.contactPhone,
-          email: schoolProfile?.email || schoolProfile?.contactEmail,
-          logo: schoolProfile?.logo || schoolProfile?.schoolLogo,
-          motto: schoolProfile?.motto,
-        },
-        metaData: [
-          { label: "Candidate Name", value: grade.student?.name || "Student" },
-          { label: "Registration No", value: grade.student?.studentCode || "N/A" },
-          { label: "Class", value: studentClass },
-          { label: "Assessment Type", value: assessmentLabel },
-          { label: "Subject", value: grade.subject || "Subject" },
-          { label: "Academic Session", value: grade.session?.name || "Current Session" },
-          { label: "Academic Term", value: grade.term || "Current Term" },
+    const teacherSigUrl = isPaying ? (secondarySignatory.signatureUrl || (grade.teacher as any)?.signatureUrl) : undefined;
+    const principalSigUrl = isPaying ? (primarySignatory.signatureUrl || schoolProfile?.primarySignature) : undefined;
+
+    await generatePDF({
+      title: 'Official Assessment Grade Report',
+      filename: `${(grade.student?.name || 'Student').replace(/\s+/g, '_')}_${grade.subject || 'Grade'}_Report.pdf`,
+      schoolProfile: {
+        ...schoolProfile,
+        name: schoolProfile?.name || schoolProfile?.schoolName || 'QEFAS ACADEMIC HUB',
+        address: schoolProfile?.address || 'Institutional Assessment & Evaluation Division',
+        phone: schoolProfile?.phone || schoolProfile?.contactPhone,
+        email: schoolProfile?.email || schoolProfile?.contactEmail,
+        logo: schoolProfile?.logo || schoolProfile?.schoolLogo,
+        motto: schoolProfile?.motto,
+      },
+      metaData: [
+        { label: 'Candidate Name', value: grade.student?.name || 'Student' },
+        { label: 'Registration No', value: grade.student?.studentCode || 'N/A' },
+        { label: 'Class', value: studentClass },
+        { label: 'Assessment Type', value: assessmentLabel },
+        { label: 'Subject', value: grade.subject || 'Subject' },
+        { label: 'Academic Session', value: grade.session?.name || 'Current Session' },
+        { label: 'Academic Term', value: grade.term || 'Current Term' },
+      ],
+      tableHeaders: [['#', 'Assessment Component', 'Class', 'Maximum Marks', 'Obtained Score', 'Percentage', 'Grade', 'Status']],
+      tableData: [
+        [
+          '1',
+          grade.subjectPaper?.title || grade.exam?.title || `${grade.subject} Evaluation`,
+          studentClass,
+          String(maxMarks),
+          String(score),
+          `${percent}%`,
+          evaluation.grade || letterGrade.letter,
+          isPassed ? 'PASSED' : 'FAILED',
         ],
-        tableHeaders: [["#", "Assessment Component", "Class", "Maximum Marks", "Obtained Score", "Percentage", "Grade", "Status"]],
-        tableData: [
-          [
-            "1",
-            grade.subjectPaper?.title || grade.exam?.title || `${grade.subject} Evaluation`,
-            studentClass,
-            String(maxMarks),
-            String(score),
-            `${percent}%`,
-            evaluation.grade || letterGrade.letter,
-            isPassed ? "PASSED" : "FAILED",
-          ],
-        ],
-        signatures: {
-          left: {
-            label: secondarySignatory.title || "Class Teacher",
-            name: secondarySignatory.name || grade.teacher?.name || "Assigned Subject Instructor",
-            signatureUrl: teacherSigUrl,
-            subLabel: "Instructor Signoff",
-          },
-          right: {
-            label: primarySignatory.title || "Principal / Head of Institution",
-            name: primarySignatory.name || schoolProfile?.principalName || "Head of Institution",
-            signatureUrl: principalSigUrl,
-            subLabel: "Institutional Board Approval",
-          },
+      ],
+      signatures: {
+        left: {
+          label: secondarySignatory.title || 'Class Teacher',
+          name: secondarySignatory.name || grade.teacher?.name || 'Assigned Subject Instructor',
+          signatureUrl: teacherSigUrl,
+          subLabel: isPaying ? 'Instructor Signoff' : '—',
         },
-      });
-      toast.success("Assessment grade report generated successfully.");
-    } catch (err) {
-      console.error("PDF generation failed:", err);
-      toast.error("Failed to generate PDF export. Please try again.");
-    } finally {
-      setIsExportingPdf(false);
-    }
+        right: {
+          label: primarySignatory.title || 'Principal / Head of Institution',
+          name: primarySignatory.name || schoolProfile?.principalName || 'Head of Institution',
+          signatureUrl: principalSigUrl,
+          subLabel: isPaying ? 'Institutional Board Approval' : '—',
+        },
+      },
+    });
   };
 
   return (
@@ -260,12 +278,11 @@ export default function GradeDetailsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleExportPDF}
-              disabled={isExportingPdf}
+              onClick={() => setIsExportModalOpen(true)}
               className="h-9 px-3 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 gap-1.5 flex-1 sm:flex-initial cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              {isExportingPdf ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-              <span>Export PDF</span>
+              <Download size={14} />
+              <span>Export Record</span>
             </Button>
 
             <Button
@@ -372,6 +389,21 @@ export default function GradeDetailsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Official Standard Academic Export Modal with Quota & Signatures */}
+      <RoleResultExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onExportPdf={handleExportPdf}
+        isExporting={false}
+        resultTitle={assessmentLabel}
+        studentName={grade.student?.name || 'Student'}
+        className={grade.class?.name || (grade.student as any)?.class?.name || 'Class'}
+        sessionName={grade.session?.name || undefined}
+        term={grade.term || undefined}
+        role="ADMIN"
+        school={schoolProfile}
+      />
     </div>
   );
 }

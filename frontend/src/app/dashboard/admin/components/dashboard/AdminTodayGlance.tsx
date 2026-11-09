@@ -15,8 +15,8 @@ interface AdminTodayGlanceProps {
 
 export default function AdminTodayGlance({ stats }: AdminTodayGlanceProps) {
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-sm flex flex-col justify-center">
-      <div className="mb-6">
+    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2rem] p-6 shadow-sm flex flex-col justify-between h-full">
+      <div className="mb-4">
         <div className="flex items-center gap-2">
           <h3 className="text-base font-bold text-slate-900 dark:text-white">Today at a glance</h3>
           <TooltipProvider>
@@ -34,7 +34,7 @@ export default function AdminTodayGlance({ stats }: AdminTodayGlanceProps) {
         </div>
         <p className="text-xs text-slate-500">Live operations summary</p>
       </div>
-      
+
       <div className="space-y-4">
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">

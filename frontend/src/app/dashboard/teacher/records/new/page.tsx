@@ -1,29 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Save, 
-  Search, 
-  Download, 
-  Loader2, 
-  Settings, 
-  Pencil, 
-  Check, 
-  UploadCloud, 
-  PenLine, 
-  Users, 
-  CheckCircle2, 
-  Clock, 
-  TrendingUp, 
-  MoreVertical, 
-  ShieldAlert, 
-  ShieldCheck, 
-  Building2, 
-  Lock, 
-  Filter, 
-  RotateCcw, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Save,
+  Search,
+  Download,
+  Loader2,
+  Settings,
+  Pencil,
+  Check,
+  UploadCloud,
+  PenLine,
+  Users,
+  CheckCircle2,
+  Clock,
+  TrendingUp,
+  MoreVertical,
+  ShieldAlert,
+  ShieldCheck,
+  Building2,
+  Lock,
+  Filter,
+  RotateCcw,
   History,
   Heart,
   Activity,
@@ -72,10 +72,11 @@ import { EditConfigModal } from "./components/EditConfigModal";
 import { ScoreBreakdownModal } from "./components/ScoreBreakdownModal";
 import { SyncProgressModal } from "./components/SyncProgressModal";
 import { SummaryPanel } from "./components/SummaryPanel";
+import { ResultEntryExportModal } from "@/app/dashboard/admin/records/new/components/ResultEntryExportModal";
 import { useClassSubjectResult, useStudentSubjectResults, useBulkSaveStudentSubjectResults, useUpdatePaperLinks, useCalculatePaperSync, usePublishClassSubjectResult, useUnpublishClassSubjectResult } from "@/lib/api/hooks/useRecords";
 import { useSubjectPapers } from "@/lib/api/hooks/useExams";
 import { useAdminAssignments } from "@/lib/api/hooks/useAssignments";
-import { 
+import {
   useStudents,
   useClassTermlyEvaluations,
   useBulkUpsertTermlyEvaluations
@@ -218,7 +219,7 @@ export default function NewFinalResultDataEntryPage() {
     if (name && assignedSubjectNameSet.has(name)) return true;
     return false;
   }, [config, user, assignedSubjectIdSet, assignedSubjectNameSet]);
-  
+
   const { data: studentsData, isLoading: isLoadingStudents } = useStudents(
     effectiveSchoolId,
     { classId: config?.classId, limit: 500 },
@@ -275,6 +276,7 @@ export default function NewFinalResultDataEntryPage() {
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
   const [isAuditHistoryOpen, setIsAuditHistoryOpen] = useState(false);
+  const [isExportPopupOpen, setIsExportPopupOpen] = useState(false);
   const { data: activeSignature } = useActiveSignature(user?.id);
   const [teacherSignature, setTeacherSignature] = useState("");
 
@@ -291,7 +293,7 @@ export default function NewFinalResultDataEntryPage() {
   }, [config?.paperLinks]);
 
   const latestUnpublish = approvalHistoryList.find((h: any) => h.action === "UNPUBLISHED" || h.status === "UNAPPROVED");
-  
+
   const [breakdownModal, setBreakdownModal] = useState<{
     isOpen: boolean;
     studentId: string;
@@ -314,23 +316,23 @@ export default function NewFinalResultDataEntryPage() {
     return [];
   }, [sessionsData]);
 
-  const resolvedSessionFilter = activeFilterSession === "default" 
-    ? config?.sessionId 
+  const resolvedSessionFilter = activeFilterSession === "default"
+    ? config?.sessionId
     : (activeFilterSession === "all" ? undefined : activeFilterSession);
-  const resolvedTermFilter = activeFilterTerm === "default" 
-    ? config?.term 
+  const resolvedTermFilter = activeFilterTerm === "default"
+    ? config?.term
     : (activeFilterTerm === "all" ? undefined : activeFilterTerm);
 
   const { data: subjectPapersResult, isLoading: isLoadingPapers } = useSubjectPapers(
-    config?.subjectId ? { 
+    config?.subjectId ? {
       subjectId: config.subjectId,
       classId: config.classId,
       sessionId: resolvedSessionFilter,
       term: resolvedTermFilter
     } : undefined
   );
-  const subjectPapers: any[] = Array.isArray(subjectPapersResult) 
-    ? subjectPapersResult 
+  const subjectPapers: any[] = Array.isArray(subjectPapersResult)
+    ? subjectPapersResult
     : (subjectPapersResult as any)?.data || [];
 
   const { data: assignmentsResult, isLoading: isLoadingAssignments } = useAdminAssignments(effectiveSchoolId);
@@ -363,8 +365,8 @@ export default function NewFinalResultDataEntryPage() {
 
       const batchKey = g.offlineBatchId || `${g.subjectId || 'subj'}-${g.category || 'EXAM'}-${g.assessmentType || 'Marksheet'}-${g.maxMarks || 100}`;
       if (!map.has(batchKey)) {
-        const title = g.assessmentType 
-          ? `${g.assessmentType} (Offline Marksheet)` 
+        const title = g.assessmentType
+          ? `${g.assessmentType} (Offline Marksheet)`
           : `${g.category || 'Assessment'} Marksheet`;
         map.set(batchKey, {
           id: g.id || batchKey,
@@ -536,7 +538,7 @@ export default function NewFinalResultDataEntryPage() {
           ...s,
           teacherRemark: s.teacherRemark?.trim() ? s.teacherRemark : defaultTeacher,
           // Only admin can touch principal remark! Teachers cannot auto-fill admin's area!
-          principalRemark: canEditPrincipalRemark 
+          principalRemark: canEditPrincipalRemark
             ? (s.principalRemark?.trim() ? s.principalRemark : "A commendable scholar demonstrating exemplary discipline and steady intellectual focus.")
             : s.principalRemark,
         };
@@ -552,7 +554,7 @@ export default function NewFinalResultDataEntryPage() {
     }
     setStudents(prev => {
       let newStudents = [...prev];
-      
+
       mappedData.forEach(row => {
         if (row.matched && row.studentId) {
           // If it's a new student, append it to the table
@@ -583,34 +585,34 @@ export default function NewFinalResultDataEntryPage() {
 
           const idx = newStudents.findIndex(s => s.id === row.studentId);
           if (idx !== -1) {
-             if (category === "all") {
-                const updates: any = {};
-                const sources: any = { ...(newStudents[idx].scoreSources || {}) };
-                if (row.assignment !== undefined && row.assignment !== "") { updates.assignment = String(row.assignment); sources.assignment = "CSV/AI"; }
-                if (row.quiz !== undefined && row.quiz !== "") { updates.quiz = String(row.quiz); sources.quiz = "CSV/AI"; }
-                if (row.ca !== undefined && row.ca !== "") { updates.ca = String(row.ca); sources.ca = "CSV/AI"; }
-                if (row.exam !== undefined && row.exam !== "") { updates.exam = String(row.exam); sources.exam = "CSV/AI"; }
-                newStudents[idx] = { ...newStudents[idx], ...updates, scoreSources: sources };
-             } else {
-                if (row.score !== undefined && row.score !== "") {
-                  newStudents[idx] = { 
-                    ...newStudents[idx], 
-                    [category]: String(row.score),
-                    scoreSources: { ...(newStudents[idx].scoreSources || {}), [category]: "CSV/AI" }
-                  };
-                }
-             }
+            if (category === "all") {
+              const updates: any = {};
+              const sources: any = { ...(newStudents[idx].scoreSources || {}) };
+              if (row.assignment !== undefined && row.assignment !== "") { updates.assignment = String(row.assignment); sources.assignment = "CSV/AI"; }
+              if (row.quiz !== undefined && row.quiz !== "") { updates.quiz = String(row.quiz); sources.quiz = "CSV/AI"; }
+              if (row.ca !== undefined && row.ca !== "") { updates.ca = String(row.ca); sources.ca = "CSV/AI"; }
+              if (row.exam !== undefined && row.exam !== "") { updates.exam = String(row.exam); sources.exam = "CSV/AI"; }
+              newStudents[idx] = { ...newStudents[idx], ...updates, scoreSources: sources };
+            } else {
+              if (row.score !== undefined && row.score !== "") {
+                newStudents[idx] = {
+                  ...newStudents[idx],
+                  [category]: String(row.score),
+                  scoreSources: { ...(newStudents[idx].scoreSources || {}), [category]: "CSV/AI" }
+                };
+              }
+            }
           }
         }
       });
       return newStudents;
     });
-    
+
     const count = mappedData.filter(d => d.matched).length;
     if (category === "all") {
-       toast.success(`Successfully applied ${count} combined records`);
+      toast.success(`Successfully applied ${count} combined records`);
     } else {
-       toast.success(`Successfully applied ${count} scores to ${category.toUpperCase()}`);
+      toast.success(`Successfully applied ${count} scores to ${category.toUpperCase()}`);
     }
   };
 
@@ -728,7 +730,7 @@ export default function NewFinalResultDataEntryPage() {
       signature: teacherSignature.trim() || undefined,
       role: "Subject Teacher",
     }, {
-      onSuccess: (data: any) => { 
+      onSuccess: (data: any) => {
         toast.success(data?.message || "Result submitted for administrative approval with your official digital signature!");
         setIsPublishModalOpen(false);
       },
@@ -748,7 +750,8 @@ export default function NewFinalResultDataEntryPage() {
       return;
     }
     unpublishResult(config.id, {
-      onSuccess: (data: any) => { toast.success(data?.message || "Result unpublished successfully!");
+      onSuccess: (data: any) => {
+        toast.success(data?.message || "Result unpublished successfully!");
         setIsUnpublishModalOpen(false);
       },
       onError: (err: any) => {
@@ -759,8 +762,8 @@ export default function NewFinalResultDataEntryPage() {
 
   const isLoading = isLoadingConfig || isLoadingStudents || isLoadingMarks;
 
-  const filteredStudents = students.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredStudents = students.filter(s =>
+    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
   const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE));
@@ -771,8 +774,8 @@ export default function NewFinalResultDataEntryPage() {
       return toast.info(
         config?.status === "PUBLISHED"
           ? (config?.paperLinks?.approval?.status === "APPROVED"
-              ? "Cannot edit scores: This result has been officially approved and locked by school administration."
-              : "Cannot edit published results")
+            ? "Cannot edit scores: This result has been officially approved and locked by school administration."
+            : "Cannot edit published results")
           : "You can only edit final results for subjects assigned to you."
       );
     }
@@ -818,7 +821,7 @@ export default function NewFinalResultDataEntryPage() {
 
   const scoresEntered = students.filter(s => !!s.assignment || !!s.quiz || !!s.ca || !!s.exam).length;
   const pendingEntry = students.length - scoresEntered;
-  
+
   // Calculate class average
   let totalClassScore = 0;
   let studentsWithScores = 0;
@@ -836,8 +839,8 @@ export default function NewFinalResultDataEntryPage() {
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Link 
-            href="/dashboard/teacher/records" 
+          <Link
+            href="/dashboard/teacher/records"
             className="p-2 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-slate-400"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -873,18 +876,30 @@ export default function NewFinalResultDataEntryPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => setIsEditConfigOpen(true)}
             className="flex items-center justify-center p-2 bg-transparent border border-slate-200 dark:border-slate-800 rounded-lg text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm cursor-pointer"
             title="Configuration Settings"
           >
             <Settings className="w-4 h-4" />
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-transparent border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50">
+          <button
+            onClick={() => setIsExportPopupOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-transparent border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+          >
             <Download className="w-4 h-4" />
             Export data
           </button>
-          <button 
+
+          <ResultEntryExportModal
+            isOpen={isExportPopupOpen}
+            onClose={() => setIsExportPopupOpen(false)}
+            config={config}
+            filteredStudents={filteredStudents}
+            schoolProfile={schoolProfile}
+            schoolId={effectiveSchoolId || ''}
+          />
+          <button
             onClick={handleSave}
             disabled={isSaving || isLoading || (config?.status === "PUBLISHED" && config?.paperLinks?.approval?.status === "APPROVED") || !isAssignedToTeacher}
             className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -893,7 +908,7 @@ export default function NewFinalResultDataEntryPage() {
             {isSaving ? "Saving..." : "Save Results"}
           </button>
           {config?.status !== "PUBLISHED" ? (
-            <button 
+            <button
               onClick={() => setIsPublishModalOpen(true)}
               disabled={isPublishing || isLoading || !isAssignedToTeacher || config?.paperLinks?.approval?.status === "PENDING_APPROVAL"}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -902,7 +917,7 @@ export default function NewFinalResultDataEntryPage() {
               {config?.paperLinks?.approval?.status === "PENDING_APPROVAL" ? "Awaiting Approval" : "Submit for Approval"}
             </button>
           ) : config?.paperLinks?.approval?.status === "APPROVED" ? (
-            <div 
+            <div
               className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-semibold shadow-xs select-none"
               title="Officially certified by school administration. Teachers cannot unpublish certified results."
             >
@@ -910,7 +925,7 @@ export default function NewFinalResultDataEntryPage() {
               <span>Admin Certified (Locked)</span>
             </div>
           ) : (
-            <button 
+            <button
               onClick={() => setIsUnpublishModalOpen(true)}
               disabled={isUnpublishing || isLoading || !isAssignedToTeacher}
               className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1062,7 +1077,7 @@ export default function NewFinalResultDataEntryPage() {
           {/* Summary Cards Overview */}
           <div className="mt-6 mb-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              
+
               {/* Card 1 */}
               <div className="bg-white dark:bg-[#1a1b2e] p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800/50 flex flex-col justify-between">
                 <div className="w-8 h-8 rounded-full bg-[#4a8df5]/10 flex items-center justify-center mb-3">
@@ -1114,33 +1129,30 @@ export default function NewFinalResultDataEntryPage() {
           <div className="flex gap-6 mt-8 mb-4 border-b border-slate-200 dark:border-slate-800">
             <button
               onClick={() => setActiveTab("academic")}
-              className={`pb-3 text-sm font-semibold transition-colors relative ${
-                activeTab === "academic"
+              className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === "academic"
                   ? "text-[#10b981]"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-              }`}
+                }`}
             >
               Academic Scores
               {activeTab === "academic" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#10b981] rounded-t-full" />}
             </button>
             <button
               onClick={() => setActiveTab("evaluation")}
-              className={`pb-3 text-sm font-semibold transition-colors relative ${
-                activeTab === "evaluation"
+              className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === "evaluation"
                   ? "text-[#10b981]"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-              }`}
+                }`}
             >
               Behavioral Evaluations & Remarks
               {activeTab === "evaluation" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#10b981] rounded-t-full" />}
             </button>
             <button
               onClick={() => setActiveTab("details")}
-              className={`pb-3 text-sm font-semibold transition-colors relative ${
-                activeTab === "details"
+              className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === "details"
                   ? "text-[#10b981]"
                   : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-              }`}
+                }`}
             >
               Configuration Details
               {activeTab === "details" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#10b981] rounded-t-full" />}
@@ -1149,632 +1161,194 @@ export default function NewFinalResultDataEntryPage() {
 
           {/* Data Entry Grid - Academic */}
           {activeTab === "academic" && (
-          <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden mt-4">
-            
-            {/* Search Bar & Actions */}
-            <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/50 gap-4 bg-white dark:bg-[#1a1b2e]">
-              <div className="relative w-full max-w-sm flex-1">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search students..." 
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full bg-[#f0fdf4] dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-[#10b981] transition-all"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setIsUploadModalOpen(true)}
-                  disabled={config?.status === "PUBLISHED" || !isAssignedToTeacher}
-                  className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <UploadCloud className="w-4 h-4" />
-                  Upload Grades
-                </button>
-                <button 
-                  onClick={() => {
-                    if (!config?.id) return;
-                    const studentIds = paginatedStudents.map(s => s.id);
-                    if (studentIds.length === 0) return;
-                    setIsSyncModalOpen(true);
-                  }}
-                  disabled={config?.status === "PUBLISHED" || !isAssignedToTeacher}
-                  className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Sync Papers
-                </button>
-              </div>
-            </div>
+            <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden mt-4">
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead>
-                  <tr className="bg-slate-50/50 dark:bg-slate-900/20 border-b border-slate-100 dark:border-slate-800/50">
-                    <th className="px-6 py-4 w-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">#</th>
-                    <th className="px-4 py-4 min-w-[200px] text-[10px] font-black uppercase tracking-widest text-slate-400 text-left">Student</th>
-                    <th className="px-4 py-4 w-24 text-[10px] font-black uppercase tracking-widest text-slate-400 text-left">Class ID</th>
-                    {config?.assignmentMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Assignment<br/><span className="text-[9px] font-medium opacity-70">(Max {config.assignmentMax})</span></th>}
-                    {config?.quizMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Quiz/Test<br/><span className="text-[9px] font-medium opacity-70">(Max {config.quizMax})</span></th>}
-                    {config?.caMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">CA<br/><span className="text-[9px] font-medium opacity-70">(Max {config.caMax})</span></th>}
-                    {config?.examMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Exam<br/><span className="text-[9px] font-medium opacity-70">(Max {config.examMax})</span></th>}
-                    <th className="px-6 py-4 w-24 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Total</th>
-                    <th className="px-4 py-4 w-20 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Grade</th>
-                    <th className="px-4 py-4 w-24 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Remark</th>
-                    <th className="px-4 py-4 w-20 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
-                  {filteredStudents.length === 0 ? (
-                    <tr>
-                      <td colSpan={11} className="px-6 py-8 text-center text-slate-500">No students found.</td>
-                    </tr>
-                  ) : paginatedStudents.map((student, idx) => {
-                    const isEditing = editingIds.has(student.id);
-                    const assignNum = parseFloat(student.assignment) || 0;
-                    const quizNum = parseFloat(student.quiz) || 0;
-                    const caNum = parseFloat(student.ca) || 0;
-                    const examNum = parseFloat(student.exam) || 0;
-                    const total = assignNum + quizNum + caNum + examNum;
-                    const globalIdx = (currentPage - 1) * PAGE_SIZE + idx;
-                    const evaluation = getGradeEvaluation(total, schoolProfile?.gradingSystem);
-                    
-                    return (
-                      <tr key={student.id} className={`group transition-colors border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 ${isEditing ? "bg-slate-50 dark:bg-slate-800/30" : ""}`}>
-                        <td className="px-6 py-4 text-center text-slate-400 font-normal text-sm">{String(globalIdx + 1).padStart(2, '0')}</td>
-                        <td className="px-4 py-4 flex items-center gap-3">
-                          <StudentAvatar name={student.name} profileImage={student.profileImage} />
-                          <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{student.name}</span>
-                        </td>
-                        <td className="px-4 py-4 text-slate-400 font-normal text-sm">{student.code}</td>
-                        {config?.assignmentMax != null && (
-                        <td className="px-4 py-3 text-center">
-                          {isEditing && isAssignedToTeacher ? (
-                            <input 
-                              type="number" 
-                              value={student.assignment}
-                              onChange={(e) => handleScoreChange(student.id, "assignment", e.target.value)}
-                              placeholder="-"
-                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
-                            />
-                          ) : (
-                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "assignment", categoryMax: config?.assignmentMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
-                              {student.assignment || <span className="text-slate-300">-</span>}
-                            </button>
-                          )}
-                        </td>
-                        )}
-                        {config?.quizMax != null && (
-                        <td className="px-4 py-3 text-center">
-                          {isEditing && isAssignedToTeacher ? (
-                            <input 
-                              type="number" 
-                              value={student.quiz}
-                              onChange={(e) => handleScoreChange(student.id, "quiz", e.target.value)}
-                              placeholder="-"
-                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
-                            />
-                          ) : (
-                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "quiz", categoryMax: config?.quizMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
-                              {student.quiz || <span className="text-slate-300">-</span>}
-                            </button>
-                          )}
-                        </td>
-                        )}
-                        {config?.caMax != null && (
-                        <td className="px-4 py-3 text-center">
-                          {isEditing && isAssignedToTeacher ? (
-                            <input 
-                              type="number" 
-                              value={student.ca}
-                              onChange={(e) => handleScoreChange(student.id, "ca", e.target.value)}
-                              placeholder="-"
-                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
-                            />
-                          ) : (
-                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "ca", categoryMax: config?.caMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
-                              {student.ca || <span className="text-slate-300">-</span>}
-                            </button>
-                          )}
-                        </td>
-                        )}
-                        {config?.examMax != null && (
-                        <td className="px-4 py-3 text-center">
-                          {isEditing && isAssignedToTeacher ? (
-                            <input 
-                              type="number" 
-                              value={student.exam}
-                              onChange={(e) => handleScoreChange(student.id, "exam", e.target.value)}
-                              placeholder="-"
-                              className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
-                            />
-                          ) : (
-                            <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "exam", categoryMax: config?.examMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
-                              {student.exam || <span className="text-slate-300">-</span>}
-                            </button>
-                          )}
-                        </td>
-                        )}
-                        <td className="px-6 py-4 text-center">
-                          {student.assignment || student.quiz || student.ca || student.exam ? (
-                            <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-bold ${total < 40 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}>{total}</span>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          {student.assignment || student.quiz || student.ca || student.exam ? (
-                            <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold ${evaluation.bg} ${evaluation.color}`}>
-                              {evaluation.grade}
-                            </span>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          {student.assignment || student.quiz || student.ca || student.exam ? (
-                            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                              {evaluation.remark}
-                            </span>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          {isAssignedToTeacher ? (
-                            <button
-                              onClick={() => toggleEdit(student.id)}
-                              className="inline-flex items-center justify-center w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-colors"
-                            >
-                              {isEditing ? <Check className="w-4 h-4 text-emerald-500" /> : <Pencil className="w-4 h-4" />}
-                            </button>
-                          ) : (
-                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full text-slate-300 dark:text-zinc-600" title="Read only">
-                              <Lock className="w-3.5 h-3.5" />
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="px-6 py-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/20">
-                <span className="text-xs text-slate-400 font-medium">
-                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredStudents.length)} of {filteredStudents.length} students
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-500 transition-colors"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-7 h-7 rounded text-xs font-semibold transition-colors ${
-                        page === currentPage 
-                          ? "bg-[#10b981] text-white" 
-                          : "text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-500 transition-colors"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-          )}
-
-
-          {/* Data Entry Grid - Behavioral Evaluations & Remarks */}
-          {activeTab === "evaluation" && (
-          <div className="space-y-4 mt-4">
-            {/* Context & Rubric Banner */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 bg-gradient-to-r from-emerald-50/80 via-white to-teal-50/50 dark:from-emerald-950/20 dark:via-[#1a1b2e] dark:to-teal-950/10 shadow-xs">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 shrink-0 mt-0.5">
-                    <Heart className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                      Student Conduct Appraisal & Behavioral Domain Evaluation
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                        Teacher Appraisal
-                      </span>
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
-                      Evaluate your scholars across 10 Affective character traits, 6 Psychomotor skills, and Class Teacher remarks. These sync directly with <strong className="text-slate-700 dark:text-slate-200">Page 2 of the Certified Academic Transcript</strong>. <span className="text-amber-700 dark:text-amber-400 font-medium">Notice: Principal/Executive remarks are restricted for administrative certification.</span>
-                    </p>
-                  </div>
-                </div>
-
-                {/* Class-wide Quick Action Buttons */}
-                <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={handleSetAllToDistinction}
-                    disabled={!isAssignedToTeacher}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition-colors shadow-2xs disabled:opacity-50 cursor-pointer"
-                  >
-                    <CheckCheck className="w-3.5 h-3.5" />
-                    Set All to 5 (Distinction)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAutoFillRemarks}
-                    disabled={!isAssignedToTeacher}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 border border-teal-200 dark:border-teal-800 transition-colors shadow-2xs disabled:opacity-50 cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Auto-fill Teacher Remarks
-                  </button>
-                </div>
-              </div>
-
-              {/* Standard 5-Point Institutional Rubric Key */}
-              <div className="mt-3 pt-3 border-t border-slate-200/70 dark:border-slate-800/60 flex items-center justify-between flex-wrap gap-2 text-[11px]">
-                <span className="font-bold text-slate-600 dark:text-slate-400">Standard 5-Point Rating Rubric:</span>
-                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                    5 = Distinction / Excellent
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                    4 = Commendable / Good
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                    3 = Acceptable / Moderate
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
-                    2 = Minimal / Needs Work
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
-                    1 = Needs Attention
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Sub-Tabs Switcher & Search Bar */}
-            <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 shadow-xs overflow-hidden">
-              <div className="p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b border-slate-100 dark:border-slate-800/50 gap-4 bg-slate-50/50 dark:bg-slate-900/20">
-                {/* Sub-tab pills */}
-                <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/60 rounded-xl overflow-x-auto max-w-full">
-                  <button
-                    type="button"
-                    onClick={() => setEvalSubTab("key")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-                      evalSubTab === "key"
-                        ? "bg-white dark:bg-slate-900 text-emerald-600 shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-                    Key Overview
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEvalSubTab("affective")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-                      evalSubTab === "affective"
-                        ? "bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    <Heart className="w-3.5 h-3.5 text-rose-500" />
-                    Affective Domain (10)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEvalSubTab("psychomotor")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-                      evalSubTab === "psychomotor"
-                        ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    <Activity className="w-3.5 h-3.5 text-blue-500" />
-                    Psychomotor Domain (6)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEvalSubTab("remarks")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-                      evalSubTab === "remarks"
-                        ? "bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    <MessageSquare className="w-3.5 h-3.5 text-purple-500" />
-                    Remarks Focus
-                  </button>
-                </div>
-
-                {/* Search Bar */}
-                <div className="relative w-full sm:w-72">
+              {/* Search Bar & Actions */}
+              <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/50 gap-4 bg-white dark:bg-[#1a1b2e]">
+                <div className="relative w-full max-w-sm flex-1">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input 
-                    type="text" 
-                    placeholder="Search student or code..." 
+                  <input
+                    type="text"
+                    placeholder="Search students..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/40 transition-all"
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="w-full bg-[#f0fdf4] dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-[#10b981] transition-all"
                   />
                 </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsUploadModalOpen(true)}
+                    disabled={config?.status === "PUBLISHED" || !isAssignedToTeacher}
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <UploadCloud className="w-4 h-4" />
+                    Upload Grades
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!config?.id) return;
+                      const studentIds = paginatedStudents.map(s => s.id);
+                      if (studentIds.length === 0) return;
+                      setIsSyncModalOpen(true);
+                    }}
+                    disabled={config?.status === "PUBLISHED" || !isAssignedToTeacher}
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-100 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Sync Papers
+                  </button>
+                </div>
               </div>
 
-              {/* Data Table */}
+              {/* Table */}
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs whitespace-nowrap">
+                <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead>
-                    <tr className="text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/50 bg-slate-50/30 dark:bg-slate-900/10">
-                      <th className="px-4 py-3.5 w-12 text-center">#</th>
-                      <th className="px-4 py-3.5 min-w-[200px]">Scholar Name</th>
-
-                      {/* Columns when Key Overview is active */}
-                      {evalSubTab === "key" && (
-                        <>
-                          <th className="px-3 py-3.5 w-24 text-center">Attentiveness<br/><span className="text-[9px] font-normal text-slate-400">(1–5)</span></th>
-                          <th className="px-3 py-3.5 w-24 text-center">Politeness<br/><span className="text-[9px] font-normal text-slate-400">(1–5)</span></th>
-                          <th className="px-3 py-3.5 w-24 text-center">Punctuality<br/><span className="text-[9px] font-normal text-slate-400">(1–5)</span></th>
-                          <th className="px-3 py-3.5 w-24 text-center">Handwriting<br/><span className="text-[9px] font-normal text-slate-400">(1–5)</span></th>
-                          <th className="px-4 py-3.5 min-w-[220px] text-left">Teacher Remark</th>
-                          <th className="px-4 py-3.5 min-w-[220px] text-left">
-                            <span className="flex items-center gap-1">
-                              Principal Remark
-                              <span title="Administrative Certification Area • Locked for teachers">
-                                <Lock className="w-3 h-3 text-amber-500" />
-                              </span>
-                            </span>
-                          </th>
-                        </>
-                      )}
-
-                      {/* Columns when Affective Domain (10) is active */}
-                      {evalSubTab === "affective" && (
-                        <>
-                          {AFFECTIVE_TRAITS.map(trait => (
-                            <th key={trait.key} className="px-2.5 py-3.5 w-24 text-center" title={trait.desc}>
-                              {trait.label}
-                              <br/><span className="text-[9px] font-normal text-slate-400">(1–5)</span>
-                            </th>
-                          ))}
-                        </>
-                      )}
-
-                      {/* Columns when Psychomotor Domain (6) is active */}
-                      {evalSubTab === "psychomotor" && (
-                        <>
-                          {PSYCHOMOTOR_SKILLS.map(skill => (
-                            <th key={skill.key} className="px-2.5 py-3.5 w-28 text-center" title={skill.desc}>
-                              {skill.label}
-                              <br/><span className="text-[9px] font-normal text-slate-400">(1–5)</span>
-                            </th>
-                          ))}
-                        </>
-                      )}
-
-                      {/* Columns when Remarks Focus is active */}
-                      {evalSubTab === "remarks" && (
-                        <>
-                          <th className="px-4 py-3.5 min-w-[320px] text-left">Class Teacher's Terminal Remark</th>
-                          <th className="px-4 py-3.5 min-w-[320px] text-left">
-                            <span className="flex items-center gap-1">
-                              Principal's Executive Remark
-                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">Admin Only</span>
-                            </span>
-                          </th>
-                        </>
-                      )}
-
-                      <th className="px-4 py-3.5 w-24 text-center">Appraisal</th>
+                    <tr className="bg-slate-50/50 dark:bg-slate-900/20 border-b border-slate-100 dark:border-slate-800/50">
+                      <th className="px-6 py-4 w-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">#</th>
+                      <th className="px-4 py-4 min-w-[200px] text-[10px] font-black uppercase tracking-widest text-slate-400 text-left">Student</th>
+                      <th className="px-4 py-4 w-24 text-[10px] font-black uppercase tracking-widest text-slate-400 text-left">Class ID</th>
+                      {config?.assignmentMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Assignment<br /><span className="text-[9px] font-medium opacity-70">(Max {config.assignmentMax})</span></th>}
+                      {config?.quizMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Quiz/Test<br /><span className="text-[9px] font-medium opacity-70">(Max {config.quizMax})</span></th>}
+                      {config?.caMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">CA<br /><span className="text-[9px] font-medium opacity-70">(Max {config.caMax})</span></th>}
+                      {config?.examMax != null && <th className="px-4 py-4 w-28 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Exam<br /><span className="text-[9px] font-medium opacity-70">(Max {config.examMax})</span></th>}
+                      <th className="px-6 py-4 w-24 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Total</th>
+                      <th className="px-4 py-4 w-20 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Grade</th>
+                      <th className="px-4 py-4 w-24 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Remark</th>
+                      <th className="px-4 py-4 w-20 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
-                    {paginatedStudents.length === 0 ? (
+                    {filteredStudents.length === 0 ? (
                       <tr>
-                        <td colSpan={14} className="px-6 py-12 text-center text-slate-500">
-                          No students matched your search criteria.
-                        </td>
+                        <td colSpan={11} className="px-6 py-8 text-center text-slate-500">No students found.</td>
                       </tr>
                     ) : paginatedStudents.map((student, idx) => {
-                      const absoluteIdx = (currentPage - 1) * PAGE_SIZE + idx + 1;
+                      const isEditing = editingIds.has(student.id);
+                      const assignNum = parseFloat(student.assignment) || 0;
+                      const quizNum = parseFloat(student.quiz) || 0;
+                      const caNum = parseFloat(student.ca) || 0;
+                      const examNum = parseFloat(student.exam) || 0;
+                      const total = assignNum + quizNum + caNum + examNum;
+                      const globalIdx = (currentPage - 1) * PAGE_SIZE + idx;
+                      const evaluation = getGradeEvaluation(total, schoolProfile?.gradingSystem);
+
                       return (
-                        <tr key={student.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors group">
-                          <td className="px-4 py-3 text-center text-slate-400 font-normal">
-                            {String(absoluteIdx).padStart(2, '0')}
-                          </td>
-                          <td className="px-4 py-3 flex items-center gap-2.5">
+                        <tr key={student.id} className={`group transition-colors border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-50 dark:hover:bg-slate-800/30 ${isEditing ? "bg-slate-50 dark:bg-slate-800/30" : ""}`}>
+                          <td className="px-6 py-4 text-center text-slate-400 font-normal text-sm">{String(globalIdx + 1).padStart(2, '0')}</td>
+                          <td className="px-4 py-4 flex items-center gap-3">
                             <StudentAvatar name={student.name} profileImage={student.profileImage} />
-                            <div className="min-w-0">
-                              <span className="text-slate-800 dark:text-slate-100 font-bold block truncate">{student.name}</span>
-                              <span className="text-[10px] font-mono text-slate-400 block">{student.code}</span>
-                            </div>
+                            <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{student.name}</span>
                           </td>
-
-                          {/* Key Overview Cells */}
-                          {evalSubTab === "key" && (
-                            <>
-                              <td className="px-3 py-2 text-center">
-                                <RatingSelect 
-                                  disabled={!isAssignedToTeacher}
-                                  value={student.attentiveness}
-                                  onChange={(val) => handleScoreChange(student.id, "attentiveness", val)}
+                          <td className="px-4 py-4 text-slate-400 font-normal text-sm">{student.code}</td>
+                          {config?.assignmentMax != null && (
+                            <td className="px-4 py-3 text-center">
+                              {isEditing && isAssignedToTeacher ? (
+                                <input
+                                  type="number"
+                                  value={student.assignment}
+                                  onChange={(e) => handleScoreChange(student.id, "assignment", e.target.value)}
+                                  placeholder="-"
+                                  className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
                                 />
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <RatingSelect 
-                                  disabled={!isAssignedToTeacher}
-                                  value={student.politeness}
-                                  onChange={(val) => handleScoreChange(student.id, "politeness", val)}
-                                />
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <RatingSelect 
-                                  disabled={!isAssignedToTeacher}
-                                  value={student.punctuality}
-                                  onChange={(val) => handleScoreChange(student.id, "punctuality", val)}
-                                />
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <RatingSelect 
-                                  disabled={!isAssignedToTeacher}
-                                  value={student.handwriting}
-                                  onChange={(val) => handleScoreChange(student.id, "handwriting", val)}
-                                />
-                              </td>
-                              <td className="px-4 py-2">
-                                <input 
-                                  disabled={!isAssignedToTeacher}
-                                  type="text" 
-                                  value={student.teacherRemark || ""}
-                                  onChange={(e) => handleScoreChange(student.id, "teacherRemark", e.target.value)}
-                                  placeholder={isAssignedToTeacher ? "Add teacher remark..." : "No remark"}
-                                  className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded-lg px-2.5 py-1.5 outline-none transition-all placeholder:text-slate-300 text-xs text-slate-800 dark:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                />
-                              </td>
-                              <td className="px-4 py-2">
-                                {canEditPrincipalRemark ? (
-                                  <input 
-                                    type="text" 
-                                    value={student.principalRemark || ""}
-                                    onChange={(e) => handleScoreChange(student.id, "principalRemark", e.target.value)}
-                                    placeholder="Add principal remark..."
-                                    className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded-lg px-2.5 py-1.5 outline-none transition-all placeholder:text-slate-300 text-xs text-slate-800 dark:text-slate-200"
-                                  />
-                                ) : (
-                                  <div 
-                                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100/70 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/40 text-slate-500 text-xs select-none cursor-not-allowed"
-                                    title="Administrative field: Reserved for Principal and School Owner"
-                                  >
-                                    <Lock className="w-3 h-3 text-amber-500 shrink-0" />
-                                    <span className="truncate italic">
-                                      {student.principalRemark || "Reserved for Principal"}
-                                    </span>
-                                  </div>
-                                )}
-                              </td>
-                            </>
+                              ) : (
+                                <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "assignment", categoryMax: config?.assignmentMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
+                                  {student.assignment || <span className="text-slate-300">-</span>}
+                                </button>
+                              )}
+                            </td>
                           )}
-
-                          {/* Affective Domain (10) Cells */}
-                          {evalSubTab === "affective" && (
-                            <>
-                              {AFFECTIVE_TRAITS.map(trait => (
-                                <td key={trait.key} className="px-2 py-2 text-center">
-                                  <RatingSelect 
-                                    disabled={!isAssignedToTeacher}
-                                    value={student[trait.key]}
-                                    onChange={(val) => handleScoreChange(student.id, trait.key, val)}
-                                  />
-                                </td>
-                              ))}
-                            </>
+                          {config?.quizMax != null && (
+                            <td className="px-4 py-3 text-center">
+                              {isEditing && isAssignedToTeacher ? (
+                                <input
+                                  type="number"
+                                  value={student.quiz}
+                                  onChange={(e) => handleScoreChange(student.id, "quiz", e.target.value)}
+                                  placeholder="-"
+                                  className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
+                                />
+                              ) : (
+                                <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "quiz", categoryMax: config?.quizMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
+                                  {student.quiz || <span className="text-slate-300">-</span>}
+                                </button>
+                              )}
+                            </td>
                           )}
-
-                          {/* Psychomotor Domain (6) Cells */}
-                          {evalSubTab === "psychomotor" && (
-                            <>
-                              {PSYCHOMOTOR_SKILLS.map(skill => (
-                                <td key={skill.key} className="px-2 py-2 text-center">
-                                  <RatingSelect 
-                                    disabled={!isAssignedToTeacher}
-                                    value={student[skill.key]}
-                                    onChange={(val) => handleScoreChange(student.id, skill.key, val)}
-                                  />
-                                </td>
-                              ))}
-                            </>
+                          {config?.caMax != null && (
+                            <td className="px-4 py-3 text-center">
+                              {isEditing && isAssignedToTeacher ? (
+                                <input
+                                  type="number"
+                                  value={student.ca}
+                                  onChange={(e) => handleScoreChange(student.id, "ca", e.target.value)}
+                                  placeholder="-"
+                                  className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
+                                />
+                              ) : (
+                                <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "ca", categoryMax: config?.caMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
+                                  {student.ca || <span className="text-slate-300">-</span>}
+                                </button>
+                              )}
+                            </td>
                           )}
-
-                          {/* Remarks Focus Cells */}
-                          {evalSubTab === "remarks" && (
-                            <>
-                              <td className="px-4 py-2">
-                                <div className="space-y-1">
-                                  <input 
-                                    disabled={!isAssignedToTeacher}
-                                    type="text" 
-                                    value={student.teacherRemark || ""}
-                                    onChange={(e) => handleScoreChange(student.id, "teacherRemark", e.target.value)}
-                                    placeholder="Enter class teacher's terminal evaluation remark..."
-                                    className="w-full bg-transparent border border-slate-200 dark:border-slate-700 hover:border-[#10b981] focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded-lg px-3 py-1.5 outline-none transition-all placeholder:text-slate-400 text-xs text-slate-800 dark:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                  />
-                                  {isAssignedToTeacher && (
-                                    <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-                                      <span className="text-[10px] text-slate-400 shrink-0">Presets:</span>
-                                      {PRESET_REMARKS.slice(0, 3).map((pr, pIdx) => (
-                                        <button
-                                          key={pIdx}
-                                          type="button"
-                                          onClick={() => handleScoreChange(student.id, "teacherRemark", pr)}
-                                          className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500/10 hover:text-emerald-600 text-slate-500 dark:text-slate-400 transition-colors shrink-0 max-w-[200px] truncate cursor-pointer"
-                                          title={pr}
-                                        >
-                                          "{pr.slice(0, 24)}..."
-                                        </button>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-4 py-2">
-                                {canEditPrincipalRemark ? (
-                                  <div className="space-y-1">
-                                    <input 
-                                      type="text" 
-                                      value={student.principalRemark || ""}
-                                      onChange={(e) => handleScoreChange(student.id, "principalRemark", e.target.value)}
-                                      placeholder="Enter principal's certified conduct remark..."
-                                      className="w-full bg-transparent border border-slate-200 dark:border-slate-700 hover:border-[#10b981] focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded-lg px-3 py-1.5 outline-none transition-all placeholder:text-slate-400 text-xs text-slate-800 dark:text-slate-200"
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="p-2.5 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 space-y-1">
-                                    <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 text-[11px] font-bold">
-                                      <Lock className="w-3.5 h-3.5" />
-                                      <span>Administrative Certification Area</span>
-                                    </div>
-                                    <p className="text-[11px] text-slate-600 dark:text-slate-400 italic">
-                                      {student.principalRemark ? `"${student.principalRemark}"` : "Pending review and certification by School Principal / Administrator."}
-                                    </p>
-                                  </div>
-                                )}
-                              </td>
-                            </>
+                          {config?.examMax != null && (
+                            <td className="px-4 py-3 text-center">
+                              {isEditing && isAssignedToTeacher ? (
+                                <input
+                                  type="number"
+                                  value={student.exam}
+                                  onChange={(e) => handleScoreChange(student.id, "exam", e.target.value)}
+                                  placeholder="-"
+                                  className="w-16 mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:ring-1 focus:ring-[#10b981] focus:border-[#10b981] text-center font-medium text-slate-800 dark:text-slate-200 text-sm transition-all shadow-sm"
+                                />
+                              ) : (
+                                <button onClick={() => setBreakdownModal({ isOpen: true, studentId: student.id, studentName: student.name, category: "exam", categoryMax: config?.examMax || null })} className="text-slate-500 font-medium hover:text-[#10b981] transition-colors px-2 py-1 rounded text-sm">
+                                  {student.exam || <span className="text-slate-300">-</span>}
+                                </button>
+                              )}
+                            </td>
                           )}
-
-                          {/* Full Appraisal Button */}
-                          <td className="px-4 py-2 text-center">
-                            <button
-                              type="button"
-                              onClick={() => setEvalModalStudentId(student.id)}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-600 hover:bg-emerald-500/10 transition-colors cursor-pointer"
-                              title="Open Full 16-Domain Appraisal Modal"
-                            >
-                              <SlidersHorizontal className="w-3.5 h-3.5" />
-                              Appraisal
-                            </button>
+                          <td className="px-6 py-4 text-center">
+                            {student.assignment || student.quiz || student.ca || student.exam ? (
+                              <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] uppercase tracking-wider font-bold ${total < 40 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}>{total}</span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            {student.assignment || student.quiz || student.ca || student.exam ? (
+                              <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold ${evaluation.bg} ${evaluation.color}`}>
+                                {evaluation.grade}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            {student.assignment || student.quiz || student.ca || student.exam ? (
+                              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                {evaluation.remark}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            {isAssignedToTeacher ? (
+                              <button
+                                onClick={() => toggleEdit(student.id)}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                {isEditing ? <Check className="w-4 h-4 text-emerald-500" /> : <Pencil className="w-4 h-4" />}
+                              </button>
+                            ) : (
+                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full text-slate-300 dark:text-zinc-600" title="Read only">
+                                <Lock className="w-3.5 h-3.5" />
+                              </span>
+                            )}
                           </td>
                         </tr>
                       );
@@ -1785,25 +1359,32 @@ export default function NewFinalResultDataEntryPage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="px-6 py-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/50 text-xs text-slate-500">
-                  <div>
-                    Showing {(currentPage - 1) * PAGE_SIZE + 1} to{" "}
-                    {Math.min(currentPage * PAGE_SIZE, filteredStudents.length)} of{" "}
-                    {filteredStudents.length} students
-                  </div>
+                <div className="px-6 py-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/20">
+                  <span className="text-xs text-slate-400 font-medium">
+                    Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredStudents.length)} of {filteredStudents.length} students
+                  </span>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
                       className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-500 transition-colors"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <span className="px-2 font-medium text-slate-700 dark:text-slate-300">
-                      Page {currentPage} of {totalPages}
-                    </span>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-7 h-7 rounded text-xs font-semibold transition-colors ${page === currentPage
+                            ? "bg-[#10b981] text-white"
+                            : "text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
+                          }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
                     <button
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
                       className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-500 transition-colors"
                     >
@@ -1813,7 +1394,433 @@ export default function NewFinalResultDataEntryPage() {
                 </div>
               )}
             </div>
-          </div>
+          )}
+
+
+          {/* Data Entry Grid - Behavioral Evaluations & Remarks */}
+          {activeTab === "evaluation" && (
+            <div className="space-y-4 mt-4">
+              {/* Context & Rubric Banner */}
+              <div className="p-4 sm:p-5 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 bg-gradient-to-r from-emerald-50/80 via-white to-teal-50/50 dark:from-emerald-950/20 dark:via-[#1a1b2e] dark:to-teal-950/10 shadow-xs">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 shrink-0 mt-0.5">
+                      <Heart className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                        Student Conduct Appraisal & Behavioral Domain Evaluation
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                          Teacher Appraisal
+                        </span>
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                        Evaluate your scholars across 10 Affective character traits, 6 Psychomotor skills, and Class Teacher remarks. These sync directly with <strong className="text-slate-700 dark:text-slate-200">Page 2 of the Certified Academic Transcript</strong>. <span className="text-amber-700 dark:text-amber-400 font-medium">Notice: Principal/Executive remarks are restricted for administrative certification.</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Class-wide Quick Action Buttons */}
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleSetAllToDistinction}
+                      disabled={!isAssignedToTeacher}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition-colors shadow-2xs disabled:opacity-50 cursor-pointer"
+                    >
+                      <CheckCheck className="w-3.5 h-3.5" />
+                      Set All to 5 (Distinction)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAutoFillRemarks}
+                      disabled={!isAssignedToTeacher}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 border border-teal-200 dark:border-teal-800 transition-colors shadow-2xs disabled:opacity-50 cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Auto-fill Teacher Remarks
+                    </button>
+                  </div>
+                </div>
+
+                {/* Standard 5-Point Institutional Rubric Key */}
+                <div className="mt-3 pt-3 border-t border-slate-200/70 dark:border-slate-800/60 flex items-center justify-between flex-wrap gap-2 text-[11px]">
+                  <span className="font-bold text-slate-600 dark:text-slate-400">Standard 5-Point Rating Rubric:</span>
+                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      5 = Distinction / Excellent
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      4 = Commendable / Good
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                      3 = Acceptable / Moderate
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 border border-orange-200 dark:border-orange-800">
+                      2 = Minimal / Needs Work
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                      1 = Needs Attention
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sub-Tabs Switcher & Search Bar */}
+              <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 shadow-xs overflow-hidden">
+                <div className="p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b border-slate-100 dark:border-slate-800/50 gap-4 bg-slate-50/50 dark:bg-slate-900/20">
+                  {/* Sub-tab pills */}
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/60 rounded-xl overflow-x-auto max-w-full">
+                    <button
+                      type="button"
+                      onClick={() => setEvalSubTab("key")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${evalSubTab === "key"
+                          ? "bg-white dark:bg-slate-900 text-emerald-600 shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                      Key Overview
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEvalSubTab("affective")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${evalSubTab === "affective"
+                          ? "bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                    >
+                      <Heart className="w-3.5 h-3.5 text-rose-500" />
+                      Affective Domain (10)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEvalSubTab("psychomotor")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${evalSubTab === "psychomotor"
+                          ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                    >
+                      <Activity className="w-3.5 h-3.5 text-blue-500" />
+                      Psychomotor Domain (6)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEvalSubTab("remarks")}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${evalSubTab === "remarks"
+                          ? "bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-purple-500" />
+                      Remarks Focus
+                    </button>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="relative w-full sm:w-72">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search student or code..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#10b981]/40 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Data Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs whitespace-nowrap">
+                    <thead>
+                      <tr className="text-[11px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800/50 bg-slate-50/30 dark:bg-slate-900/10">
+                        <th className="px-4 py-3.5 w-12 text-center">#</th>
+                        <th className="px-4 py-3.5 min-w-[200px]">Scholar Name</th>
+
+                        {/* Columns when Key Overview is active */}
+                        {evalSubTab === "key" && (
+                          <>
+                            <th className="px-3 py-3.5 w-24 text-center">Attentiveness<br /><span className="text-[9px] font-normal text-slate-400">(1–5)</span></th>
+                            <th className="px-3 py-3.5 w-24 text-center">Politeness<br /><span className="text-[9px] font-normal text-slate-400">(1–5)</span></th>
+                            <th className="px-3 py-3.5 w-24 text-center">Punctuality<br /><span className="text-[9px] font-normal text-slate-400">(1–5)</span></th>
+                            <th className="px-3 py-3.5 w-24 text-center">Handwriting<br /><span className="text-[9px] font-normal text-slate-400">(1–5)</span></th>
+                            <th className="px-4 py-3.5 min-w-[220px] text-left">Teacher Remark</th>
+                            <th className="px-4 py-3.5 min-w-[220px] text-left">
+                              <span className="flex items-center gap-1">
+                                Principal Remark
+                                <span title="Administrative Certification Area • Locked for teachers">
+                                  <Lock className="w-3 h-3 text-amber-500" />
+                                </span>
+                              </span>
+                            </th>
+                          </>
+                        )}
+
+                        {/* Columns when Affective Domain (10) is active */}
+                        {evalSubTab === "affective" && (
+                          <>
+                            {AFFECTIVE_TRAITS.map(trait => (
+                              <th key={trait.key} className="px-2.5 py-3.5 w-24 text-center" title={trait.desc}>
+                                {trait.label}
+                                <br /><span className="text-[9px] font-normal text-slate-400">(1–5)</span>
+                              </th>
+                            ))}
+                          </>
+                        )}
+
+                        {/* Columns when Psychomotor Domain (6) is active */}
+                        {evalSubTab === "psychomotor" && (
+                          <>
+                            {PSYCHOMOTOR_SKILLS.map(skill => (
+                              <th key={skill.key} className="px-2.5 py-3.5 w-28 text-center" title={skill.desc}>
+                                {skill.label}
+                                <br /><span className="text-[9px] font-normal text-slate-400">(1–5)</span>
+                              </th>
+                            ))}
+                          </>
+                        )}
+
+                        {/* Columns when Remarks Focus is active */}
+                        {evalSubTab === "remarks" && (
+                          <>
+                            <th className="px-4 py-3.5 min-w-[320px] text-left">Class Teacher's Terminal Remark</th>
+                            <th className="px-4 py-3.5 min-w-[320px] text-left">
+                              <span className="flex items-center gap-1">
+                                Principal's Executive Remark
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">Admin Only</span>
+                              </span>
+                            </th>
+                          </>
+                        )}
+
+                        <th className="px-4 py-3.5 w-24 text-center">Appraisal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800/20 text-slate-600 dark:text-slate-300 font-medium">
+                      {paginatedStudents.length === 0 ? (
+                        <tr>
+                          <td colSpan={14} className="px-6 py-12 text-center text-slate-500">
+                            No students matched your search criteria.
+                          </td>
+                        </tr>
+                      ) : paginatedStudents.map((student, idx) => {
+                        const absoluteIdx = (currentPage - 1) * PAGE_SIZE + idx + 1;
+                        return (
+                          <tr key={student.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors group">
+                            <td className="px-4 py-3 text-center text-slate-400 font-normal">
+                              {String(absoluteIdx).padStart(2, '0')}
+                            </td>
+                            <td className="px-4 py-3 flex items-center gap-2.5">
+                              <StudentAvatar name={student.name} profileImage={student.profileImage} />
+                              <div className="min-w-0">
+                                <span className="text-slate-800 dark:text-slate-100 font-bold block truncate">{student.name}</span>
+                                <span className="text-[10px] font-mono text-slate-400 block">{student.code}</span>
+                              </div>
+                            </td>
+
+                            {/* Key Overview Cells */}
+                            {evalSubTab === "key" && (
+                              <>
+                                <td className="px-3 py-2 text-center">
+                                  <RatingSelect
+                                    disabled={!isAssignedToTeacher}
+                                    value={student.attentiveness}
+                                    onChange={(val) => handleScoreChange(student.id, "attentiveness", val)}
+                                  />
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <RatingSelect
+                                    disabled={!isAssignedToTeacher}
+                                    value={student.politeness}
+                                    onChange={(val) => handleScoreChange(student.id, "politeness", val)}
+                                  />
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <RatingSelect
+                                    disabled={!isAssignedToTeacher}
+                                    value={student.punctuality}
+                                    onChange={(val) => handleScoreChange(student.id, "punctuality", val)}
+                                  />
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <RatingSelect
+                                    disabled={!isAssignedToTeacher}
+                                    value={student.handwriting}
+                                    onChange={(val) => handleScoreChange(student.id, "handwriting", val)}
+                                  />
+                                </td>
+                                <td className="px-4 py-2">
+                                  <input
+                                    disabled={!isAssignedToTeacher}
+                                    type="text"
+                                    value={student.teacherRemark || ""}
+                                    onChange={(e) => handleScoreChange(student.id, "teacherRemark", e.target.value)}
+                                    placeholder={isAssignedToTeacher ? "Add teacher remark..." : "No remark"}
+                                    className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded-lg px-2.5 py-1.5 outline-none transition-all placeholder:text-slate-300 text-xs text-slate-800 dark:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  />
+                                </td>
+                                <td className="px-4 py-2">
+                                  {canEditPrincipalRemark ? (
+                                    <input
+                                      type="text"
+                                      value={student.principalRemark || ""}
+                                      onChange={(e) => handleScoreChange(student.id, "principalRemark", e.target.value)}
+                                      placeholder="Add principal remark..."
+                                      className="w-full bg-transparent border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 focus:bg-white dark:focus:bg-slate-900 focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded-lg px-2.5 py-1.5 outline-none transition-all placeholder:text-slate-300 text-xs text-slate-800 dark:text-slate-200"
+                                    />
+                                  ) : (
+                                    <div
+                                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100/70 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/40 text-slate-500 text-xs select-none cursor-not-allowed"
+                                      title="Administrative field: Reserved for Principal and School Owner"
+                                    >
+                                      <Lock className="w-3 h-3 text-amber-500 shrink-0" />
+                                      <span className="truncate italic">
+                                        {student.principalRemark || "Reserved for Principal"}
+                                      </span>
+                                    </div>
+                                  )}
+                                </td>
+                              </>
+                            )}
+
+                            {/* Affective Domain (10) Cells */}
+                            {evalSubTab === "affective" && (
+                              <>
+                                {AFFECTIVE_TRAITS.map(trait => (
+                                  <td key={trait.key} className="px-2 py-2 text-center">
+                                    <RatingSelect
+                                      disabled={!isAssignedToTeacher}
+                                      value={student[trait.key]}
+                                      onChange={(val) => handleScoreChange(student.id, trait.key, val)}
+                                    />
+                                  </td>
+                                ))}
+                              </>
+                            )}
+
+                            {/* Psychomotor Domain (6) Cells */}
+                            {evalSubTab === "psychomotor" && (
+                              <>
+                                {PSYCHOMOTOR_SKILLS.map(skill => (
+                                  <td key={skill.key} className="px-2 py-2 text-center">
+                                    <RatingSelect
+                                      disabled={!isAssignedToTeacher}
+                                      value={student[skill.key]}
+                                      onChange={(val) => handleScoreChange(student.id, skill.key, val)}
+                                    />
+                                  </td>
+                                ))}
+                              </>
+                            )}
+
+                            {/* Remarks Focus Cells */}
+                            {evalSubTab === "remarks" && (
+                              <>
+                                <td className="px-4 py-2">
+                                  <div className="space-y-1">
+                                    <input
+                                      disabled={!isAssignedToTeacher}
+                                      type="text"
+                                      value={student.teacherRemark || ""}
+                                      onChange={(e) => handleScoreChange(student.id, "teacherRemark", e.target.value)}
+                                      placeholder="Enter class teacher's terminal evaluation remark..."
+                                      className="w-full bg-transparent border border-slate-200 dark:border-slate-700 hover:border-[#10b981] focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded-lg px-3 py-1.5 outline-none transition-all placeholder:text-slate-400 text-xs text-slate-800 dark:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    />
+                                    {isAssignedToTeacher && (
+                                      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                                        <span className="text-[10px] text-slate-400 shrink-0">Presets:</span>
+                                        {PRESET_REMARKS.slice(0, 3).map((pr, pIdx) => (
+                                          <button
+                                            key={pIdx}
+                                            type="button"
+                                            onClick={() => handleScoreChange(student.id, "teacherRemark", pr)}
+                                            className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-emerald-500/10 hover:text-emerald-600 text-slate-500 dark:text-slate-400 transition-colors shrink-0 max-w-[200px] truncate cursor-pointer"
+                                            title={pr}
+                                          >
+                                            "{pr.slice(0, 24)}..."
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-2">
+                                  {canEditPrincipalRemark ? (
+                                    <div className="space-y-1">
+                                      <input
+                                        type="text"
+                                        value={student.principalRemark || ""}
+                                        onChange={(e) => handleScoreChange(student.id, "principalRemark", e.target.value)}
+                                        placeholder="Enter principal's certified conduct remark..."
+                                        className="w-full bg-transparent border border-slate-200 dark:border-slate-700 hover:border-[#10b981] focus:border-[#10b981] focus:ring-1 focus:ring-[#10b981] rounded-lg px-3 py-1.5 outline-none transition-all placeholder:text-slate-400 text-xs text-slate-800 dark:text-slate-200"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className="p-2.5 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 space-y-1">
+                                      <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 text-[11px] font-bold">
+                                        <Lock className="w-3.5 h-3.5" />
+                                        <span>Administrative Certification Area</span>
+                                      </div>
+                                      <p className="text-[11px] text-slate-600 dark:text-slate-400 italic">
+                                        {student.principalRemark ? `"${student.principalRemark}"` : "Pending review and certification by School Principal / Administrator."}
+                                      </p>
+                                    </div>
+                                  )}
+                                </td>
+                              </>
+                            )}
+
+                            {/* Full Appraisal Button */}
+                            <td className="px-4 py-2 text-center">
+                              <button
+                                type="button"
+                                onClick={() => setEvalModalStudentId(student.id)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-600 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                                title="Open Full 16-Domain Appraisal Modal"
+                              >
+                                <SlidersHorizontal className="w-3.5 h-3.5" />
+                                Appraisal
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="px-6 py-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/50 text-xs text-slate-500">
+                    <div>
+                      Showing {(currentPage - 1) * PAGE_SIZE + 1} to{" "}
+                      {Math.min(currentPage * PAGE_SIZE, filteredStudents.length)} of{" "}
+                      {filteredStudents.length} students
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-500 transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <span className="px-2 font-medium text-slate-700 dark:text-slate-300">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <button
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 text-slate-500 transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
           {/* Configuration Details Tab */}
@@ -1831,32 +1838,32 @@ export default function NewFinalResultDataEntryPage() {
                   Edit Configuration
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* General Info */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">General Information</h3>
-                  
+
                   <div className="flex flex-col">
                     <span className="text-xs text-slate-400">Result Name</span>
                     <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{config.name}</span>
                   </div>
-                  
+
                   <div className="flex flex-col">
                     <span className="text-xs text-slate-400">Subject</span>
                     <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{config.subject?.name || "N/A"}</span>
                   </div>
-                  
+
                   <div className="flex flex-col">
                     <span className="text-xs text-slate-400">Class</span>
                     <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{config.class?.name || "N/A"}</span>
                   </div>
-                  
+
                   <div className="flex flex-col">
                     <span className="text-xs text-slate-400">Department</span>
                     <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{config.department?.name || "All Departments"}</span>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col">
                       <span className="text-xs text-slate-400">Term</span>
@@ -1872,7 +1879,7 @@ export default function NewFinalResultDataEntryPage() {
                 {/* Score Configuration & Dates */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Assessment Limits & Dates</h3>
-                  
+
                   <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-100 dark:border-slate-800">
                     <div className="flex flex-col items-center justify-center p-2 bg-white dark:bg-slate-800 rounded shadow-sm">
                       <span className="text-[10px] uppercase text-slate-400 font-bold mb-1">Assignment Max</span>
@@ -2033,30 +2040,30 @@ export default function NewFinalResultDataEntryPage() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {([
-                      { key: "exam" as const,         label: "Exam Assessments",           category: "EXAM",       borderColor: "border-[#10b981]/40",    headerBg: "bg-[#10b981]/10",  dotColor: "bg-[#10b981]",  textColor: "text-[#10b981]",  checkColor: "accent-[#10b981]" },
-                      { key: "subjectPaper" as const, label: "Quiz / Test Assessments",   category: "QUIZ",       borderColor: "border-amber-300/60",    headerBg: "bg-amber-50 dark:bg-amber-500/10",  dotColor: "bg-amber-500",  textColor: "text-amber-600 dark:text-amber-400",  checkColor: "accent-amber-500" },
-                      { key: "ca" as const,           label: "Continuous Assessment (CA)", category: "CA",         borderColor: "border-emerald-300/60",  headerBg: "bg-emerald-50 dark:bg-emerald-500/10",  dotColor: "bg-emerald-500",  textColor: "text-emerald-600 dark:text-emerald-400",  checkColor: "accent-emerald-500" },
-                      { key: "assignment" as const,   label: "Assignment Assessments",     category: "ASSIGNMENT", borderColor: "border-rose-300/60",     headerBg: "bg-rose-50 dark:bg-rose-500/10",  dotColor: "bg-rose-500",  textColor: "text-rose-600 dark:text-rose-400",  checkColor: "accent-rose-500" },
+                      { key: "exam" as const, label: "Exam Assessments", category: "EXAM", borderColor: "border-[#10b981]/40", headerBg: "bg-[#10b981]/10", dotColor: "bg-[#10b981]", textColor: "text-[#10b981]", checkColor: "accent-[#10b981]" },
+                      { key: "subjectPaper" as const, label: "Quiz / Test Assessments", category: "QUIZ", borderColor: "border-amber-300/60", headerBg: "bg-amber-50 dark:bg-amber-500/10", dotColor: "bg-amber-500", textColor: "text-amber-600 dark:text-amber-400", checkColor: "accent-amber-500" },
+                      { key: "ca" as const, label: "Continuous Assessment (CA)", category: "CA", borderColor: "border-emerald-300/60", headerBg: "bg-emerald-50 dark:bg-emerald-500/10", dotColor: "bg-emerald-500", textColor: "text-emerald-600 dark:text-emerald-400", checkColor: "accent-emerald-500" },
+                      { key: "assignment" as const, label: "Assignment Assessments", category: "ASSIGNMENT", borderColor: "border-rose-300/60", headerBg: "bg-rose-50 dark:bg-rose-500/10", dotColor: "bg-rose-500", textColor: "text-rose-600 dark:text-rose-400", checkColor: "accent-rose-500" },
                     ]).map(({ key, label, category, borderColor, headerBg, dotColor, textColor, checkColor }) => {
                       const selected = paperAssignments[key];
                       const searchKey = paperSearch[key];
-                      
+
                       // Filter online papers
                       const onlineItems = key === "assignment"
                         ? assignments.filter((p: any) => {
-                            const matchesClass = !config?.classId || p.classId === config.classId;
-                            const matchesSubject = !config?.subjectId || p.subjectId === config.subjectId;
-                            const matchesTerm = !resolvedTermFilter || p.term === resolvedTermFilter;
-                            const matchesSession = !resolvedSessionFilter || p.sessionId === resolvedSessionFilter;
-                            return matchesClass && matchesSubject && matchesTerm && matchesSession;
-                          })
+                          const matchesClass = !config?.classId || p.classId === config.classId;
+                          const matchesSubject = !config?.subjectId || p.subjectId === config.subjectId;
+                          const matchesTerm = !resolvedTermFilter || p.term === resolvedTermFilter;
+                          const matchesSession = !resolvedSessionFilter || p.sessionId === resolvedSessionFilter;
+                          return matchesClass && matchesSubject && matchesTerm && matchesSession;
+                        })
                         : subjectPapers.filter((p: any) => {
-                            const hasExamConnections = p.exams && p.exams.length > 0;
-                            if (hasExamConnections) {
-                              return p.exams.some((e: any) => e.exam?.category === category);
-                            }
-                            return p.category === category;
-                          });
+                          const hasExamConnections = p.exams && p.exams.length > 0;
+                          if (hasExamConnections) {
+                            return p.exams.some((e: any) => e.exam?.category === category);
+                          }
+                          return p.category === category;
+                        });
 
                       // Filter offline marksheets
                       const matchingOffline = offlineBatches.filter((b) => b.category === category);
@@ -2102,7 +2109,7 @@ export default function NewFinalResultDataEntryPage() {
                               {selected.length} selected
                             </span>
                           </div>
-                          
+
                           <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/30 flex-shrink-0">
                             <div className="relative">
                               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -2163,7 +2170,7 @@ export default function NewFinalResultDataEntryPage() {
         </>
       )}
 
-      <SummaryPanel 
+      <SummaryPanel
         students={students}
         config={config}
         subjectPapers={subjectPapers}
@@ -2196,7 +2203,7 @@ export default function NewFinalResultDataEntryPage() {
         categoryMax={breakdownModal.categoryMax}
       />
 
-      <SyncProgressModal 
+      <SyncProgressModal
         isOpen={isSyncModalOpen}
         onClose={() => setIsSyncModalOpen(false)}
         resultId={config?.id || ""}
@@ -2214,7 +2221,7 @@ export default function NewFinalResultDataEntryPage() {
               if (syncedData.quiz !== undefined) { updates.quiz = syncedData.quiz?.toString() || "0"; sources.quiz = "SYNC"; }
               if (syncedData.ca !== undefined) { updates.ca = syncedData.ca?.toString() || "0"; sources.ca = "SYNC"; }
               if (syncedData.exam !== undefined) { updates.exam = syncedData.exam?.toString() || "0"; sources.exam = "SYNC"; }
-              
+
               return {
                 ...student,
                 ...updates,
@@ -2272,9 +2279,9 @@ export default function NewFinalResultDataEntryPage() {
                   <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Active & Certified</span>
                 </div>
                 <div className="h-16 flex items-center justify-center bg-white dark:bg-slate-950/60 rounded-lg border border-slate-200/80 dark:border-slate-800/80 p-2">
-                  <img 
-                    src={activeSignature.signedUrl} 
-                    alt="Teacher Signature" 
+                  <img
+                    src={activeSignature.signedUrl}
+                    alt="Teacher Signature"
                     className="max-h-12 w-auto object-contain dark:invert dark:brightness-125"
                   />
                 </div>
@@ -2307,7 +2314,7 @@ export default function NewFinalResultDataEntryPage() {
                 Cancel
               </button>
             </DialogClose>
-            <button 
+            <button
               onClick={handlePublish}
               disabled={isPublishing}
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 min-w-[170px] disabled:opacity-70 shadow-sm cursor-pointer"
@@ -2352,7 +2359,7 @@ export default function NewFinalResultDataEntryPage() {
               </button>
             </DialogClose>
             {config?.paperLinks?.approval?.status !== "APPROVED" && (
-              <button 
+              <button
                 onClick={handleUnpublish}
                 disabled={isUnpublishing}
                 className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center min-w-[100px] disabled:opacity-70"
@@ -2512,8 +2519,8 @@ export default function NewFinalResultDataEntryPage() {
                   {AFFECTIVE_TRAITS.map(trait => {
                     const currentRating = parseInt(String(evalModalStudent[trait.key] || "5"), 10);
                     return (
-                      <div 
-                        key={trait.key} 
+                      <div
+                        key={trait.key}
                         className="p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between gap-2"
                       >
                         <div className="min-w-0 pr-2">
@@ -2533,21 +2540,19 @@ export default function NewFinalResultDataEntryPage() {
                                 type="button"
                                 disabled={!isAssignedToTeacher}
                                 onClick={() => handleScoreChange(evalModalStudent.id, trait.key, String(score))}
-                                className={`w-6 h-6 rounded-md text-xs font-bold transition-all ${
-                                  !isAssignedToTeacher ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                                } ${
-                                  isSelected
+                                className={`w-6 h-6 rounded-md text-xs font-bold transition-all ${!isAssignedToTeacher ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                  } ${isSelected
                                     ? score === 5
                                       ? "bg-emerald-600 text-white shadow-xs scale-105"
                                       : score === 4
-                                      ? "bg-blue-600 text-white shadow-xs scale-105"
-                                      : score === 3
-                                      ? "bg-amber-600 text-white shadow-xs scale-105"
-                                      : score === 2
-                                      ? "bg-orange-600 text-white shadow-xs scale-105"
-                                      : "bg-rose-600 text-white shadow-xs scale-105"
+                                        ? "bg-blue-600 text-white shadow-xs scale-105"
+                                        : score === 3
+                                          ? "bg-amber-600 text-white shadow-xs scale-105"
+                                          : score === 2
+                                            ? "bg-orange-600 text-white shadow-xs scale-105"
+                                            : "bg-rose-600 text-white shadow-xs scale-105"
                                     : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
-                                }`}
+                                  }`}
                               >
                                 {score}
                               </button>
@@ -2578,8 +2583,8 @@ export default function NewFinalResultDataEntryPage() {
                   {PSYCHOMOTOR_SKILLS.map(skill => {
                     const currentRating = parseInt(String(evalModalStudent[skill.key] || "5"), 10);
                     return (
-                      <div 
-                        key={skill.key} 
+                      <div
+                        key={skill.key}
                         className="p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between gap-2"
                       >
                         <div className="min-w-0 pr-2">
@@ -2599,21 +2604,19 @@ export default function NewFinalResultDataEntryPage() {
                                 type="button"
                                 disabled={!isAssignedToTeacher}
                                 onClick={() => handleScoreChange(evalModalStudent.id, skill.key, String(score))}
-                                className={`w-6 h-6 rounded-md text-xs font-bold transition-all ${
-                                  !isAssignedToTeacher ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                                } ${
-                                  isSelected
+                                className={`w-6 h-6 rounded-md text-xs font-bold transition-all ${!isAssignedToTeacher ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                                  } ${isSelected
                                     ? score === 5
                                       ? "bg-emerald-600 text-white shadow-xs scale-105"
                                       : score === 4
-                                      ? "bg-blue-600 text-white shadow-xs scale-105"
-                                      : score === 3
-                                      ? "bg-amber-600 text-white shadow-xs scale-105"
-                                      : score === 2
-                                      ? "bg-orange-600 text-white shadow-xs scale-105"
-                                      : "bg-rose-600 text-white shadow-xs scale-105"
+                                        ? "bg-blue-600 text-white shadow-xs scale-105"
+                                        : score === 3
+                                          ? "bg-amber-600 text-white shadow-xs scale-105"
+                                          : score === 2
+                                            ? "bg-orange-600 text-white shadow-xs scale-105"
+                                            : "bg-rose-600 text-white shadow-xs scale-105"
                                     : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
-                                }`}
+                                  }`}
                               >
                                 {score}
                               </button>
@@ -2695,8 +2698,8 @@ export default function NewFinalResultDataEntryPage() {
                   ) : (
                     <div className="p-3 rounded-xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-800/40 space-y-1.5">
                       <p className="text-xs text-slate-700 dark:text-slate-300 italic">
-                        {evalModalStudent.principalRemark 
-                          ? `"${evalModalStudent.principalRemark}"` 
+                        {evalModalStudent.principalRemark
+                          ? `"${evalModalStudent.principalRemark}"`
                           : "Pending executive review and certification by School Principal / Administrator."}
                       </p>
                       <div className="flex items-center gap-1.5 text-[10px] text-amber-700 dark:text-amber-400 font-medium pt-1 border-t border-amber-200/40 dark:border-amber-800/30">

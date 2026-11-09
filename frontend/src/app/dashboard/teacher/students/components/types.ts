@@ -11,6 +11,8 @@ export interface Student {
   performance: PerformanceLevel;
   attendance: number;
   lastExam: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface NavItem {

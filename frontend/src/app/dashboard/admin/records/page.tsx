@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { toast } from "react-toastify";
 import { format } from "date-fns";
 import { generatePDF } from "@/utils/pdfGenerator";
+import { RecordsExportModal } from "./components/RecordsExportModal";
 import { TooltipProvider, Tooltip as UITooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 import { useClassSubjectResults, useStudentTermResults, useCreateClassSubjectResult } from "@/lib/api/hooks/useRecords";
@@ -23,15 +24,14 @@ export default function RecordsPage() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"subject" | "student">("subject");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  
+
   // Mobile defaults to grid view
   useEffect(() => {
     if (window.innerWidth < 768) {
       setViewMode("grid");
     }
   }, []);
-  const [isExporting, setIsExporting] = useState<'csv' | 'pdf' | null>(null);
-  
+
   // Pagination state
   const [subjectPage, setSubjectPage] = useState(1);
   const [studentPage, setStudentPage] = useState(1);
@@ -45,10 +45,6 @@ export default function RecordsPage() {
 
   // Export popup state
   const [isExportPopupOpen, setIsExportPopupOpen] = useState(false);
-  const [exportTargetFormat, setExportTargetFormat] = useState<'csv' | 'pdf'>('csv');
-  const [exportFilterClass, setExportFilterClass] = useState("");
-  const [exportFilterSession, setExportFilterSession] = useState("");
-  const [exportFilterTerm, setExportFilterTerm] = useState("");
 
   // Popup form state
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -68,7 +64,7 @@ export default function RecordsPage() {
   });
 
   const { mutate: createResult, isPending: isCreating } = useCreateClassSubjectResult();
-  
+
   const effectiveSchoolId = user?.schools?.[0]?.schoolId || user?.tenantId || "";
   const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
 
@@ -84,7 +80,7 @@ export default function RecordsPage() {
   const departments = Array.isArray(departmentsData) ? departmentsData : departmentsData?.data || [];
 
   const { data: subjectResults, isLoading: isLoadingSubjects } = useClassSubjectResults();
-  
+
   const { data: studentsData, isLoading: isLoadingStudents } = useSchoolStudents(effectiveSchoolId, { search: studentSearchQuery });
   const studentResults = Array.isArray(studentsData) ? studentsData : studentsData?.data || [];
 
@@ -103,15 +99,15 @@ export default function RecordsPage() {
 
   // Compute summary stats dynamically
   const totalRecords = activeTab === "student" ? filteredStudentResults.length : filteredSubjectResults.length;
-  const completedRecords = activeTab === "student" 
+  const completedRecords = activeTab === "student"
     ? filteredStudentResults.filter((r: any) => r.status === "PUBLISHED").length
     : filteredSubjectResults.filter((r: any) => r.status === "PUBLISHED").length;
   const pendingRecords = totalRecords - completedRecords;
   const completionRate = totalRecords > 0 ? Math.round((completedRecords / totalRecords) * 100) : 0;
-  
+
   // Compute average score only from student results
   const validScores = filteredStudentResults.filter((r: any) => r.averageScore != null).map((r: any) => r.averageScore);
-  const averageScore = validScores.length > 0 
+  const averageScore = validScores.length > 0
     ? (validScores.reduce((a: number, b: number) => a + b, 0) / validScores.length).toFixed(1)
     : "0.0";
 
@@ -176,130 +172,7 @@ export default function RecordsPage() {
       }
     );
   };
-  
-  const handleExport = async (targetFormat: 'csv' | 'pdf') => {
-    setIsExporting(targetFormat);
-    try {
-      const rawData = activeTab === "subject" ? subjectResults : studentResults;
-      const dataToExport = rawData?.filter((res: any) => {
-        if (exportFilterClass && res.classId !== exportFilterClass) return false;
-        if (exportFilterSession && res.sessionId !== exportFilterSession) return false;
-        if (exportFilterTerm && res.term !== exportFilterTerm) return false;
-        return true;
-      }) || [];
-      
-      if (!dataToExport || dataToExport.length === 0) {
-        toast.info("No records to export with the selected filters.");
-        return;
-      }
-      
-      const exportFormat = targetFormat;
-      
-      let headers: string[] = [];
-      let rows: string[][] = [];
-      
-      if (activeTab === "subject") {
-        headers = ["#", "Name", "Session", "Term", "Class", "Subject", "Status", "Date Saved"];
-        rows = dataToExport.map((res: any, index: number) => [
-          (index + 1).toString(),
-          res.name || "N/A",
-          res.session?.name || "N/A",
-          res.term || "N/A",
-          res.class?.name || "N/A",
-          res.subject?.name || "N/A",
-          res.status || "DRAFT",
-          format(new Date(res.createdAt), "yyyy-MM-dd")
-        ]);
-      } else {
-        headers = ["#", "Student Name", "Class", "Session", "Term", "Average", "Position", "Status"];
-        rows = dataToExport.map((res: any, index: number) => [
-          (index + 1).toString(),
-          res.student?.name || "N/A",
-          res.class?.name || "N/A",
-          res.session?.name || "N/A",
-          res.term || "N/A",
-          res.averageScore ? `${res.averageScore}%` : "N/A",
-          res.position ? res.position.toString() : "N/A",
-          res.status || "DRAFT"
-        ]);
-      }
 
-      const dateStr = format(new Date(), "yyyy-MM-dd");
-      const tabName = activeTab === "subject" ? "subjects" : "students";
-      const schoolName = schoolProfile?.name || user?.schools?.[0]?.name || (user as any)?.tenant?.name || "School";
-      const sanitizedSchoolName = schoolName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      const fileNameBase = `${sanitizedSchoolName}_records_${tabName}_export_${dateStr}`;
-
-      if (exportFormat === 'csv') {
-        const csvContent = [];
-        
-        csvContent.push(`"${schoolName.toUpperCase()}"`);
-        if (schoolProfile?.motto) csvContent.push(`"${schoolProfile.motto}"`);
-        if (schoolProfile?.address) csvContent.push(`"${schoolProfile.address}"`);
-        if (schoolProfile?.phone || schoolProfile?.schoolEmail) csvContent.push(`"${[schoolProfile?.phone, schoolProfile?.schoolEmail].filter(Boolean).join(' | ')}"`);
-        csvContent.push("");
-        csvContent.push(`"Records Report - ${tabName.charAt(0).toUpperCase() + tabName.slice(1)} View"`);
-        csvContent.push(`"Generated on: ${dateStr}"`);
-        csvContent.push("");
-
-        let csvRows: string[][] = [];
-        if (activeTab === "subject") {
-          csvRows = dataToExport.map((res: any, index: number) => [
-            (index + 1).toString(),
-            `"${(res.name || "").replace(/"/g, '""')}"`,
-            `"${(res.session?.name || "").replace(/"/g, '""')}"`,
-            `"${(res.term || "").replace(/"/g, '""')}"`,
-            `"${(res.class?.name || "").replace(/"/g, '""')}"`,
-            `"${(res.subject?.name || "").replace(/"/g, '""')}"`,
-            res.status || "DRAFT",
-            `="${format(new Date(res.createdAt), "yyyy-MM-dd")}"`
-          ]);
-        } else {
-          csvRows = dataToExport.map((res: any, index: number) => [
-            (index + 1).toString(),
-            `"${(res.student?.name || "").replace(/"/g, '""')}"`,
-            `"${(res.class?.name || "").replace(/"/g, '""')}"`,
-            `"${(res.session?.name || "").replace(/"/g, '""')}"`,
-            `"${(res.term || "").replace(/"/g, '""')}"`,
-            res.averageScore ? `${res.averageScore}%` : "N/A",
-            res.position ? res.position.toString() : "N/A",
-            res.status || "DRAFT"
-          ]);
-        }
-        
-        csvContent.push(headers.join(","));
-        csvRows.forEach(r => csvContent.push(r.join(",")));
-
-        const csv = csvContent.join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${fileNameBase}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      } else {
-        await generatePDF({
-          title: `Records Report - ${tabName.charAt(0).toUpperCase() + tabName.slice(1)} View`,
-          filename: `${fileNameBase}.pdf`,
-          schoolProfile,
-          metaData: [
-            { label: 'Date', value: dateStr },
-            { label: 'Total Records', value: dataToExport.length.toString() }
-          ],
-          tableHeaders: [headers],
-          tableData: rows
-        });
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error(`Failed to export records as ${targetFormat.toUpperCase()}.`);
-    } finally {
-      setIsExporting(null);
-    }
-  };
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-[95%] mx-auto font-sans bg-slate-50/50 dark:bg-[#0f1015] min-h-screen">
@@ -326,68 +199,14 @@ export default function RecordsPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Dialog open={isExportPopupOpen} onOpenChange={setIsExportPopupOpen}>
-            <DialogTrigger asChild>
-              <button
-                disabled={totalRecords === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 shadow-sm"
-              >
-                <Download className="w-4 h-4" />
-                Export Data
-              </button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] dark:bg-[#1a1b2e] dark:border-slate-800">
-              <DialogHeader>
-                <DialogTitle className="text-slate-900 dark:text-white">Export Data</DialogTitle>
-                <DialogDescription className="text-slate-500">
-                  Filter the records you want to export.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Class (Optional)</label>
-                  <select value={exportFilterClass} onChange={(e) => setExportFilterClass(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
-                    <option value="">All Classes</option>
-                    {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Session (Optional)</label>
-                  <select value={exportFilterSession} onChange={(e) => setExportFilterSession(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
-                    <option value="">All Sessions</option>
-                    {sessions.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Term (Optional)</label>
-                  <select value={exportFilterTerm} onChange={(e) => setExportFilterTerm(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
-                    <option value="">All Terms</option>
-                    <option value="FIRST">First Term</option>
-                    <option value="SECOND">Second Term</option>
-                    <option value="THIRD">Third Term</option>
-                  </select>
-                </div>
-              </div>
-              <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-4">
-                <button
-                  onClick={() => handleExport('csv')}
-                  disabled={isExporting !== null}
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-                >
-                  {isExporting === 'csv' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  Download CSV
-                </button>
-                <button
-                  onClick={() => handleExport('pdf')}
-                  disabled={isExporting !== null}
-                  className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-                >
-                  {isExporting === 'pdf' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  Download PDF
-                </button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <button
+            onClick={() => setIsExportPopupOpen(true)}
+            disabled={totalRecords === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 shadow-sm cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            Export Data
+          </button>
           <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
             <DialogTrigger asChild>
               <button className="flex items-center gap-2 px-4 py-2 bg-[#5B5CE6] hover:bg-[#4a4be5] text-white rounded-lg text-sm font-semibold transition-colors shadow-sm">
@@ -405,7 +224,7 @@ export default function RecordsPage() {
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Name</label>
-                  <input type="text" placeholder="e.g. Term 1 Mathematics Result" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all" />
+                  <input type="text" placeholder="e.g. Term 1 Mathematics Result" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all" />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
@@ -413,7 +232,7 @@ export default function RecordsPage() {
                     {isLoadingClasses ? (
                       <div className="w-full h-[38px] bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
                     ) : (
-                      <select value={formData.classId} onChange={(e) => setFormData({...formData, classId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                      <select value={formData.classId} onChange={(e) => setFormData({ ...formData, classId: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
                         <option value="">Select Class</option>
                         {classes.map((c: any) => (
                           <option key={c.id} value={c.id}>{c.name}</option>
@@ -426,7 +245,7 @@ export default function RecordsPage() {
                     {isLoadingSubjectsList ? (
                       <div className="w-full h-[38px] bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
                     ) : (
-                      <select value={formData.subjectId} onChange={(e) => setFormData({...formData, subjectId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                      <select value={formData.subjectId} onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
                         <option value="">Select Subject</option>
                         {subjects.map((s: any) => (
                           <option key={s.id} value={s.id}>{s.name}</option>
@@ -439,7 +258,7 @@ export default function RecordsPage() {
                     {isLoadingDepartments ? (
                       <div className="w-full h-[38px] bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
                     ) : (
-                      <select value={formData.departmentId} onChange={(e) => setFormData({...formData, departmentId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                      <select value={formData.departmentId} onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
                         <option value="">All Departments</option>
                         {departments.map((d: any) => (
                           <option key={d.id} value={d.id}>{d.name}</option>
@@ -454,7 +273,7 @@ export default function RecordsPage() {
                     {isLoadingSessions ? (
                       <div className="w-full h-[38px] bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
                     ) : (
-                      <select value={formData.sessionId} onChange={(e) => setFormData({...formData, sessionId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                      <select value={formData.sessionId} onChange={(e) => setFormData({ ...formData, sessionId: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
                         <option value="">Select Session</option>
                         {sessions.map((s: any) => (
                           <option key={s.id} value={s.id}>{s.name}</option>
@@ -464,7 +283,7 @@ export default function RecordsPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Term</label>
-                    <select value={formData.term} onChange={(e) => setFormData({...formData, term: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                    <select value={formData.term} onChange={(e) => setFormData({ ...formData, term: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
                       <option value="FIRST">First Term</option>
                       <option value="SECOND">Second Term</option>
                       <option value="THIRD">Third Term</option>
@@ -474,32 +293,32 @@ export default function RecordsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Reveal Date</label>
-                    <input type="date" value={formData.revealDate} onChange={(e) => setFormData({...formData, revealDate: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all" />
+                    <input type="date" value={formData.revealDate} onChange={(e) => setFormData({ ...formData, revealDate: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Release Date</label>
-                    <input type="date" value={formData.releaseDate} onChange={(e) => setFormData({...formData, releaseDate: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all" />
+                    <input type="date" value={formData.releaseDate} onChange={(e) => setFormData({ ...formData, releaseDate: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all" />
                   </div>
                 </div>
-                
+
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
                   <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Include Assessments & Max Marks</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="space-y-2">
                       <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Assignment Max</label>
-                      <input type="number" value={formData.assignmentMax} onChange={(e) => setFormData({...formData, assignmentMax: Number(e.target.value)})} placeholder="Max (e.g. 10)" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all text-center mt-2" />
+                      <input type="number" value={formData.assignmentMax} onChange={(e) => setFormData({ ...formData, assignmentMax: Number(e.target.value) })} placeholder="Max (e.g. 10)" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all text-center mt-2" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Quiz Max</label>
-                      <input type="number" value={formData.quizMax} onChange={(e) => setFormData({...formData, quizMax: Number(e.target.value)})} placeholder="Max (e.g. 10)" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all text-center mt-2" />
+                      <input type="number" value={formData.quizMax} onChange={(e) => setFormData({ ...formData, quizMax: Number(e.target.value) })} placeholder="Max (e.g. 10)" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all text-center mt-2" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">CA Max</label>
-                      <input type="number" value={formData.caMax} onChange={(e) => setFormData({...formData, caMax: Number(e.target.value)})} placeholder="Max (e.g. 20)" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all text-center mt-2" />
+                      <input type="number" value={formData.caMax} onChange={(e) => setFormData({ ...formData, caMax: Number(e.target.value) })} placeholder="Max (e.g. 20)" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all text-center mt-2" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Exam Max</label>
-                      <input type="number" value={formData.examMax} onChange={(e) => setFormData({...formData, examMax: Number(e.target.value)})} placeholder="Max (e.g. 60)" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all text-center mt-2" />
+                      <input type="number" value={formData.examMax} onChange={(e) => setFormData({ ...formData, examMax: Number(e.target.value) })} placeholder="Max (e.g. 60)" className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all text-center mt-2" />
                     </div>
                   </div>
                 </div>
@@ -551,7 +370,7 @@ export default function RecordsPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Card 2 */}
         <div className="bg-white dark:bg-[#1a1b2e] rounded-xl border border-slate-100 dark:border-slate-800/50 p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex flex-col justify-between">
           <div className="flex items-center gap-3 mb-4">
@@ -646,21 +465,19 @@ export default function RecordsPage() {
       <div className="flex border-b border-slate-200 dark:border-slate-800">
         <button
           onClick={() => setActiveTab("subject")}
-          className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${
-            activeTab === "subject"
+          className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === "subject"
               ? "border-[#5B5CE6] text-[#5B5CE6]"
               : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-          }`}
+            }`}
         >
           Subject Final Result
         </button>
         <button
           onClick={() => setActiveTab("student")}
-          className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${
-            activeTab === "student"
+          className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${activeTab === "student"
               ? "border-[#5B5CE6] text-[#5B5CE6]"
               : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-          }`}
+            }`}
         >
           Students Final Result
         </button>
@@ -707,21 +524,21 @@ export default function RecordsPage() {
                   <div className="grid gap-4 py-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Class</label>
-                      <select value={filterClass} onChange={(e) => {setFilterClass(e.target.value); setSubjectPage(1);}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                      <select value={filterClass} onChange={(e) => { setFilterClass(e.target.value); setSubjectPage(1); }} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
                         <option value="">All Classes</option>
                         {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Session</label>
-                      <select value={filterSession} onChange={(e) => {setFilterSession(e.target.value); setSubjectPage(1);}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                      <select value={filterSession} onChange={(e) => { setFilterSession(e.target.value); setSubjectPage(1); }} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
                         <option value="">All Sessions</option>
                         {sessions.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                       </select>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Term</label>
-                      <select value={filterTerm} onChange={(e) => {setFilterTerm(e.target.value); setSubjectPage(1);}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                      <select value={filterTerm} onChange={(e) => { setFilterTerm(e.target.value); setSubjectPage(1); }} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
                         <option value="">All Terms</option>
                         <option value="FIRST">First Term</option>
                         <option value="SECOND">Second Term</option>
@@ -790,19 +607,17 @@ export default function RecordsPage() {
                           <td className="px-4 py-4 text-slate-900 dark:text-slate-100">{res.subject?.name}</td>
                           <td className="px-4 py-4 text-slate-500">{new Date(res.createdAt).toLocaleDateString()}</td>
                           <td className="px-4 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border shadow-xs ${
-                              res.status === "PUBLISHED" 
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60" 
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border shadow-xs ${res.status === "PUBLISHED"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60"
                                 : "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60"
-                            }`}>
-                              <span className={`h-1.5 w-1.5 rounded-full ${
-                                res.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
-                              }`} />
+                              }`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${res.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                                }`} />
                               {res.status || "DRAFT"}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <button 
+                            <button
                               onClick={() => router.push(`/dashboard/admin/records/new?id=${res.id}`)}
                               className="inline-block px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:border-[#5B5CE6] hover:text-[#5B5CE6] dark:hover:border-[#5B5CE6] rounded-lg text-xs font-bold transition-colors"
                             >
@@ -828,72 +643,70 @@ export default function RecordsPage() {
                 filteredSubjectResults.slice((subjectPage - 1) * PAGE_SIZE, subjectPage * PAGE_SIZE).map((res: any, index: number) => {
                   const globalIdx = (subjectPage - 1) * PAGE_SIZE + index + 1;
                   return (
-                  <div key={res.id} className="bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-4 sm:p-5 space-y-3.5 hover:border-[#5B5CE6]/60 hover:shadow-md transition-all shadow-sm relative group flex flex-col justify-between">
-                     {/* Top Row: Index + Session/Term on Left, Published Badge on Right */}
-                     <div className="space-y-2">
-                       <div className="flex items-center justify-between gap-2">
-                         <div className="flex items-center gap-1.5 min-w-0">
-                           <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 select-none shrink-0">
-                             #{globalIdx}
-                           </span>
-                           <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">
-                             {res.session?.name || "Session"} • {res.term || "Term"}
-                           </span>
-                         </div>
-                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0 border shadow-xs ${
-                           res.status === "PUBLISHED" 
-                             ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60" 
-                             : "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60"
-                         }`}>
-                           <span className={`h-1.5 w-1.5 rounded-full ${
-                             res.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
-                           }`} />
-                           {res.status || "DRAFT"}
-                         </span>
-                       </div>
+                    <div key={res.id} className="bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-4 sm:p-5 space-y-3.5 hover:border-[#5B5CE6]/60 hover:shadow-md transition-all shadow-sm relative group flex flex-col justify-between">
+                      {/* Top Row: Index + Session/Term on Left, Published Badge on Right */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 select-none shrink-0">
+                              #{globalIdx}
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">
+                              {res.session?.name || "Session"} • {res.term || "Term"}
+                            </span>
+                          </div>
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0 border shadow-xs ${res.status === "PUBLISHED"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60"
+                              : "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60"
+                            }`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${res.status === "PUBLISHED" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                              }`} />
+                            {res.status || "DRAFT"}
+                          </span>
+                        </div>
 
-                       {/* Title Row */}
-                       <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-[#5B5CE6] transition-colors pt-0.5" title={res.name}>
-                         {res.name}
-                       </h3>
-                     </div>
+                        {/* Title Row */}
+                        <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-[#5B5CE6] transition-colors pt-0.5" title={res.name}>
+                          {res.name}
+                        </h3>
+                      </div>
 
-                     {/* Details Badges */}
-                     <div className="grid grid-cols-2 gap-2 text-xs">
-                       <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60 p-2.5 rounded-xl">
-                         <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Class</p>
-                         <p className="font-bold text-slate-800 dark:text-slate-200 truncate" title={res.class?.name || "General"}>
-                           {res.class?.name || "General"}
-                         </p>
-                       </div>
-                       <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60 p-2.5 rounded-xl">
-                         <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Subject</p>
-                         <p className="font-bold text-slate-800 dark:text-slate-200 truncate" title={res.subject?.name || "All Subjects"}>
-                           {res.subject?.name || "All Subjects"}
-                         </p>
-                       </div>
-                     </div>
+                      {/* Details Badges */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60 p-2.5 rounded-xl">
+                          <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Class</p>
+                          <p className="font-bold text-slate-800 dark:text-slate-200 truncate" title={res.class?.name || "General"}>
+                            {res.class?.name || "General"}
+                          </p>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60 p-2.5 rounded-xl">
+                          <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Subject</p>
+                          <p className="font-bold text-slate-800 dark:text-slate-200 truncate" title={res.subject?.name || "All Subjects"}>
+                            {res.subject?.name || "All Subjects"}
+                          </p>
+                        </div>
+                      </div>
 
-                     {/* Footer Row */}
-                     <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                       <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1.5">
-                         <Clock className="w-3.5 h-3.5 text-slate-400" />
-                         {new Date(res.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                       </span>
-                       <button 
-                         onClick={() => router.push(`/dashboard/admin/records/new?id=${res.id}`)} 
-                         className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#5B5CE6]/10 text-[#5B5CE6] hover:bg-[#5B5CE6] hover:text-white dark:bg-[#5B5CE6]/20 dark:hover:bg-[#5B5CE6] transition-all"
-                       >
-                         Edit Results
-                       </button>
-                     </div>
-                  </div>
+                      {/* Footer Row */}
+                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                        <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          {new Date(res.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                        <button
+                          onClick={() => router.push(`/dashboard/admin/records/new?id=${res.id}`)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#5B5CE6]/10 text-[#5B5CE6] hover:bg-[#5B5CE6] hover:text-white dark:bg-[#5B5CE6]/20 dark:hover:bg-[#5B5CE6] transition-all"
+                        >
+                          Edit Results
+                        </button>
+                      </div>
+                    </div>
                   )
                 })
               )}
             </div>
           )}
-          
+
           {/* Pagination Controls */}
           {filteredSubjectResults && filteredSubjectResults.length > PAGE_SIZE && (
             <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between bg-slate-50/30 dark:bg-slate-900/10">
@@ -901,7 +714,7 @@ export default function RecordsPage() {
                 Showing {(subjectPage - 1) * PAGE_SIZE + 1} - {Math.min(subjectPage * PAGE_SIZE, filteredSubjectResults.length)} of {filteredSubjectResults.length}
               </span>
               <div className="flex items-center gap-1">
-                <button 
+                <button
                   onClick={() => setSubjectPage(p => Math.max(1, p - 1))}
                   disabled={subjectPage === 1}
                   className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 text-slate-500 transition-colors"
@@ -911,7 +724,7 @@ export default function RecordsPage() {
                 <div className="px-3 py-1 text-sm font-medium text-slate-700 dark:text-slate-300">
                   Page {subjectPage} of {Math.ceil(filteredSubjectResults.length / PAGE_SIZE)}
                 </div>
-                <button 
+                <button
                   onClick={() => setSubjectPage(p => Math.min(Math.ceil(filteredSubjectResults.length / PAGE_SIZE), p + 1))}
                   disabled={subjectPage === Math.ceil(filteredSubjectResults.length / PAGE_SIZE)}
                   className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 text-slate-500 transition-colors"
@@ -945,11 +758,11 @@ export default function RecordsPage() {
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search students..." 
-                  value={studentSearchQuery} 
-                  onChange={(e) => { setStudentSearchQuery(e.target.value); setStudentPage(1); }} 
+                <input
+                  type="text"
+                  placeholder="Search students..."
+                  value={studentSearchQuery}
+                  onChange={(e) => { setStudentSearchQuery(e.target.value); setStudentPage(1); }}
                   className="pl-9 pr-4 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all w-64"
                 />
               </div>
@@ -974,21 +787,21 @@ export default function RecordsPage() {
                   <div className="grid gap-4 py-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Class</label>
-                      <select value={filterClass} onChange={(e) => {setFilterClass(e.target.value); setStudentPage(1);}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                      <select value={filterClass} onChange={(e) => { setFilterClass(e.target.value); setStudentPage(1); }} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
                         <option value="">All Classes</option>
                         {classes.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                       </select>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Session</label>
-                      <select value={filterSession} onChange={(e) => {setFilterSession(e.target.value); setStudentPage(1);}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                      <select value={filterSession} onChange={(e) => { setFilterSession(e.target.value); setStudentPage(1); }} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
                         <option value="">All Sessions</option>
                         {sessions.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                       </select>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Term</label>
-                      <select value={filterTerm} onChange={(e) => {setFilterTerm(e.target.value); setStudentPage(1);}} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
+                      <select value={filterTerm} onChange={(e) => { setFilterTerm(e.target.value); setStudentPage(1); }} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#5B5CE6]/50 transition-all cursor-pointer">
                         <option value="">All Terms</option>
                         <option value="FIRST">First Term</option>
                         <option value="SECOND">Second Term</option>
@@ -1074,46 +887,46 @@ export default function RecordsPage() {
                 filteredStudentResults.slice((studentPage - 1) * PAGE_SIZE, studentPage * PAGE_SIZE).map((res: any, index: number) => {
                   const globalIdx = (studentPage - 1) * PAGE_SIZE + index + 1;
                   return (
-                  <div key={res.id} onClick={() => router.push('/dashboard/admin/records/student/' + res.id)} className="cursor-pointer bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-4 sm:p-5 space-y-3.5 hover:border-[#5B5CE6]/60 hover:shadow-md transition-all shadow-sm relative group flex flex-col justify-between">
-                     <div className="space-y-2">
-                       <div className="flex items-center justify-between gap-2">
-                         <div className="flex items-center gap-1.5 min-w-0">
-                           <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 select-none shrink-0">
-                             #{globalIdx}
-                           </span>
-                           <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">
-                             {res.studentCode || "No Student ID"}
-                           </span>
-                         </div>
-                       </div>
-                       <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-[#5B5CE6] transition-colors pt-0.5" title={`${res.name} ${res.lastName || ''}`}>
-                         {res.name} {res.lastName || ''}
-                       </h3>
-                     </div>
+                    <div key={res.id} onClick={() => router.push('/dashboard/admin/records/student/' + res.id)} className="cursor-pointer bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-4 sm:p-5 space-y-3.5 hover:border-[#5B5CE6]/60 hover:shadow-md transition-all shadow-sm relative group flex flex-col justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 select-none shrink-0">
+                              #{globalIdx}
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">
+                              {res.studentCode || "No Student ID"}
+                            </span>
+                          </div>
+                        </div>
+                        <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-1 group-hover:text-[#5B5CE6] transition-colors pt-0.5" title={`${res.name} ${res.lastName || ''}`}>
+                          {res.name} {res.lastName || ''}
+                        </h3>
+                      </div>
 
-                     <div className="grid grid-cols-2 gap-2 text-xs">
-                       <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60 p-2.5 rounded-xl text-center">
-                         <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Gender</p>
-                         <p className="font-black text-[#5B5CE6]">{res.gender || "-"}</p>
-                       </div>
-                       <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60 p-2.5 rounded-xl text-center">
-                         <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Class</p>
-                         <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{res.classes?.[0]?.class?.name || res.gradeLevel || "-"}</p>
-                       </div>
-                     </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60 p-2.5 rounded-xl text-center">
+                          <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Gender</p>
+                          <p className="font-black text-[#5B5CE6]">{res.gender || "-"}</p>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/60 p-2.5 rounded-xl text-center">
+                          <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-0.5">Class</p>
+                          <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{res.classes?.[0]?.class?.name || res.gradeLevel || "-"}</p>
+                        </div>
+                      </div>
 
-                     <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end items-center">
-                       <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#5B5CE6]/10 text-[#5B5CE6] group-hover:bg-[#5B5CE6] group-hover:text-white transition-all">
-                         View Record
-                       </span>
-                     </div>
-                  </div>
+                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end items-center">
+                        <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#5B5CE6]/10 text-[#5B5CE6] group-hover:bg-[#5B5CE6] group-hover:text-white transition-all">
+                          View Record
+                        </span>
+                      </div>
+                    </div>
                   )
                 })
               )}
             </div>
           )}
-          
+
           {/* Pagination Controls */}
           {filteredStudentResults && filteredStudentResults.length > PAGE_SIZE && (
             <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between bg-slate-50/30 dark:bg-slate-900/10">
@@ -1121,7 +934,7 @@ export default function RecordsPage() {
                 Showing {(studentPage - 1) * PAGE_SIZE + 1} - {Math.min(studentPage * PAGE_SIZE, filteredStudentResults.length)} of {filteredStudentResults.length}
               </span>
               <div className="flex items-center gap-1">
-                <button 
+                <button
                   onClick={() => setStudentPage(p => Math.max(1, p - 1))}
                   disabled={studentPage === 1}
                   className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 text-slate-500 transition-colors"
@@ -1131,7 +944,7 @@ export default function RecordsPage() {
                 <div className="px-3 py-1 text-sm font-medium text-slate-700 dark:text-slate-300">
                   Page {studentPage} of {Math.ceil(filteredStudentResults.length / PAGE_SIZE)}
                 </div>
-                <button 
+                <button
                   onClick={() => setStudentPage(p => Math.min(Math.ceil(filteredStudentResults.length / PAGE_SIZE), p + 1))}
                   disabled={studentPage === Math.ceil(filteredStudentResults.length / PAGE_SIZE)}
                   className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 text-slate-500 transition-colors"
@@ -1144,6 +957,17 @@ export default function RecordsPage() {
         </div>
       )}
 
+      {/* Modular Records Export Modal */}
+      <RecordsExportModal
+        isOpen={isExportPopupOpen}
+        onClose={() => setIsExportPopupOpen(false)}
+        activeTab={activeTab}
+        dataToExport={activeTab === "subject" ? subjectResults || [] : studentResults || []}
+        classes={classes}
+        sessions={sessions}
+        schoolProfile={schoolProfile}
+        schoolId={effectiveSchoolId}
+      />
     </div>
   );
 }

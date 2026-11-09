@@ -1111,7 +1111,7 @@ export default function RecordScoreEntryModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent showCloseButton={false} className="w-full sm:w-[96vw] max-w-7xl 2xl:max-w-[1500px] h-full sm:h-[92vh] max-h-screen sm:max-h-[95vh] p-0 flex flex-col bg-slate-50 dark:bg-slate-950 border-0 sm:border sm:border-slate-200 dark:sm:border-slate-800 shadow-2xl rounded-none sm:rounded-2xl overflow-hidden inset-0 sm:inset-auto">
+      <DialogContent showCloseButton={false} className="w-full sm:w-[96vw] max-w-7xl 2xl:max-w-[1500px] h-full sm:h-[92vh] max-h-screen sm:max-h-[95vh] p-0 flex flex-col bg-slate-50 dark:bg-slate-950 border-0 sm:border sm:border-slate-200 dark:sm:border-slate-800 shadow-2xl rounded-none sm:rounded-2xl overflow-hidden sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">
         {/* Hidden Accessibility Header */}
         <DialogHeader className="sr-only">
           <DialogTitle>Record Offline Assessment Scores</DialogTitle>

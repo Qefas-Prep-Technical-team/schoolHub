@@ -37,7 +37,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { AnimatePresence, motion } from "framer-motion";
+import { StudentExportModal } from "./components/export/StudentExportModal";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import { toast } from "react-toastify";
@@ -65,14 +65,12 @@ export default function StudentsPage() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [exportFilters, setExportFilters] = useState({ classId: "", departmentId: "", subjectId: "" });
-  const [isExporting, setIsExporting] = useState<'csv' | 'pdf' | null>(null);
 
   const { data: departmentsData = [] } = useSchoolDepartments(schoolId);
   const { data: subjectsData = [] } = useSchoolSubjects(schoolId);
   const { data: schoolProfile } = useSchoolProfile(schoolId);
   const { data: subUsage } = useSubscriptionUsage();
-  
+
   const isFreePlan = subUsage?.planName?.toUpperCase() === 'FREE';
 
   useEffect(() => {
@@ -225,150 +223,6 @@ export default function StudentsPage() {
       inactiveBadge: "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300",
     },
   ];
-
-  const generatePDFHeaderAndFooter = async (doc: any, title: string, orientation: 'portrait' | 'landscape' = 'portrait') => {
-    const schoolName = schoolProfile?.name || user?.schools?.[0]?.name || 'Qefas Prep School';
-    const address = schoolProfile?.address || 'School Address Not Provided';
-    const motto = schoolProfile?.motto || '';
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
-    
-    // Add decorative background elements
-    doc.setFillColor(241, 245, 249); // slate-100
-    doc.circle(pageWidth, 0, 40, 'F');
-    doc.setFillColor(226, 232, 240); // slate-200
-    doc.circle(pageWidth, 0, 25, 'F');
-    doc.setFillColor(248, 250, 252); // slate-50
-    doc.circle(0, pageHeight, 60, 'F');
-    
-    // Header
-    if (schoolProfile?.logo) {
-        try {
-            const img = new Image();
-            img.crossOrigin = 'Anonymous';
-            img.src = schoolProfile.logo;
-            await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
-            doc.addImage(img, 'PNG', pageWidth - 45, 10, 30, 30);
-        } catch(e) {}
-    }
-    
-    let yPos = 22;
-    doc.setFontSize(24);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(15, 23, 42); // slate-900
-    doc.text(schoolName, 14, yPos);
-    yPos += 7;
-    
-    if (motto) {
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'italic');
-        doc.setTextColor(100, 116, 139); // slate-500
-        doc.text(`"${motto}"`, 14, yPos);
-        yPos += 6;
-    }
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 116, 139); // slate-500
-    doc.text(address, 14, yPos);
-    yPos += 8;
-    
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(100, 116, 139); // slate-500
-    doc.text(title.toUpperCase(), 14, yPos);
-    yPos += 7;
-    
-    // Horizontal line
-    doc.setDrawColor(15, 23, 42);
-    doc.setLineWidth(0.8);
-    doc.line(14, yPos, pageWidth - 14, yPos);
-    
-    return yPos + 10; // startY for table
-  };
-
-  const addSignatureBlock = (doc: any, finalY: number) => {
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(0, 0, 0);
-    
-    const yPos = finalY + 30;
-    doc.text('_________________________________', 14, yPos);
-    doc.text('Authorized Signature', 14, yPos + 6);
-    
-    const dateStr = new Date().toLocaleDateString();
-    doc.text(`Date Generated: ${dateStr}`, doc.internal.pageSize.width - 14, yPos + 6, { align: 'right' });
-  };
-
-  const handleExport = async (format: 'csv' | 'pdf') => {
-    setIsExporting(format);
-    try {
-      const exportLimit = isFreePlan ? 10 : 10000;
-      const result = await adminService.getSchoolStudents(schoolId!, 1, exportLimit, searchTerm, {
-        ...activeFilters,
-        ...exportFilters
-      });
-      const rows = result?.data || [];
-      if (!rows.length) {
-        toast.info("No students found to export.");
-        setIsExporting(null);
-        return;
-      }
-      const headers = ["#", "Name", "Email", "Code", "Class", "Department", "Status"];
-      const tableRows = rows.map((s: any, i: number) => [
-        (i + 1).toString(),
-        s.name || "",
-        s.email || "",
-        s.studentCode || "UNASSIGNED",
-        `${s.classes?.[0]?.class?.name || ""} ${s.classes?.[0]?.class?.section || ""}`.trim(),
-        s.department?.name || "",
-        s.verified ? "Verified" : "Pending",
-      ]);
-
-      const schoolNameStr = (schoolProfile?.name || user?.schools?.[0]?.name || 'School').replace(/\s+/g, '_');
-      const dateStr = new Date().toISOString().split("T")[0];
-      const year = new Date().getFullYear();
-      const fileNameBase = `${schoolNameStr}_students_${dateStr}_${year}`;
-
-      if (format === 'csv') {
-        const csv = [
-          headers.join(","),
-          ...tableRows.map((row: any[]) => row.map((c: any) => `"${c}"`).join(",")),
-        ].join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${fileNameBase}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        const { jsPDF } = await import('jspdf');
-        const { default: autoTable } = await import('jspdf-autotable');
-        const doc = new jsPDF('landscape');
-        
-        const startY = await generatePDFHeaderAndFooter(doc, 'STUDENTS PROFILES', 'landscape');
-
-        autoTable(doc, { 
-          head: [headers], 
-          body: tableRows, 
-          startY: startY, 
-          theme: 'grid', 
-          styles: { lineColor: [150, 150, 150], lineWidth: 0.3 }, 
-          headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], lineColor: [150, 150, 150], lineWidth: 0.3 } 
-        });
-        
-        addSignatureBlock(doc, (doc as any).lastAutoTable.finalY);
-        doc.save(`${fileNameBase}.pdf`);
-      }
-      setIsExportModalOpen(false);
-    } catch {
-      toast.error("Failed to export students");
-    } finally {
-      setIsExporting(null);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-3.5 sm:p-6 lg:p-8 transition-colors duration-300">
@@ -583,14 +437,14 @@ export default function StudentsPage() {
             {/* Export and View Toggle */}
             <div className="flex items-center gap-2 shrink-0 w-full md:w-auto mt-1 md:mt-0">
               <div className="flex bg-gray-100 dark:bg-slate-800 rounded-lg p-1 shrink-0 h-9 items-center border border-gray-200 dark:border-white/5">
-                <button 
+                <button
                   onClick={() => setViewMode("list")}
                   className={cn("p-1.5 rounded-md transition-all h-full flex items-center justify-center", viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700")}
                   title="List View"
                 >
                   <List size={14} />
                 </button>
-                <button 
+                <button
                   onClick={() => setViewMode("grid")}
                   className={cn("p-1.5 rounded-md transition-all h-full flex items-center justify-center", viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700")}
                   title="Grid View"
@@ -621,66 +475,19 @@ export default function StudentsPage() {
 
       <AddStudentDialog open={open} onOpenChange={setOpen} />
 
-      <AnimatePresence>
-        {isExportModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-            <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-gray-100 dark:border-white/10">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Export Students</h2>
-              <p className="text-sm text-gray-500 mb-5">Filter which students you want to export.</p>
-
-              {isFreePlan && (
-                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg">
-                  <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                    <span className="font-bold">Free Plan Limit:</span> You can only export a maximum of 10 students at a time. Upgrade your plan for unlimited exports.
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Class Filter</label>
-                  <select value={exportFilters.classId} onChange={(e) => setExportFilters(p => ({ ...p, classId: e.target.value }))} className="w-full h-9 px-2 text-sm border border-gray-200 dark:border-white/10 rounded-md bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500/50">
-                    <option value="">All Classes</option>
-                    {classFilters.filter(c => c.id).map(cls => (
-                      <option key={cls.id} value={cls.id}>{cls.name}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Department Filter</label>
-                  <select value={exportFilters.departmentId} onChange={(e) => setExportFilters(p => ({ ...p, departmentId: e.target.value }))} className="w-full h-9 px-2 text-sm border border-gray-200 dark:border-white/10 rounded-md bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500/50">
-                    <option value="">All Departments</option>
-                    {departmentsData.map((dept: any) => (
-                      <option key={dept.id} value={dept.id}>{dept.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Subject Filter</label>
-                  <select value={exportFilters.subjectId} onChange={(e) => setExportFilters(p => ({ ...p, subjectId: e.target.value }))} className="w-full h-9 px-2 text-sm border border-gray-200 dark:border-white/10 rounded-md bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500/50">
-                    <option value="">All Subjects</option>
-                    {subjectsData.map((subj: any) => (
-                      <option key={subj.id} value={subj.id}>{subj.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <button onClick={() => handleExport('csv')} disabled={isExporting !== null} className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-sm font-semibold transition-colors disabled:opacity-50">
-                    {isExporting === 'csv' ? <span className="animate-spin h-4 w-4 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full" /> : <Download size={16} />} CSV
-                  </button>
-                  <button onClick={() => handleExport('pdf')} disabled={isExporting !== null} className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-sm font-semibold transition-colors disabled:opacity-50">
-                    {isExporting === 'pdf' ? <span className="animate-spin h-4 w-4 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full" /> : <Download size={16} />} PDF
-                  </button>
-                </div>
-              </div>
-              <Button variant="outline" className="w-full mt-4 rounded-xl font-semibold text-sm" onClick={() => setIsExportModalOpen(false)} disabled={isExporting !== null}>Cancel</Button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <StudentExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        schoolId={schoolId}
+        schoolProfile={schoolProfile}
+        searchTerm={searchTerm}
+        activeFilters={activeFilters}
+        classFilters={classFilters}
+        departmentsData={departmentsData}
+        subjectsData={subjectsData}
+        userName={user?.name}
+        userRole={user?.role || "ADMIN"}
+      />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { User, Mail, Phone, BadgeCheck, Download, Loader2, FileText, FileSpreads
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import Pagination from "@/components/ui/Pagination";
 import TeacherDetailsModal from "./TeacherDetailsModal";
-import { generatePDF } from '@/utils/pdfGenerator';
+import { ClassTeachersExportModal } from './ClassTeachersExportModal';
 import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { toast } from 'react-toastify';
 import {
@@ -60,84 +60,7 @@ const TeachersTab: React.FC<TeachersTabProps> = ({ teachers = [], classData, cla
   };
 
   const { data: schoolProfile } = useSchoolProfile(classData?.schoolId || '');
-  const [isExporting, setIsExporting] = useState(false);
-
-  const handleExport = async () => {
-    if (teachers.length === 0) {
-      toast.warning("No teachers to export");
-      return;
-    }
-    
-    setIsExporting(true);
-    const toastId = toast.loading("Generating PDF...", { autoClose: false });
-
-    try {
-      const tableData = teachers.map((ct, index) => [
-        index + 1,
-        ct.teacher.name,
-        ct.teacher.email || '-',
-        ct.teacher.phone || '-',
-        ct.isLead ? 'Yes' : 'No'
-      ]);
-
-      await generatePDF({
-        title: 'Class Teachers Report',
-        filename: `${schoolProfile?.name?.replace(/\\s+/g, '_') || 'School'}_${className?.replace(/\\s+/g, '_') || 'Class'}_Teachers.pdf`,
-        schoolProfile,
-        metaData: [
-          { label: 'Class Name', value: className || 'Unknown Class' },
-          { label: 'Date Exported', value: new Date().toLocaleDateString() },
-          { label: 'Total Teachers', value: teachers.length.toString() },
-          { label: 'Lead Teachers', value: teachers.filter(t => t.isLead).length.toString() }
-        ],
-        tableHeaders: [['S/N', 'Teacher Name', 'Email', 'Phone', 'Lead Teacher']],
-        tableData
-      });
-
-      toast.update(toastId, { render: "PDF Exported Successfully!", type: "success", isLoading: false, autoClose: 3000 });
-    } catch (error) {
-      console.error('Failed to export PDF:', error);
-      toast.update(toastId, { render: "Failed to export PDF", type: "error", isLoading: false, autoClose: 3000 });
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const handleExportCSV = () => {
-    if (teachers.length === 0) {
-      toast.warning("No teachers to export");
-      return;
-    }
-    
-    const headers = ['S/N', 'Teacher Name', 'Email', 'Phone', 'Lead Teacher'];
-    const rows = teachers.map((ct, index) => [
-      index + 1,
-      `"${ct.teacher.name}"`,
-      `"${ct.teacher.email || '-'}"`,
-      `"${ct.teacher.phone || '-'}"`,
-      `"${ct.isLead ? 'Yes' : 'No'}"`
-    ]);
-    
-    const schoolName = schoolProfile?.name || (globalThis as any)?.settings?.schoolName || 'School';
-    const schoolAddress = schoolProfile?.address || '';
-    const csvContent = [
-      `"${schoolName}"`,
-      `"${schoolAddress}"`,
-      `"Class: ${className || 'Class'}"`,
-      '',
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].filter(r => r !== '""').join('\\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', `${schoolProfile?.name?.replace(/\\s+/g, '_') || 'School'}_${className?.replace(/\\s+/g, '_') || 'Class'}_Teachers.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("CSV Exported Successfully!");
-  };
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   if (!teachers || teachers.length === 0) {
     return (
@@ -174,35 +97,21 @@ const TeachersTab: React.FC<TeachersTabProps> = ({ teachers = [], classData, cla
             </Tooltip>
           </TooltipProvider>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                disabled={isExporting}
-                className="flex items-center justify-center gap-2 h-10 px-4 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors disabled:opacity-50"
-              >
-                {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                <span className="hidden sm:inline">Export</span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={handleExport} className="cursor-pointer flex items-center gap-2">
-                <FileText size={16} className="text-rose-500" />
-                <span>Export as PDF</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportCSV} className="cursor-pointer flex items-center gap-2">
-                <FileSpreadsheet size={16} className="text-emerald-500" />
-                <span>Export as CSV</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <button
+            onClick={() => setIsExportModalOpen(true)}
+            className="flex items-center justify-center gap-2 h-10 px-4 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+          >
+            <Download size={16} />
+            <span className="hidden sm:inline">Export</span>
+          </button>
         </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {paginatedTeachers.map((ct) => (
-          <div 
+          <div
             key={ct.teacher.id}
             onClick={() => handleTeacherClick(ct.teacher, ct.isLead)}
             className="group relative bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
@@ -213,7 +122,7 @@ const TeachersTab: React.FC<TeachersTabProps> = ({ teachers = [], classData, cla
                 <span className="text-[10px] font-bold uppercase tracking-wider">Lead Teacher</span>
               </div>
             )}
-            
+
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform duration-300">
                 {ct.teacher.name.charAt(0)}
@@ -246,7 +155,7 @@ const TeachersTab: React.FC<TeachersTabProps> = ({ teachers = [], classData, cla
             </div>
 
             <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-700/50">
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleTeacherClick(ct.teacher, ct.isLead);
@@ -276,6 +185,15 @@ const TeachersTab: React.FC<TeachersTabProps> = ({ teachers = [], classData, cla
         onClose={() => setIsDetailsOpen(false)}
         teacher={selectedTeacher}
         isLead={isLeadTeacher}
+      />
+
+      <ClassTeachersExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        classNameStr={className || classData?.name}
+        teachers={teachers}
+        schoolProfile={schoolProfile}
+        schoolId={classData?.schoolId || schoolProfile?.id || ''}
       />
     </div>
   );

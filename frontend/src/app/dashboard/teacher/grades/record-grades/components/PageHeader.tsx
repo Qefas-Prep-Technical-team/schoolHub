@@ -1,5 +1,6 @@
 import React from 'react';
-
+import Breadcrumbs from './Breadcrumbs';
+import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
 
 interface PageHeaderProps {
   title: string;
@@ -17,9 +18,14 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, showSyncStatus = true })
         ]}
       />
       <div className="flex flex-wrap justify-between items-center gap-4">
-        <h1 className="text-gray-900 dark:text-white text-3xl sm:text-4xl font-black leading-tight tracking-[-0.033em] min-w-72">
-          {title}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-gray-900 dark:text-white text-3xl sm:text-4xl font-black leading-tight tracking-[-0.033em] min-w-72">
+            {title}
+          </h1>
+          <HeaderTooltip
+            content="Enter and verify individual student scores for assignments, tests, and examinations. All changes can be saved as drafts or submitted as finalized records."
+          />
+        </div>
         {showSyncStatus && (
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <span className="material-symbols-outlined text-base">sync</span>
@@ -31,5 +37,4 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, showSyncStatus = true })
   );
 };
 
-import Breadcrumbs from './Breadcrumbs';
 export default PageHeader;

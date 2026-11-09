@@ -27,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import { TeacherPagination } from '../../components/TeacherPagination';
 import { toast } from 'react-toastify';
 import { HeaderTooltip } from '@/app/dashboard/teacher/components/dashboard/HeaderTooltip';
+import { TeacherAssessmentExportModal } from './TeacherAssessmentExportModal';
 
 export default function ExamsQuizzesOverview() {
   const [activeTab, setActiveTab] = useState<'all' | 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment'>('all');
@@ -46,7 +47,8 @@ export default function ExamsQuizzesOverview() {
   const [examToDelete, setExamToDelete] = useState<Exam | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
   const queryClient = useQueryClient();
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,8 +81,8 @@ export default function ExamsQuizzesOverview() {
         isPaper
           ? 'Subject paper deleted successfully.'
           : isAssignment
-          ? 'Assignment deleted successfully.'
-          : 'Assessment deleted successfully.'
+            ? 'Assignment deleted successfully.'
+            : 'Assessment deleted successfully.'
       );
       setIsRefreshing(true);
       queryClient.invalidateQueries({ queryKey: ['teacher-exams'] });
@@ -204,8 +206,8 @@ export default function ExamsQuizzesOverview() {
   };
 
   const handleTabChange = (tab: 'all' | 'exams' | 'quizzes' | 'subject-papers' | 'ca' | 'assignment') => {
-      setActiveTab(tab);
-      setCurrentPage(1);
+    setActiveTab(tab);
+    setCurrentPage(1);
   };
 
   const filteredData = useMemo(() => {
@@ -237,10 +239,10 @@ export default function ExamsQuizzesOverview() {
       list = list.filter(item => {
         const effectiveType = item._tabType || (
           item.type === 'assignment' ? 'assignment' :
-          item.type === 'subject_paper' ? 'subject-papers' :
-          item.category === 'QUIZ' ? 'quizzes' :
-          item.category === 'CA' ? 'ca' :
-          'exams'
+            item.type === 'subject_paper' ? 'subject-papers' :
+              item.category === 'QUIZ' ? 'quizzes' :
+                item.category === 'CA' ? 'ca' :
+                  'exams'
         );
 
         // Terminal exams can be viewed by class teachers even across multiple subjects
@@ -283,7 +285,7 @@ export default function ExamsQuizzesOverview() {
         const itemDate = new Date(item.createdAt || item.startDate || now);
         const diffTime = Math.abs(now.getTime() - itemDate.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
+
         if (filters.date === 'Last Week') return diffDays <= 7;
         if (filters.date === 'Last Month') return diffDays <= 30;
         if (filters.date === 'Last 3 Months') return diffDays <= 90;
@@ -364,7 +366,7 @@ export default function ExamsQuizzesOverview() {
         const marks = item.totalMarks !== undefined ? String(item.totalMarks) : '-';
         const duration = item.durationMinutes ? `${item.durationMinutes}m` : '-';
         const status = (item.status || 'DRAFT').toUpperCase();
-        const date = item.createdAt || item.startDate 
+        const date = item.createdAt || item.startDate
           ? new Date(item.createdAt || item.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
           : '-';
         return [
@@ -423,7 +425,7 @@ export default function ExamsQuizzesOverview() {
     const schoolName = profileForExport.name || 'School';
     const schoolAddress = profileForExport.address || '';
     const headers = ['S/N', 'Title', 'Category', 'Subject', 'Class', 'Total Marks', 'Duration (mins)', 'Status', 'Date'];
-    
+
     const rows = filteredData.map((item: any, idx: number) => {
       const title = (item.title || item.name || 'Untitled').replace(/"/g, '""');
       const cat = item.category || (activeTab === 'quizzes' ? 'QUIZ' : activeTab === 'ca' ? 'CA' : activeTab === 'assignment' ? 'ASSIGNMENT' : 'EXAM');
@@ -432,7 +434,7 @@ export default function ExamsQuizzesOverview() {
       const marks = item.totalMarks !== undefined ? item.totalMarks : '-';
       const duration = item.durationMinutes || '-';
       const status = (item.status || 'DRAFT').toUpperCase();
-      const date = item.createdAt || item.startDate 
+      const date = item.createdAt || item.startDate
         ? new Date(item.createdAt || item.startDate).toLocaleDateString('en-GB')
         : '-';
       return [
@@ -472,53 +474,72 @@ export default function ExamsQuizzesOverview() {
   return (
     <main className="w-full space-y-6 sm:space-y-8 py-2">
       <div className="flex flex-col flex-1 w-full">
-        <PageHeader 
-          title="Assessments" 
+        <PageHeader
+          title="Assessments"
           onCreateNew={handleCreateNew}
           onAddPaper={() => setIsAddPaperModalOpen(true)}
           activeTab={activeTab}
+          onExport={() => setIsExportModalOpen(true)}
           onExportPDF={handleExportPDF}
           onExportCSV={handleExportCSV}
           isExporting={isExporting}
         />
 
+        <TeacherAssessmentExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          assessments={filteredData}
+          classes={classesData || []}
+          activeTabLabel={
+            activeTab === 'exams' ? 'Exams' :
+              activeTab === 'quizzes' ? 'Quizzes' :
+                activeTab === 'subject-papers' ? 'Subject Papers' :
+                  activeTab === 'ca' ? 'Continuous Assessment' :
+                    activeTab === 'assignment' ? 'Assignments' :
+                      'Assessments'
+          }
+          schoolProfile={schoolProfile}
+          schoolId={activeSchoolId}
+          teacherName={user?.name || 'Faculty Member'}
+        />
+
         {/* Top Stat Cards — 2 Columns on Mobile */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6">
-          <StatCard 
-            label="Total Assessments" 
-            value={totalAssessments} 
-            icon={ClipboardList} 
-            color="text-emerald-500" 
-            bgColor="bg-emerald-500/10" 
-            tooltip="Total count of exams, quizzes, continuous assessments, and assignments configured in your directory. Use this to monitor overall evaluation volume." 
+          <StatCard
+            label="Total Assessments"
+            value={totalAssessments}
+            icon={ClipboardList}
+            color="text-emerald-500"
+            bgColor="bg-emerald-500/10"
+            tooltip="Total count of exams, quizzes, continuous assessments, and assignments configured in your directory. Use this to monitor overall evaluation volume."
           />
-          <StatCard 
-            label="Active / Published" 
-            value={publishedCount} 
-            icon={Trophy} 
-            color="text-blue-500" 
-            bgColor="bg-blue-500/10" 
-            tooltip="Assessments currently published or approved for student submission and grading. Use this to verify which evaluations are actively taking responses." 
+          <StatCard
+            label="Active / Published"
+            value={publishedCount}
+            icon={Trophy}
+            color="text-blue-500"
+            bgColor="bg-blue-500/10"
+            tooltip="Assessments currently published or approved for student submission and grading. Use this to verify which evaluations are actively taking responses."
           />
-          <StatCard 
-            label="Draft Assessments" 
-            value={draftCount} 
-            icon={FileText} 
-            color="text-amber-500" 
-            bgColor="bg-amber-500/10" 
-            tooltip="Assessments still in preparation or pending question entry. Use this to quickly identify pending evaluation drafts before publishing deadlines." 
+          <StatCard
+            label="Draft Assessments"
+            value={draftCount}
+            icon={FileText}
+            color="text-amber-500"
+            bgColor="bg-amber-500/10"
+            tooltip="Assessments still in preparation or pending question entry. Use this to quickly identify pending evaluation drafts before publishing deadlines."
           />
-          <StatCard 
-            label="My Modules" 
-            value={myItemsCount} 
-            icon={Sparkles} 
-            color="text-purple-500" 
-            bgColor="bg-purple-500/10" 
-            tooltip="Evaluations created by you or where you are directly assigned as the evaluating instructor. Use this to track your personal grading responsibility." 
+          <StatCard
+            label="My Modules"
+            value={myItemsCount}
+            icon={Sparkles}
+            color="text-purple-500"
+            bgColor="bg-purple-500/10"
+            tooltip="Evaluations created by you or where you are directly assigned as the evaluating instructor. Use this to track your personal grading responsibility."
           />
         </div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white dark:bg-emerald-950/30 backdrop-blur-md rounded-xl sm:rounded-2xl border border-emerald-100 dark:border-emerald-800/40 shadow-xl shadow-emerald-900/5 p-4 sm:p-6"
@@ -528,43 +549,43 @@ export default function ExamsQuizzesOverview() {
             {/* Scrollable Category Tabs */}
             <div className="relative w-full md:w-auto overflow-hidden">
               <div className="flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 bg-emerald-50/80 dark:bg-emerald-950/40 rounded-xl sm:rounded-2xl shadow-inner border border-emerald-100/60 dark:border-emerald-800/30 overflow-x-auto no-scrollbar scroll-smooth overscroll-x-contain">
-                <TabButton 
-                  active={activeTab === 'all'} 
+                <TabButton
+                  active={activeTab === 'all'}
                   onClick={() => handleTabChange('all')}
                   icon={LayoutGrid}
                   label="All Assessments"
                   count={activeTab === 'all' ? filteredData.length : undefined}
                 />
-                <TabButton 
-                  active={activeTab === 'exams'} 
+                <TabButton
+                  active={activeTab === 'exams'}
                   onClick={() => handleTabChange('exams')}
                   icon={Trophy}
                   label="Exams"
                   count={activeTab === 'exams' ? filteredData.length : undefined}
                 />
-                <TabButton 
-                  active={activeTab === 'quizzes'} 
+                <TabButton
+                  active={activeTab === 'quizzes'}
                   onClick={() => handleTabChange('quizzes')}
                   icon={ClipboardList}
                   label="Quizzes"
                   count={activeTab === 'quizzes' ? filteredData.length : undefined}
                 />
-                <TabButton 
-                  active={activeTab === 'subject-papers'} 
+                <TabButton
+                  active={activeTab === 'subject-papers'}
                   onClick={() => handleTabChange('subject-papers')}
                   icon={Sparkles}
                   label="Subject Papers"
                   count={activeTab === 'subject-papers' ? filteredData.length : undefined}
                 />
-                <TabButton 
-                  active={activeTab === 'ca'} 
+                <TabButton
+                  active={activeTab === 'ca'}
                   onClick={() => handleTabChange('ca')}
                   icon={FileText}
                   label="CA"
                   count={activeTab === 'ca' ? filteredData.length : undefined}
                 />
-                <TabButton 
-                  active={activeTab === 'assignment'} 
+                <TabButton
+                  active={activeTab === 'assignment'}
                   onClick={() => handleTabChange('assignment')}
                   icon={BookOpen}
                   label="Assignments"
@@ -583,22 +604,20 @@ export default function ExamsQuizzesOverview() {
                 <div className="flex items-center gap-1 bg-emerald-50/80 dark:bg-emerald-950/40 p-1 rounded-xl border border-emerald-100/60 dark:border-emerald-800/30 backdrop-blur-sm shadow-inner">
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-lg cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                      viewMode === 'list' 
-                        ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md' 
+                    className={`p-2 rounded-lg cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${viewMode === 'list'
+                        ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md'
                         : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                    }`}
+                      }`}
                     title="List View"
                   >
                     <List size={16} strokeWidth={2.5} />
                   </button>
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-lg cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                      viewMode === 'grid' 
-                        ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md' 
+                    className={`p-2 rounded-lg cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${viewMode === 'grid'
+                        ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md'
                         : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                    }`}
+                      }`}
                     title="Grid View"
                   >
                     <LayoutGrid size={16} strokeWidth={2.5} />
@@ -651,8 +670,8 @@ export default function ExamsQuizzesOverview() {
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.4 }}
                 >
-                  <ExamsTable 
-                    exams={filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)} 
+                  <ExamsTable
+                    exams={filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)}
                     activeTab={activeTab}
                     viewMode={viewMode}
                     currentPage={currentPage}
@@ -661,14 +680,14 @@ export default function ExamsQuizzesOverview() {
                     onDelete={(exam) => setExamToDelete(exam)}
                   />
                   {filteredData.length > 0 && (
-                      <TeacherPagination
-                          currentPage={currentPage}
-                          totalPages={Math.ceil(filteredData.length / itemsPerPage)}
-                          totalItems={filteredData.length}
-                          itemsPerPage={itemsPerPage}
-                          onPageChange={setCurrentPage}
-                          itemName="assessments"
-                      />
+                    <TeacherPagination
+                      currentPage={currentPage}
+                      totalPages={Math.ceil(filteredData.length / itemsPerPage)}
+                      totalItems={filteredData.length}
+                      itemsPerPage={itemsPerPage}
+                      onPageChange={setCurrentPage}
+                      itemName="assessments"
+                    />
                   )}
                 </motion.div>
               )}
@@ -690,11 +709,11 @@ export default function ExamsQuizzesOverview() {
             </p>
           </DialogHeader>
           <div className="pt-2">
-            <CreatePaperForm 
+            <CreatePaperForm
               onSuccess={(paperId) => {
                 router.push(`/dashboard/teacher/exams&quizzes/add-question?paperId=${paperId}`);
                 setIsAddPaperModalOpen(false);
-              }} 
+              }}
             />
           </div>
         </DialogContent>
@@ -708,13 +727,13 @@ export default function ExamsQuizzesOverview() {
               <Sparkles className="w-5 h-5 text-emerald-500" />
               Create {
                 createCategory === 'EXAM' ? 'Single Paper Exam' :
-                createCategory === 'CA' ? 'Continuous Assessment' :
-                createCategory === 'QUIZ' ? 'Test (Quizzes)' : createCategory
+                  createCategory === 'CA' ? 'Continuous Assessment' :
+                    createCategory === 'QUIZ' ? 'Test (Quizzes)' : createCategory
               }
             </DialogTitle>
           </DialogHeader>
-          <CreateExamForm 
-            category={createCategory} 
+          <CreateExamForm
+            category={createCategory}
             onSuccess={(id, paperId) => {
               setIsExamModalOpen(false);
               if (paperId) {
@@ -722,7 +741,7 @@ export default function ExamsQuizzesOverview() {
               } else {
                 router.push(`/dashboard/teacher/exams&quizzes/${id}/papers`);
               }
-            }} 
+            }}
           />
         </DialogContent>
       </Dialog>
@@ -736,11 +755,11 @@ export default function ExamsQuizzesOverview() {
               Create Assignment
             </DialogTitle>
           </DialogHeader>
-          <CreateAssignmentForm 
+          <CreateAssignmentForm
             onSuccess={(id: string) => {
               setIsAssignmentModalOpen(false);
               router.push(`/dashboard/teacher/assignments/${id}?edit=true`);
-            }} 
+            }}
           />
         </DialogContent>
       </Dialog>
@@ -834,43 +853,41 @@ export default function ExamsQuizzesOverview() {
   );
 }
 
-function TabButton({ 
-  active, 
-  onClick, 
-  icon: Icon, 
+function TabButton({
+  active,
+  onClick,
+  icon: Icon,
   label,
   count
-}: { 
-  active: boolean, 
-  onClick: () => void, 
-  icon: React.ElementType, 
+}: {
+  active: boolean,
+  onClick: () => void,
+  icon: React.ElementType,
   label: string,
-  count?: number 
+  count?: number
 }) {
   return (
     <motion.button
       whileTap={{ scale: 0.96 }}
       onClick={onClick}
-      className={`relative flex items-center cursor-pointer gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-300 overflow-hidden focus:outline-none shrink-0 whitespace-nowrap select-none ${
-        active 
-          ? 'text-white shadow-md shadow-emerald-600/20' 
+      className={`relative flex items-center cursor-pointer gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-300 overflow-hidden focus:outline-none shrink-0 whitespace-nowrap select-none ${active
+          ? 'text-white shadow-md shadow-emerald-600/20'
           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30'
-      }`}
+        }`}
     >
       <Icon size={14} className="relative z-10 shrink-0" strokeWidth={2.5} />
       <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider relative z-10">{label}</span>
       {typeof count === 'number' && (
-        <span className={`relative z-10 px-1.5 py-0.5 text-[9px] font-black rounded-md ${
-          active 
-            ? 'bg-white/20 text-white' 
+        <span className={`relative z-10 px-1.5 py-0.5 text-[9px] font-black rounded-md ${active
+            ? 'bg-white/20 text-white'
             : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
-        }`}>
+          }`}>
           {count}
         </span>
       )}
-      
+
       {active && (
-        <motion.div 
+        <motion.div
           layoutId="active-tab-bg"
           className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 shadow-md shadow-emerald-500/20"
           transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
@@ -880,23 +897,23 @@ function TabButton({
   );
 }
 
-function StatCard({ 
-  label, 
-  value, 
-  icon: Icon, 
-  color, 
-  bgColor, 
-  tooltip 
-}: { 
-  label: string; 
-  value: string | number; 
-  icon: React.ElementType; 
-  color: string; 
-  bgColor: string; 
-  tooltip: string; 
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  color,
+  bgColor,
+  tooltip
+}: {
+  label: string;
+  value: string | number;
+  icon: React.ElementType;
+  color: string;
+  bgColor: string;
+  tooltip: string;
 }) {
   return (
-    <motion.div 
+    <motion.div
       whileHover={{ y: -2, scale: 1.01 }}
       className="p-3 sm:p-5 md:p-6 bg-white dark:bg-emerald-950/60 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-emerald-800/50 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between"
     >

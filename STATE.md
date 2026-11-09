@@ -1,3 +1,143 @@
+### Monday, November 9, 2026
+- [x] Fixed Modal Centering on Offline Grades (/dashboard/admin/offline-grades & /dashboard/teacher/offline-grades):
+  - Resolved issue where modal pop-ups appeared docked in the corner/edge of the screen instead of being centered.
+  - Replaced overriding positioning classes (such as inset-0 sm:inset-auto) and added explicit viewport centering classes (sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2) across all offline grades modal dialogs: RecordScoreEntryModal, OfflineGradeSheetSyncModal, OfflineGradesCSVModal, OfflineGradesOCRModal, OfflineRecordsList delete dialog, and OfflineGradesExportModal.
+  - Verified clean TypeScript compilation with 0 errors via tsc --noEmit.
+
+- [x] Standardized Academic Export & Grading Skills across Teacher Offline Grades (/dashboard/teacher/offline-grades):
+  - Created offline marksheet spreadsheet exporter in frontend/src/app/dashboard/admin/offline-grades/utils/offlineGradeSpreadsheetExporter.ts supporting Excel and CSV formats with Date Recorded, Assessment Title, Class, and Letter Grade.
+  - Built modular OfflineGradesExportModal in frontend/src/app/dashboard/admin/offline-grades/components/OfflineGradesExportModal.tsx integrating ExportQuotaBanner, date duration filtering, record limit slicing, multi-format export, digital leadership signature resolution, and automated leadership audit notifications.
+  - Enforced school_grading_system_sync across offline grades with strict fallback to DEFAULT_GRADING_SYSTEM.
+  - Verified Nigerian academic naming compliance and clean TypeScript compilation with 0 errors.
+
+- [x] Included Grade Acquisition/Recorded Date in Teacher Grade Exports (/dashboard/teacher/grades):
+  - Updated PDF generation in TeacherGradeExportModal.tsx with Date Recorded column.
+  - Updated Excel and CSV exporters in teacherGradeSpreadsheetExporter.ts with Date Recorded column.
+  - Verified clean TypeScript compilation with 0 errors.
+
+- [x] Fixed Teacher Grades Export Volume and Endorsements Synchronization (/dashboard/teacher/grades):
+  - Resolved race condition where TeacherGradeExportModal defaulted to mappedGrades (10 items from page 1) before the 1000-record export query completed, causing exports to always output only 10 items even when selecting 100 or ALL.
+  - Added isLoading and totalAvailable props to TeacherGradeExportModal, showing live dataset fetching progress indicator and disabling export trigger until complete.
+  - Integrated teacher digital signature resolution via signatureService.getActiveSignature(teacherId) to populate signatures.left (Class Teacher) and synchronized institutional signatures (signatures.right) with school principal/head endorsements.
+  - Ensured date duration options (Past 7 Days, 30 Days, 90 Days, This Academic Session, All Time) accurately filter records prior to limit slicing.
+  - Dispatches automated export leadership notifications to school admin and verified TypeScript passes with 0 errors.
+
+- [x] Resolved Dynamic Record Volume and Pagination Sizing on Teacher Grades (/dashboard/teacher/grades):
+  - Fixed hardcoded limit of 10 items in frontend/src/app/dashboard/teacher/grades/components/GradesOverview.tsx by implementing dynamic pageSize state (10, 25, 50, 100 rows per page) and passing limit: pageSize to gradeService.getGradeHub.
+  - Added full dataset query (exportResponse with limit: 1000) enabled on export modal launch so when teachers select 100 records (or ALL records) in TeacherGradeExportModal, all 100 records are exported rather than being capped at the paginated page size.
+  - Updated TablePagination.tsx and GradesTable.tsx with rows-per-page selector dropdown and dynamic pagination offset indexing.
+  - Verified frontend TypeScript compilation with 0 errors via npx tsc --noEmit.
+
+- [x] Standardized Academic Export & Grading Skills across Teacher Grades (/dashboard/teacher/grades & subroutes):
+  - Created grade spreadsheet exporter in frontend/src/app/dashboard/teacher/grades/utils/teacherGradeSpreadsheetExporter.ts supporting Excel (.xlsx) and CSV (.csv) with continuous assessment metadata.
+  - Built modular TeacherGradeExportModal in frontend/src/app/dashboard/teacher/grades/components/TeacherGradeExportModal.tsx integrating ExportQuotaBanner (10/month cap on free tier), status filtering (Graded, Published, Draft), multi-format export (PDF, Excel, CSV), digital leadership signature resolution via signatureResolver, and automated leadership audit notifications via dispatchExportLeadershipNotification.
+  - Refactored frontend/src/app/dashboard/teacher/grades/components/GradesOverview.tsx, wiring up TeacherGradeExportModal.
+  - Verified and confirmed that grade calculation algorithms across teacher grades (including gradeCalculator.ts, GradeStatistics.tsx, GradeStatsCards.tsx, and Record-Grades subroutes) strictly synchronize score evaluations with school_grading_system_sync via calculateGrade, getGradeEvaluation, and schoolProfile?.gradingSystem.
+  - Verified frontend TypeScript compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export & Grading Skills across Teacher Classes (/dashboard/teacher/my-classes & /dashboard/teacher/my-classes/[classId]):
+  - Created class spreadsheet exporter in frontend/src/app/dashboard/teacher/my-classes/utils/teacherClassSpreadsheetExporter.ts supporting Excel (.xlsx) and CSV (.csv) with institutional headers and metadata.
+  - Built modular TeacherClassExportModal in frontend/src/app/dashboard/teacher/my-classes/components/TeacherClassExportModal.tsx integrating ExportQuotaBanner (10/month cap on free tier), grade level filtering, multi-format export (PDF, Excel, CSV), digital leadership signature resolution via signatureResolver, and automated leadership audit notifications via dispatchExportLeadershipNotification.
+  - Refactored frontend/src/app/dashboard/teacher/my-classes/components/PageHeader.tsx and MyClassesPage.tsx, wiring up TeacherClassExportModal.
+  - Verified and confirmed that the class details subroutes (/dashboard/teacher/my-classes/[classId], including grades, student register, and offline marksheets) strictly synchronize score evaluations with school_grading_system_sync via calculateLetterGrade, getGradeEvaluation, and schoolProfile?.gradingSystem.
+  - Verified frontend TypeScript compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export & Grading Skills across Teacher Students (/dashboard/teacher/students & /dashboard/teacher/students/[studentId]):
+  - Created teacher student spreadsheet exporter in frontend/src/app/dashboard/teacher/students/utils/teacherStudentSpreadsheetExporter.ts supporting Excel (.xlsx) and CSV (.csv) with institutional headers and RFC-compliant metadata.
+  - Built modular TeacherStudentExportModal in frontend/src/app/dashboard/teacher/students/components/TeacherStudentExportModal.tsx integrating ExportQuotaBanner (10/month cap on free tier), class cohort filtering, multi-format export (PDF, Excel, CSV), digital leadership signature resolution via signatureResolver, and automated leadership audit notifications via dispatchExportLeadershipNotification.
+  - Refactored frontend/src/app/dashboard/teacher/students/components/StudentPage.tsx, replacing basic CSV export with TeacherStudentExportModal.
+  - Enforced school_grading_system_sync on the student subroute: updated TranscriptPDF.tsx to dynamically evaluate letter grades and evaluations via getGradeEvaluation(percentage, school?.gradingSystem) replacing hardcoded boundaries.
+  - Verified frontend TypeScript compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Transaction Audit & Export Architecture across Admin Transactions (/dashboard/admin/transactions):
+  - Created billing spreadsheet exporter in frontend/src/app/dashboard/admin/transactions/utils/transactionSpreadsheetExporter.ts supporting Excel (.xlsx) and CSV (.csv) with institutional metadata.
+  - Built modular TransactionExportModal in frontend/src/app/dashboard/admin/transactions/components/TransactionExportModal.tsx integrating ExportQuotaBanner (10/month cap on free tier), status filtering (SUCCESS, PENDING, FAILED), multi-format export (PDF, Excel, CSV), digital leadership signature resolution via signatureResolver, and automated leadership audit notifications via dispatchExportLeadershipNotification.
+  - Refactored frontend/src/app/dashboard/admin/transactions/page.tsx, replacing basic CSV download trigger with TransactionExportModal.
+  - Verified and confirmed that canonical date sectioning (date_sectioning_display) is strictly maintained across TransactionsSectionedTable.
+  - Verified frontend TypeScript compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export & Collections Architecture across Admin Payments (/dashboard/admin/payments):
+  - Wired reusable FinanceExportModal into frontend/src/app/dashboard/admin/payments/page.tsx and PaymentsHeaderAndStats.tsx.
+  - Enabled multi-format exports (Certified PDF ledger, Excel .xlsx, and CSV .csv) with quota tracking (10/month cap on free tier; unlimited on Pro).
+  - Enforced digital leadership signatures gating (connected_school_signature_fetcher) and automated leadership audit notifications (institutional_export_and_notification).
+  - Verified and confirmed date sectioning (date_sectioning_display) via PaymentsTableSection and groupByDate.
+  - Verified frontend TypeScript compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Financial Ledger & Export Architecture across Admin Finance (/dashboard/admin/finance & subroutes):
+  - Created finance spreadsheet exporter in frontend/src/app/dashboard/admin/finance/utils/financeSpreadsheetExporter.ts supporting Excel (.xlsx) with auto-formatted column widths and CSV (.csv) with institutional metadata and RFC-compliant quoting.
+  - Built modular FinanceExportModal in frontend/src/app/dashboard/admin/finance/components/FinanceExportModal.tsx integrating ExportQuotaBanner (10/month cap on free tier), filter scoping (gateway status, fee category), multi-format export (PDF, Excel, CSV), digital leadership signature resolution via signatureResolver, and automated leadership audit notifications via dispatchExportLeadershipNotification.
+  - Refactored frontend/src/app/dashboard/admin/finance/page.tsx, FinanceHeaderAndStats.tsx, and FinanceTransactionsTab.tsx, wiring up FinanceExportModal.
+  - Verified and confirmed that the subroutes (/dashboard/admin/finance/transactions, /dashboard/admin/finance/global-transactions, and /dashboard/admin/finance/bank-setup) follow consistent date sectioning, role gating, and institutional styling.
+  - Verified frontend TypeScript compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export Architecture & Skills across Admin Departments (/dashboard/admin/departments):
+  - Created department spreadsheet exporter in frontend/src/app/dashboard/admin/departments/utils/departmentSpreadsheetExporter.ts supporting Excel (.xlsx) with auto-formatted column widths and CSV (.csv) with institutional metadata.
+  - Built modular DepartmentExportModal in frontend/src/app/dashboard/admin/departments/components/DepartmentExportModal.tsx integrating ExportQuotaBanner (10/month cap on free tier), scope filtering (School-wide, Personal, Active, Archived), multi-format export (PDF, Excel, CSV), digital leadership signature resolution via signatureResolver, and automated leadership audit notifications via dispatchExportLeadershipNotification.
+  - Refactored frontend/src/app/dashboard/admin/departments/page.tsx, stripping out monolithic inline export logic and wiring up DepartmentExportModal.
+  - Verified compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export Architecture & Skills across Admin Subjects (/dashboard/admin/subjects & /dashboard/admin/subjects/[id]):
+  - Created subject spreadsheet exporter in frontend/src/app/dashboard/admin/subjects/utils/subjectSpreadsheetExporter.ts supporting Excel (.xlsx) with automated column widths and CSV (.csv) with institutional headers.
+  - Built modular SubjectExportModal in frontend/src/app/dashboard/admin/subjects/components/SubjectExportModal.tsx integrating ExportQuotaBanner (10/month cap on free tier), department filtering, multi-format export (PDF, Excel, CSV), digital leadership signature resolution via signatureResolver, and automated leadership audit notifications via dispatchExportLeadershipNotification.
+  - Refactored frontend/src/app/dashboard/admin/subjects/page.tsx, stripping out monolithic inline export logic and wiring up SubjectExportModal.
+  - Verified and confirmed that the subjects subroute (/dashboard/admin/subjects/[id]) integrates curriculum planning and assessment references linking directly to standardized exam and grade workflows.
+  - Verified frontend TypeScript compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export Architecture & Skills across Admin Assignments (/dashboard/admin/assignments & /dashboard/admin/assignments/[id]):
+  - Created assignment spreadsheet exporter in frontend/src/app/dashboard/admin/assignments/utils/assignmentSpreadsheetExporter.ts for Excel (.xlsx) and CSV (.csv).
+  - Built modular AssignmentExportModal in frontend/src/app/dashboard/admin/assignments/components/AssignmentExportModal.tsx supporting status filtering, quota enforcement (10/month cap on free tier), Excel/CSV gating for Pro, digital leadership signature resolution via signatureResolver, and automated leadership audit notifications.
+  - Refactored frontend/src/app/dashboard/admin/assignments/page.tsx, stripping out monolithic inline export logic and wiring up AssignmentExportModal.
+  - Refactored frontend/src/app/dashboard/admin/assignments/[id]/components/SubmissionList.tsx, replacing legacy dropdown with ExportResultScopeModal and executeExportWorkflow with quota tracking and verified grade evaluation mapping.
+  - Verified and confirmed that SubmissionReviewModal and SubmissionList dynamically evaluate and pill assignment scores via getGradeEvaluation and computeGradePill in strict alignment with school_grading_system_sync.
+  - Verified compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export Architecture & Skills across Admin Exams & Subject Papers (/dashboard/admin/exams & /dashboard/admin/exams/papers/[id]):
+  - Replaced legacy react-pdf PDFDownloadLink in frontend/src/app/dashboard/admin/exams/papers/[id]/page.tsx with the standardized ExportResultScopeModal and executeExportWorkflow architecture.
+  - Enabled multi-format exports (Master PDF, Excel .xlsx, CSV .csv) and packaging (combined sheet vs candidate selections) with monthly quota tracking (10/month cap on free tier).
+  - Enforced digital leadership signatures gating (connected_school_signature_fetcher) and automated leadership audit notifications (institutional_export_and_notification).
+  - Verified and confirmed that SubjectPaperReport dynamically derives grades via getGradeEvaluation(percentage, school?.gradingSystem) in compliance with school_grading_system_sync.
+  - Verified compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export Architecture & Skills across Admin Transcripts (/dashboard/admin/transcript):
+  - Verified and confirmed dynamic school grading synchronization (`school_grading_system_sync`) across TranscriptPreview.tsx: letter grades, grade points (5.0 scale), evaluation remarks, and badge colors strictly inherit the connected school's configured scale with institutional fallback.
+  - Enforced tier-based quota management (`reusable_academic_export_and_quota`): integrated ExportQuotaBanner (10/month cap for free tier) and blocked downloads when limit is reached.
+  - Enforced digital leadership signatures gating (`connected_school_signature_fetcher`): official registrar and principal signatures render only for paid/institutional tiers; rendered with formal unendorsed dashes for free tiers.
+  - Automated audit notification dispatch (`institutional_export_and_notification`): calls `dispatchExportLeadershipNotification` upon transcript PDF generation.
+  - Verified compilation with 0 errors via npx tsc --noEmit.
+- [x] Enforced `school_grading_system_sync` across Admin Grades and Subroutes (/dashboard/admin/grades, /dashboard/admin/grades/[gradeId], & components):
+  - Audited all grade calculation algorithms across the entire grades subsystem to eliminate hardcoded boundaries (e.g. `>= 75 ? 'A' : ...`).
+  - Updated frontend/src/app/dashboard/admin/grades/[gradeId]/page.tsx to calculate letter grades, evaluation remarks, and badge tokens strictly using `getGradeEvaluation(percent, schoolProfile?.gradingSystem)`.
+  - Updated frontend/src/app/dashboard/admin/grades/components/GradeDetailSheet.tsx to evaluate letter grades and badge colors dynamically via `getGradeEvaluation(percent, gradingSystem)`.
+  - Updated frontend/src/app/dashboard/admin/grades/components/IndividualStudentReport.tsx to compute overall and individual subject grade evaluations strictly via `getGradeEvaluation(percent, school?.gradingSystem)`, adhering to the connected school's custom matrix or institutional 9-grade fallback.
+  - Verified compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export Architecture & Skills across Admin Grades and Subroutes (/dashboard/admin/grades, /dashboard/admin/grades/[gradeId], /dashboard/admin/grades/batch-grade-entry, & /dashboard/admin/grades/batch-upload):
+  - Verified modular ExportResultScopeModal and exportWorkflowHandler architecture across main Grades Hub, assessment cohort views, and student rosters with quota tracking and digital signature endorsements.
+  - Refactored frontend/src/app/dashboard/admin/grades/[gradeId]/page.tsx to standardize single grade record export via RoleResultExportModal (with ADMIN role support, tier-based signature checking, and automated quota/audit logs).
+  - Wired ExportResultScopeModal and executeExportWorkflow into frontend/src/app/dashboard/admin/grades/batch-grade-entry/page.tsx, enabling multi-format (PDF, Excel, CSV) cohort export for batch marksheets.
+  - Implemented dynamic XLSX grade upload template generation in frontend/src/app/dashboard/admin/grades/batch-upload/page.tsx.
+  - Verified compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export Architecture & Skills across Admin Records and Subroutes (/dashboard/admin/records & /dashboard/admin/records/new):
+  - Created records spreadsheet exporter in frontend/src/app/dashboard/admin/records/utils/recordsSpreadsheetExporter.ts for Excel (.xlsx) and CSV (.csv).
+  - Built modular RecordsExportModal in frontend/src/app/dashboard/admin/records/components/RecordsExportModal.tsx with quota enforcement, scope filtering (Class, Session, Term), multi-format export, digital leadership signature resolution, and audit notifications.
+  - Refactored frontend/src/app/dashboard/admin/records/page.tsx, stripping out ~130 lines of monolithic inline CSV/PDF generation and wiring up RecordsExportModal.
+  - Built modular ResultEntryExportModal in frontend/src/app/dashboard/admin/records/new/components/ResultEntryExportModal.tsx with quota checks, score breakdown (Assignment, Quiz, CA, Exam, Total, Grade), competition ranking, digital leadership stamps, and audit notifications.
+  - Refactored frontend/src/app/dashboard/admin/records/new/page.tsx, shedding ~320 lines of redundant inline export handling and wiring up ResultEntryExportModal.
+  - Verified frontend typecheck with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export Architecture & Skills across Admin Inquiries (/dashboard/admin/inquiries):
+  - Created inquiry spreadsheet exporter in frontend/src/app/dashboard/admin/inquiries/utils/inquirySpreadsheetExporter.ts for Excel (.xlsx) and CSV (.csv).
+  - Built modular InquiryExportModal in frontend/src/app/dashboard/admin/inquiries/components/InquiryExportModal.tsx with quota checks, status filtering, PDF/Excel/CSV support, digital leadership signature resolution, and audit notifications.
+  - Refactored frontend/src/app/dashboard/admin/inquiries/page.tsx, removing 140+ lines of monolithic inline PDF/CSV generators and hooking up InquiryExportModal.
+  - Verified compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export Architecture & Skills across Admin Classes and Subroutes (/dashboard/admin/classes & /dashboard/admin/classes/[id]):
+  - Created class spreadsheet exporter utility in frontend/src/app/dashboard/admin/classes/utils/classSpreadsheetExporter.ts for Excel (.xlsx) and CSV (.csv).
+  - Built modular ClassExportModal in frontend/src/app/dashboard/admin/classes/components/export/ClassExportModal.tsx supporting Master Classes Directory and detailed individual class reports with PDF/Excel/CSV, quota management, digital leadership endorsements, and audit notifications.
+  - Refactored frontend/src/app/dashboard/admin/classes/page.tsx, removing 200+ lines of inline export code and hooking up ClassExportModal.
+  - Upgraded Class Students subroute (frontend/src/app/dashboard/admin/classes/[id]/components/students/StudentsTab.tsx) with ClassRosterExportModal.
+  - Upgraded Class Teachers subroute (frontend/src/app/dashboard/admin/classes/[id]/components/TeachersTab.tsx) with ClassTeachersExportModal.
+  - Verified compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export Architecture & Skills across Admin Students and Subroutes (/dashboard/admin/students & /dashboard/admin/students/[studentId]):
+  - Created student spreadsheet exporter utility in frontend/src/app/dashboard/admin/students/utils/studentSpreadsheetExporter.ts for Excel (.xlsx) and CSV (.csv).
+  - Built modular StudentExportModal in frontend/src/app/dashboard/admin/students/components/export/StudentExportModal.tsx with quota checks, PDF/Excel/CSV support, digital leadership signature resolution, and audit notifications.
+  - Refactored frontend/src/app/dashboard/admin/students/page.tsx, removing monolithic inline PDF/CSV generators and connecting StudentExportModal.
+  - Upgraded student official transcript modal in frontend/src/app/dashboard/admin/students/[studentId]/components/TranscriptModal.tsx with quota enforcement, Pro tier badges, and leadership audit dispatches.
+  - Verified compilation with 0 errors via npx tsc --noEmit.
+- [x] Standardized Academic Export Architecture & Skills across Admin Teachers and Subroutes (/dashboard/admin/teachers & /dashboard/admin/teachers/[teacherId]/performance):
+  - Created reusable spreadsheet exporter utility in frontend/src/app/dashboard/admin/teachers/utils/teacherSpreadsheetExporter.ts with Excel (.xlsx) and CSV (.csv) formatters.
+  - Built modular TeacherExportModal in frontend/src/app/dashboard/admin/teachers/components/export/TeacherExportModal.tsx supporting multi-dataset exports with PDF/Excel/CSV, quota checks (10/mo on free), digital endorsements, and leadership notifications.
+  - Refactored frontend/src/app/dashboard/admin/teachers/page.tsx, replacing 180+ lines of inline export code with TeacherExportModal.
+  - Upgraded teacher performance attendance export in frontend/src/app/dashboard/admin/teachers/[teacherId]/performance/PerformancePage.tsx with IndividualAttendanceExportModal.
+  - Verified compilation with 0 errors via npx tsc --noEmit.
+
 ### Friday, November 6, 2026
 - [x] Redesigned Class Analytics tab (AnalyticsTab.tsx) for full-width responsive fit and mobile optimization:
   - Decomposed 557-line monolith into dedicated subcomponents under components/ (SectionCard, TrendChart, OverallPerformanceChart, ChartTooltips, AnalyticsSkeleton).
@@ -7366,3 +7506,83 @@ U p d a t e d   P a r e n t   D a s h b o a r d   w i t h   d y n a m i c   a s 
 - [x] **Live Assessment Status Tagging**
 - [x] **Exam Taking Authorization for Unattached & School-wide Assessments**
 - [x] **Verification**: Frontend and Backend tsc passed with 0 errors.
+
+### Monday, November 9, 2026 - Admin Dashboard Hero Banner Redesign
+- [x] **Hero Banner Component Extraction & Redesign**: Created AdminHeroBanner.tsx with glassmorphic cards, institutional identity tags, academic standing badges, and proper grammatical formatting.
+- [x] **School vs Admin Name Resolution**: Resolved correct school name and admin personal name so the greeting reads Welcome back, [Admin Name] under [School Name].
+- [x] **Verification**: Frontend TypeScript validation passed with 0 errors.
+
+### Monday, November 9, 2026 - Teacher Grade Export Date Scoping, Record Limits, Signature Endorsements & Leadership Notification
+- [x] **Export Duration & Date Range Filtering**:
+  - Integrated dynamic date range selection into [TeacherGradeExportModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/TeacherGradeExportModal.tsx), [TeacherClassExportModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/my-classes/components/TeacherClassExportModal.tsx), and [TeacherStudentExportModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/students/components/TeacherStudentExportModal.tsx):
+    - Supports: All Time / Cumulative, Past 7 Days, Past 30 Days (Current Month), Past 90 Days (Current Term), and This Academic Session (1 Year).
+- [x] **Teacher Data Limit & Volume Control**:
+  - Added quick selection buttons for batch size limits: All, 10, 25, 50, 100, and Custom numeric limit input.
+  - Dynamically calculates and displays selected slice count vs total matching records before generating exports.
+- [x] **Institutional Signature Endorsement Guarantee**:
+  - Fixed PDF signature generation in TeacherGradeExportModal, TeacherClassExportModal, and TeacherStudentExportModal:
+    - Unconditionally renders dual official endorsement blocks: Left (Class Teacher / Faculty Member) and Right (Principal / Head of Institution).
+    - Safely draws digitized signatures or formal institutional signature lines with leader titles and names.
+- [x] **Automated School Leadership Notifications**:
+  - Confirmed export events trigger dispatchExportLeadershipNotification, informing connected school admins (Principal, Owner, Registrar) whenever a teacher exports academic marksheets, class registries, or student rosters.
+- [x] **Sub-Route Standardization & Header Tooltips**:
+  - Upgraded teacher sub-routes:
+    - [record-grades/components/PageHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/record-grades/components/PageHeader.tsx): Added HeaderTooltip for batch score recording & marksheets.
+    - [grade-edit/components/BackButton.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/grade-edit/components/BackButton.tsx): Added HeaderTooltip for grade modification and audit history.
+- [x] **Verification**:
+  - Frontend TypeScript verification (	sc --noEmit) passed with **0 errors**.
+
+### Monday, November 9, 2026 - Teacher Grades Export Modal Routing & Direct Download Interception
+- [x] **Direct Export Interception & Modal Activation**:
+  - Identified why PDF and CSV files were still downloading immediately without opening the custom modal: TableToolbar.tsx contained legacy direct download actions (handleExportPDF and handleExportCSV) attached to an inline dropdown that bypassed TeacherGradeExportModal.
+  - Re-routed table toolbar's primary Export action in [GradesOverview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/GradesOverview.tsx) and [TableToolbar.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/TableToolbar.tsx) to trigger setIsExportModalOpen(true).
+  - Added an official Export action to [PageHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/PageHeader.tsx) wired directly into setIsExportModalOpen(true).
+  - Now, clicking **Export** on /dashboard/teacher/grades ALWAYS opens the comprehensive [TeacherGradeExportModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/grades/components/TeacherGradeExportModal.tsx), letting teachers select:
+    - Date Duration / Range (All Time, Past 7 Days, Past 30 Days, Past 90 Days, This Academic Session)
+    - Record volume / batch limits (All, 10, 25, 50, 100, Custom)
+    - Format (PDF, Excel, CSV)
+    - Official digital signatures and automated leadership audit notifications.
+- [x] **Verification**:
+  - 	sc --noEmit passed with 0 errors.
+
+### Monday, November 9, 2026 - Teacher Records Institutional Export & Grading System Sync
+- [x] **Records Export Modal Actor Role Generalization**:
+  - In rontend/src/app/dashboard/admin/records/components/RecordsExportModal.tsx, added support for ctorRole?: 'ADMIN' | 'TEACHER' so the modal dynamically adapts export quota banners and leadership notification actor context.
+- [x] **Teacher Records Export Integration (/dashboard/teacher/records)**:
+  - In rontend/src/app/dashboard/teacher/records/page.tsx, connected the "Export Data" button to RecordsExportModal with ctorRole="TEACHER", school profile integration, and multi-format (PDF/Excel/CSV) export capabilities.
+- [x] **Teacher New Record Entry Export Integration (/dashboard/teacher/records/new)**:
+  - In rontend/src/app/dashboard/teacher/records/new/page.tsx, integrated ResultEntryExportModal with complete student roster assessment export, digital signatures, and notification triggers.
+- [x] **Teacher Result Preview Export Integration (/dashboard/teacher/records/preview)**:
+  - In rontend/src/app/dashboard/teacher/records/preview/page.tsx, connected the header "Export data" button to ResultEntryExportModal with config, ilteredStudents, schoolProfile, and effectiveSchoolId.
+- [x] **Grading System Synchronization (school_grading_system_sync)**:
+  - Ensured dynamic score evaluation, letter grades, and badge calculations are synchronized with schoolProfile?.gradingSystem across all teacher record routes.
+- [x] **Verification**:
+  - Local TypeScript compilation (
+ode frontend/node_modules/typescript/bin/tsc --noEmit --project frontend/tsconfig.json) passed with 0 errors.
+
+### Monday, November 9, 2026 - Teacher Exams & Quizzes Institutional Export & Grading System Sync
+- [x] **Teacher Assessment Export Modal Creation**:
+  - Authored [TeacherAssessmentExportModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/components/TeacherAssessmentExportModal.tsx) and [teacherAssessmentSpreadsheetExporter.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/utils/teacherAssessmentSpreadsheetExporter.ts).
+  - Implements multi-format exports (PDF, Excel .xlsx, and CSV .csv).
+  - Implements dynamic date range filtering (All Time, Past 7 Days, Past 30 Days, Past 90 Days, This Session).
+  - Implements batch volume limit controls (All, 10, 25, 50, 100, Custom numeric limit).
+  - Implements monthly export quota tracking and quota banner enforcement (ExportQuotaBanner).
+  - Implements dual official digital leadership signature endorsement (Subject Teacher / Faculty + Principal / Head of Institution).
+  - Dispatches automated audit notifications to school leadership (dispatchExportLeadershipNotification).
+- [x] **Teacher Exams & Quizzes Hub Integration**:
+  - Connected the main Export action in [ExamsQuizzesOverview.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/components/ExamsQuizzesOverview.tsx) and [PageHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/components/PageHeader.tsx) to <TeacherAssessmentExportModal>.
+- [x] **Sub-Route Grading System Synchronization (school_grading_system_sync)**:
+  - In [add-question/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/add-question/page.tsx), integrated computeGradePill(percentage, school?.gradingSystem) into the student submission table alongside existing implementation in [papers/[id]/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/teacher/exams&quizzes/papers/[id]/page.tsx).
+- [x] **Verification**:
+  - Frontend TypeScript validation (	sc --noEmit) passed with **0 errors**.
+
+### Monday, November 9, 2026 - Production Build Verification
+- [x] **Frontend Production Build**:
+  - Successfully ran 
+pm --prefix frontend run build (Next.js 16.3.7 with webpack).
+  - All 208 static and dynamic routes compiled, type-checked, and statically generated with 0 errors.
+- [x] **Backend Production Build**:
+  - Cleaned stale .tmp query engine artifacts in 
+ode_modules/.prisma/client.
+  - Successfully executed 
+pm --prefix backend run build (prisma generate && tsc && tsc-alias) with 0 errors.

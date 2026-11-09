@@ -13,6 +13,7 @@ import {
   Loader2,
   AlertTriangle,
   FileEdit,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,16 +44,17 @@ interface OfflineRecordsListProps {
   onExportPDF: (record?: GradeBatchSummary) => void;
   onExportCSV: (record?: GradeBatchSummary) => void;
   onOpenSyncModal?: () => void;
+  onOpenExportModal?: (record?: GradeBatchSummary) => void;
 }
 
 export type OfflineCategoryTab = 'all' | 'exam' | 'ca' | 'assignment' | 'quiz_test' | 'draft';
 
 export const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  CA:         { bg: 'bg-blue-50 dark:bg-blue-950/50',     text: 'text-blue-700 dark:text-blue-300',     border: 'border-blue-200 dark:border-blue-800/60' },
-  QUIZ:       { bg: 'bg-amber-50 dark:bg-amber-950/50',   text: 'text-amber-700 dark:text-amber-300',   border: 'border-amber-200 dark:border-amber-800/60' },
-  MIDTERM:    { bg: 'bg-purple-50 dark:bg-purple-950/50', text: 'text-purple-700 dark:text-purple-300', border: 'border-purple-200 dark:border-purple-800/60' },
+  CA: { bg: 'bg-blue-50 dark:bg-blue-950/50', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-200 dark:border-blue-800/60' },
+  QUIZ: { bg: 'bg-amber-50 dark:bg-amber-950/50', text: 'text-amber-700 dark:text-amber-300', border: 'border-amber-200 dark:border-amber-800/60' },
+  MIDTERM: { bg: 'bg-purple-50 dark:bg-purple-950/50', text: 'text-purple-700 dark:text-purple-300', border: 'border-purple-200 dark:border-purple-800/60' },
   ASSIGNMENT: { bg: 'bg-emerald-50 dark:bg-emerald-950/50', text: 'text-emerald-700 dark:text-emerald-300', border: 'border-emerald-200 dark:border-emerald-800/60' },
-  EXAM:       { bg: 'bg-rose-50 dark:bg-rose-950/50',     text: 'text-rose-700 dark:text-rose-300',     border: 'border-rose-200 dark:border-rose-800/60' },
+  EXAM: { bg: 'bg-rose-50 dark:bg-rose-950/50', text: 'text-rose-700 dark:text-rose-300', border: 'border-rose-200 dark:border-rose-800/60' },
 };
 
 export default function OfflineRecordsList({
@@ -69,6 +71,7 @@ export default function OfflineRecordsList({
   onExportPDF,
   onExportCSV,
   onOpenSyncModal,
+  onOpenExportModal,
 }: OfflineRecordsListProps) {
   const [activeTab, setActiveTab] = useState<OfflineCategoryTab>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -323,6 +326,18 @@ export default function OfflineRecordsList({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            {onOpenExportModal && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenExportModal()}
+                className={`h-11 px-4 sm:px-5 rounded-xl border ${isTeacher ? 'border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40' : 'border-indigo-300 dark:border-indigo-700 text-indigo-800 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} font-bold text-xs sm:text-sm gap-2 shadow-xs cursor-pointer`}
+              >
+                <Download size={16} className={isTeacher ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'} />
+                <span>Export Marksheets</span>
+              </Button>
+            )}
+
             {onOpenSyncModal && (
               <Button
                 type="button"
@@ -338,11 +353,11 @@ export default function OfflineRecordsList({
             <Button
               type="button"
               onClick={() => {
-                const defaultCat = 
+                const defaultCat =
                   activeTab === 'exam' ? 'EXAM' :
-                  activeTab === 'ca' ? 'CA' :
-                  activeTab === 'assignment' ? 'ASSIGNMENT' :
-                  activeTab === 'quiz_test' ? 'QUIZ' : undefined;
+                    activeTab === 'ca' ? 'CA' :
+                      activeTab === 'assignment' ? 'ASSIGNMENT' :
+                        activeTab === 'quiz_test' ? 'QUIZ' : undefined;
                 onAddNewRecord(defaultCat);
               }}
               className={`h-11 px-5 rounded-xl ${isTeacher ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'} text-white font-bold text-xs sm:text-sm gap-2 shadow-md dark:shadow-none cursor-pointer`}
@@ -352,12 +367,12 @@ export default function OfflineRecordsList({
                 {activeTab === 'exam'
                   ? 'Record New Exam Marksheet'
                   : activeTab === 'ca'
-                  ? 'Record New CA Marksheet'
-                  : activeTab === 'assignment'
-                  ? 'Record New Assignment'
-                  : activeTab === 'quiz_test'
-                  ? 'Record New Quiz / Test'
-                  : 'Record New Offline Grade'}
+                    ? 'Record New CA Marksheet'
+                    : activeTab === 'assignment'
+                      ? 'Record New Assignment'
+                      : activeTab === 'quiz_test'
+                        ? 'Record New Quiz / Test'
+                        : 'Record New Offline Grade'}
               </span>
             </Button>
           </div>
@@ -371,11 +386,10 @@ export default function OfflineRecordsList({
               setActiveTab('all');
               setSelectedStatus('all');
             }}
-            className={`text-left p-2.5 rounded-xl transition-all cursor-pointer ${
-              activeTab === 'all' && selectedStatus === 'all'
+            className={`text-left p-2.5 rounded-xl transition-all cursor-pointer ${activeTab === 'all' && selectedStatus === 'all'
                 ? 'bg-slate-100/80 dark:bg-slate-800/80 ring-1 ring-slate-300 dark:ring-slate-700'
                 : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
-            }`}
+              }`}
           >
             <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Total Offline Records
@@ -399,11 +413,10 @@ export default function OfflineRecordsList({
             onClick={() => {
               setSelectedStatus(selectedStatus === 'PUBLISHED' ? 'all' : 'PUBLISHED');
             }}
-            className={`text-left p-2.5 rounded-xl transition-all cursor-pointer ${
-              selectedStatus === 'PUBLISHED'
+            className={`text-left p-2.5 rounded-xl transition-all cursor-pointer ${selectedStatus === 'PUBLISHED'
                 ? 'bg-emerald-50 dark:bg-emerald-950/40 ring-1.5 ring-emerald-400 dark:ring-emerald-600'
                 : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
-            }`}
+              }`}
             title="Filter by published records"
           >
             <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -428,11 +441,10 @@ export default function OfflineRecordsList({
                 setSelectedStatus('DRAFT');
               }
             }}
-            className={`text-left p-2.5 rounded-xl transition-all cursor-pointer ${
-              activeTab === 'draft' || selectedStatus === 'DRAFT'
+            className={`text-left p-2.5 rounded-xl transition-all cursor-pointer ${activeTab === 'draft' || selectedStatus === 'DRAFT'
                 ? 'bg-amber-50 dark:bg-amber-950/40 ring-1.5 ring-amber-400 dark:ring-amber-600'
                 : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
-            }`}
+              }`}
             title="Filter by draft records"
           >
             <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -490,18 +502,18 @@ export default function OfflineRecordsList({
             No Offline Assessment Records Found
           </h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto mb-5">
-            {records.length === 0 
+            {records.length === 0
               ? 'You have not recorded any offline classroom grades or assessment sheets yet.'
               : 'No records matched your search filters. Try adjusting your query.'}
           </p>
           <Button
             type="button"
             onClick={() => {
-              const defaultCat = 
+              const defaultCat =
                 activeTab === 'exam' ? 'EXAM' :
-                activeTab === 'ca' ? 'CA' :
-                activeTab === 'assignment' ? 'ASSIGNMENT' :
-                activeTab === 'quiz_test' ? 'QUIZ' : undefined;
+                  activeTab === 'ca' ? 'CA' :
+                    activeTab === 'assignment' ? 'ASSIGNMENT' :
+                      activeTab === 'quiz_test' ? 'QUIZ' : undefined;
               onAddNewRecord(defaultCat);
             }}
             className={`h-10 px-5 rounded-xl ${isTeacher ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'} text-white font-bold text-xs gap-1.5 shadow-md cursor-pointer`}
@@ -511,12 +523,12 @@ export default function OfflineRecordsList({
               {activeTab === 'exam'
                 ? 'Record First Exam Marksheet'
                 : activeTab === 'ca'
-                ? 'Record First CA Marksheet'
-                : activeTab === 'assignment'
-                ? 'Record First Assignment'
-                : activeTab === 'quiz_test'
-                ? 'Record First Quiz / Test'
-                : 'Record First Offline Grade'}
+                  ? 'Record First CA Marksheet'
+                  : activeTab === 'assignment'
+                    ? 'Record First Assignment'
+                    : activeTab === 'quiz_test'
+                      ? 'Record First Quiz / Test'
+                      : 'Record First Offline Grade'}
             </span>
           </Button>
         </div>
@@ -530,6 +542,7 @@ export default function OfflineRecordsList({
           onDeleteRecord={handleRequestDelete}
           onExportPDF={onExportPDF}
           onExportCSV={onExportCSV}
+          onExportRecord={onOpenExportModal}
         />
       ) : (
         <OfflineRecordsTable
@@ -539,13 +552,14 @@ export default function OfflineRecordsList({
           gradingSystem={gradingSystem}
           onEditRecord={onEditRecord}
           onDeleteRecord={handleRequestDelete}
+          onExportRecord={onOpenExportModal}
         />
       )}
 
       {/* Delete Confirmation Modal with Deleting Progress Indicator */}
       {recordToDelete && (
         <Dialog open={!!recordToDelete} onOpenChange={(open) => { if (!open && !isDeleting) setRecordToDelete(null); }}>
-          <DialogContent className="max-w-md rounded-2xl p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+          <DialogContent className="max-w-md rounded-2xl p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">
             <DialogHeader className="space-y-3">
               <div className="size-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-rose-600 dark:text-rose-400">
                 <AlertTriangle size={24} />

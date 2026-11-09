@@ -438,7 +438,7 @@ export default function OfflineGradeSheetSyncModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[94vw] max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 dark:bg-slate-900 dark:border-slate-800">
+      <DialogContent className="w-[94vw] max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 dark:bg-slate-900 dark:border-slate-800 sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2">
         <DialogHeader className="pb-4 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <div className={`size-12 rounded-2xl ${isTeacher ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60' : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-800/60'} flex items-center justify-center shrink-0 shadow-xs`}>
@@ -635,10 +635,10 @@ export default function OfflineGradeSheetSyncModal({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className={`lg:col-span-5 rounded-2xl border-2 border-dashed transition-all p-4 sm:p-5 flex flex-col items-center justify-center text-center relative ${isDragging
-                ? isTeacher
-                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30'
-                  : 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30'
-                : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-400'
+              ? isTeacher
+                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30'
+                : 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30'
+              : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-400'
               }`}
           >
             <input

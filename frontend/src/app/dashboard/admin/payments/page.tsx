@@ -6,10 +6,14 @@ import { PaymentsHeaderAndStats } from "./components/PaymentsHeaderAndStats";
 import { PaymentsFilterCard } from "./components/PaymentsFilterCard";
 import { PaymentReceiptModal } from "./components/PaymentReceiptModal";
 import { StatementPrintModal } from "./components/StatementPrintModal";
+import { FinanceExportModal } from "../finance/components/FinanceExportModal";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { Loader2, Landmark } from "lucide-react";
 
 export default function AdminPaymentsPage() {
   const p = useAdminPayments();
+  const [isExportModalOpen, setIsExportModalOpen] = React.useState(false);
+  const { data: schoolProfile } = useSchoolProfile(p.schoolId);
 
   if (p.loading) {
     return (
@@ -46,7 +50,7 @@ export default function AdminPaymentsPage() {
         refreshing={p.refreshing}
         onBack={() => p.router.back()}
         onRefresh={() => p.loadData(true)}
-        onExportCSV={p.handleExportCSV}
+        onOpenExportModal={() => setIsExportModalOpen(true)}
         onOpenStatement={() => p.setIsStatementOpen(true)}
       />
 
@@ -73,6 +77,15 @@ export default function AdminPaymentsPage() {
         open={p.isReceiptOpen}
         onOpenChange={p.setIsReceiptOpen}
         receipt={p.selectedReceipt}
+      />
+
+      {/* Multi-Format Export Modal */}
+      <FinanceExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        transactions={p.allTransactions}
+        schoolProfile={schoolProfile}
+        schoolId={p.schoolId}
       />
 
       {/* Official Bursary Statement Modal */}
