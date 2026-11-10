@@ -94,9 +94,8 @@ export default function AssignmentCard({
 
   return (
     <div
-      className={`group bg-white dark:bg-slate-900 rounded-[20px] border-l-4 ${config.borderColor} border-y border-r border-slate-100 dark:border-slate-800 p-6 shadow-sm hover:shadow-md transition-shadow flex ${
-        viewMode === 'grid' ? 'flex-col gap-4' : 'flex-col md:flex-row gap-6 items-start md:items-center'
-      } ${status === 'graded' ? 'opacity-90 hover:opacity-100' : ''}`}
+      className={`group bg-white dark:bg-slate-900 rounded-[20px] border-l-4 ${config.borderColor} border-y border-r border-slate-100 dark:border-slate-800 p-6 shadow-sm hover:shadow-md transition-shadow flex ${viewMode === 'grid' ? 'flex-col gap-4' : 'flex-col md:flex-row gap-6 items-start md:items-center'
+        } ${status === 'graded' ? 'opacity-90 hover:opacity-100' : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -133,9 +132,8 @@ export default function AssignmentCard({
 
         {/* Due Date */}
         <div className="flex items-center gap-4 mt-2">
-          <div className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md ${
-            config.dueBg ? config.dueBg : 'bg-slate-50 dark:bg-slate-800'
-          } ${config.dueColor}`}>
+          <div className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md ${config.dueBg ? config.dueBg : 'bg-slate-50 dark:bg-slate-800'
+            } ${config.dueColor}`}>
             <DueIcon className="size-3.5" />
             <span>{dueDate}</span>
           </div>
@@ -143,39 +141,40 @@ export default function AssignmentCard({
       </div>
 
       {/* Actions & Status */}
-      <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+      <div className={`flex items-center gap-3 ${viewMode === 'grid'
+          ? 'w-full justify-between pt-3 border-t border-slate-100 dark:border-slate-800/80 mt-auto'
+          : 'w-full md:w-auto justify-between md:justify-end'
+        }`}>
         {/* Score (for graded assignments) */}
         {score && (
-          <div className="text-right mr-2 hidden md:block">
-            <p className="text-[11px] text-slate-400 font-medium">Score</p>
-            <p className="text-lg font-bold text-green-600 dark:text-green-400">{score}</p>
+          <div className="text-left md:text-right mr-1">
+            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Score</p>
+            <p className="text-base font-black text-green-600 dark:text-green-400 leading-tight">{score}</p>
           </div>
         )}
 
-        {/* Status Badge */}
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold border ${config.badge.bg} ${config.badge.border}`}>
-          {config.badge.text}
-        </span>
+        <div className="flex items-center gap-2.5 ml-auto">
+          {/* Status Badge */}
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold border shadow-2xs ${config.badge.bg} ${config.badge.border}`}>
+            {config.badge.text}
+          </span>
 
-        <Link
-        href={`/dashboard/parent/assignments/details/${id}`}
-        >
-        
-        <button className={`text-sm font-semibold px-4 py-2 rounded-lg cursor-pointer transition-colors whitespace-nowrap ${
-          status === 'graded' || status === 'late'
-          ? config.button 
-          : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-orange-500 text-slate-700 dark:text-slate-300 hover:text-orange-600'
-        }`}>
-          {status === 'graded' ? 'View Feedback' : 'View Details'}
-        </button>
-        </Link>
+          <Link href={`/dashboard/parent/assignments/details/${id}`}>
+            <button className={`text-xs font-bold px-3.5 py-2 rounded-xl cursor-pointer transition-all active:scale-95 whitespace-nowrap shadow-xs ${status === 'graded' || status === 'late'
+                ? config.button
+                : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-orange-500 text-slate-700 dark:text-slate-300 hover:text-orange-600'
+              }`}>
+              {status === 'graded' ? 'Feedback' : 'Details'}
+            </button>
+          </Link>
+        </div>
       </div>
 
-      {/* Mobile Score View (for graded assignments) */}
-      {score && (
-        <div className="flex md:hidden justify-between w-full pt-4 border-t border-slate-100 dark:border-slate-800">
-          <span className="text-sm font-medium text-slate-500">Score</span>
-          <span className="text-sm font-bold text-green-600 dark:text-green-400">{score}</span>
+      {/* Mobile Score View only in list view when score exists */}
+      {score && viewMode === 'list' && (
+        <div className="flex md:hidden justify-between w-full pt-3 border-t border-slate-100 dark:border-slate-800">
+          <span className="text-xs font-medium text-slate-500">Score</span>
+          <span className="text-xs font-bold text-green-600 dark:text-green-400">{score}</span>
         </div>
       )}
     </div>

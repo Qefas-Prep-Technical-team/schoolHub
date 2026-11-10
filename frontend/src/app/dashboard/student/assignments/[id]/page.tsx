@@ -9,15 +9,20 @@ import InstructionsPanel from './components/InstructionsPanel';
 import ActionFooter from './components/ActionFooter';
 import { Assignment } from './components/types';
 import SubmissionModal from './components/SubmissionModal';
+import { SingleAssignmentExportModal } from './components/SingleAssignmentExportModal';
 import { useAssignmentById, useSubmitAssignment } from '@/lib/api/hooks/useAssignments';
+import { useStudentProfile } from '@/lib/api/hooks/useStudent';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 import { toast } from 'react-toastify';
-import { 
-  ExternalLink, 
-  Download, 
-  FileText, 
-  CheckCircle2, 
-  XCircle, 
-  ChevronLeft, 
+import {
+  ExternalLink,
+  Download,
+  FileText,
+  CheckCircle2,
+  XCircle,
+  ChevronLeft,
   ChevronRight,
   AlertCircle
 } from 'lucide-react';
@@ -66,12 +71,27 @@ export default function AssignmentDetailsPage() {
 
   const [activeTab, setActiveTab] = useState<'instructions' | 'attachments' | 'rubric' | 'materials' | 'quiz'>('instructions');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
   const [currentQuestionPage, setCurrentQuestionPage] = useState(1);
   const QUESTIONS_PER_PAGE = 10;
 
+  const { user } = useAuthStore();
+  const { data: studentProfile } = useStudentProfile();
   const { data: assignment, isLoading, error } = useAssignmentById(assignmentId);
   const { mutateAsync: submitAssignment } = useSubmitAssignment();
+
+  // Resolve connected school profile for customized institutional grading scale
+  const userRecord = user as Record<string, unknown> | null | undefined;
+  const schoolId =
+    (assignment as any)?.schoolId ||
+    studentProfile?.schoolId ||
+    user?.schools?.[0]?.schoolId ||
+    (typeof userRecord?.schoolId === 'string' ? userRecord.schoolId : '') ||
+    user?.tenantId ||
+    '';
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const customGradingSystem = schoolProfile?.gradingSystem;
 
   const [isAnswersInitialized, setIsAnswersInitialized] = useState(false);
 
@@ -93,7 +113,7 @@ export default function AssignmentDetailsPage() {
   // Periodic / Debounced Sync of Quiz Answers to database as draft
   useEffect(() => {
     if (!isAnswersInitialized) return;
-    
+
     const submissionStatus = assignment?.submissions?.[0]?.status;
     if (submissionStatus === 'SUBMITTED' || submissionStatus === 'GRADED' || submissionStatus === 'submitted' || submissionStatus === 'graded') {
       return;
@@ -104,7 +124,7 @@ export default function AssignmentDetailsPage() {
 
     const savedAnswers = assignment?.submissions?.[0]?.answers as SavedAnswer[] | undefined;
     const savedAnswersArray = Array.isArray(savedAnswers) ? savedAnswers : [];
-    
+
     const isDifferent = Object.entries(quizAnswers).some(([qId, ansVal]) => {
       const savedAns = savedAnswersArray.find((sa) => sa.questionId === qId);
       return !savedAns || savedAns.answer !== ansVal;
@@ -118,7 +138,7 @@ export default function AssignmentDetailsPage() {
           questionId,
           answer,
         }));
-        
+
         await submitAssignment({
           id: assignmentId,
           data: {
@@ -169,11 +189,11 @@ export default function AssignmentDetailsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-4 sm:p-6 md:p-8 animate-in fade-in duration-300">
-        <div className="w-full max-w-5xl mx-auto space-y-6">
-          <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded-md w-1/3 animate-pulse" />
+        <div className="w-full max-w-[1600px] mx-auto space-y-6">
+          <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded-md w-1/4 animate-pulse" />
           <div className="h-44 bg-slate-200 dark:bg-slate-800 rounded-3xl animate-pulse" />
-          <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-2xl w-1/2 animate-pulse" />
-          <div className="h-64 bg-slate-200 dark:bg-slate-800 rounded-3xl animate-pulse" />
+          <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-2xl w-1/3 animate-pulse" />
+          <div className="h-96 bg-slate-200 dark:bg-slate-800 rounded-3xl animate-pulse" />
         </div>
       </div>
     );
@@ -191,8 +211,8 @@ export default function AssignmentDetailsPage() {
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">
           The requested assignment does not exist or has not been published yet.
         </p>
-        <button 
-          onClick={() => router.back()} 
+        <button
+          onClick={() => router.back()}
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition-colors"
         >
           <ChevronLeft className="h-4 w-4" /> Go Back
@@ -201,18 +221,47 @@ export default function AssignmentDetailsPage() {
     );
   }
 
-  const isGraded = 
-    assignment?.status === 'GRADED' || 
-    assignment?.status === 'graded' || 
-    assignment?.submissions?.[0]?.status === 'GRADED' || 
+  const isGraded =
+    assignment?.status === 'GRADED' ||
+    assignment?.status === 'graded' ||
+    assignment?.submissions?.[0]?.status === 'GRADED' ||
     assignment?.submissions?.[0]?.status === 'graded';
 
-  const isSubmitted = 
-    assignment?.status === 'SUBMITTED' || 
-    assignment?.status === 'submitted' || 
-    assignment?.submissions?.[0]?.status === 'SUBMITTED' || 
-    assignment?.submissions?.[0]?.status === 'submitted' || 
+  const isSubmitted =
+    assignment?.status === 'SUBMITTED' ||
+    assignment?.status === 'submitted' ||
+    assignment?.submissions?.[0]?.status === 'SUBMITTED' ||
+    assignment?.submissions?.[0]?.status === 'submitted' ||
     isGraded;
+
+  // Compute school-synced grade evaluation
+  const gradeEvaluation = (() => {
+    if (!isGraded) return null;
+    const rawGrade = assignment?.grade || assignment?.submissions?.[0]?.grade;
+    if (!rawGrade) return null;
+
+    let percent: number | null = null;
+    if (typeof rawGrade === 'string' && rawGrade.includes('/')) {
+      const [scorePart, totalPart] = rawGrade.split('/');
+      const s = parseFloat(scorePart);
+      const t = parseFloat(totalPart);
+      if (!isNaN(s) && !isNaN(t) && t > 0) percent = Math.round((s / t) * 100);
+    } else {
+      const parsed = parseFloat(String(rawGrade).replace(/[^0-9.]/g, ''));
+      const max = assignment?.totalMarks || 100;
+      if (!isNaN(parsed) && max > 0) percent = Math.round((parsed / max) * 100);
+    }
+
+    if (percent == null) return null;
+    const res = getGradeEvaluation(percent, customGradingSystem);
+    return {
+      percentage: percent,
+      grade: res.grade,
+      remark: res.remark,
+      color: res.color,
+      bg: res.bg,
+    };
+  })();
 
   const breadcrumbs = [
     { label: 'Dashboard', href: '/dashboard/student' },
@@ -223,13 +272,17 @@ export default function AssignmentDetailsPage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col">
       <div className="flex-grow">
-        <main className="w-full max-w-5xl mx-auto flex flex-col px-3.5 py-4 sm:px-6 sm:py-6 lg:p-8">
-          
+        <main className="w-full max-w-[1600px] mx-auto flex flex-col px-3.5 py-4 sm:px-6 sm:py-6 lg:px-8">
+
           <div className="hidden sm:block mb-4">
             <Breadcrumbs items={breadcrumbs} />
           </div>
 
-          <Header assignment={assignment as Assignment} />
+          <Header
+            assignment={assignment as Assignment}
+            onOpenExportModal={() => setIsExportModalOpen(true)}
+            gradeEvaluation={gradeEvaluation}
+          />
 
           <TabNavigation
             activeTab={activeTab}
@@ -240,7 +293,7 @@ export default function AssignmentDetailsPage() {
           />
 
           <div className="mt-2 mb-20 sm:mb-24 space-y-6">
-            
+
             {/* Instructions Tab */}
             {activeTab === 'instructions' && (
               <div className="space-y-6 animate-in fade-in duration-300">
@@ -322,7 +375,7 @@ export default function AssignmentDetailsPage() {
 
                     {/* Completion progress strip */}
                     <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
-                      <div 
+                      <div
                         className="bg-pink-500 h-1.5 rounded-full transition-all duration-300"
                         style={{ width: `${progressPercentage}%` }}
                       />
@@ -352,9 +405,9 @@ export default function AssignmentDetailsPage() {
                                   const optionLetter = optKey.replace('option', '');
                                   const isSelected = quizAnswers[q.id] === optionLetter;
                                   const isCorrectAnswer = isGraded && q.correctAnswer === optionLetter;
-                                  
+
                                   let labelClass = 'border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300';
-                                  
+
                                   if (isGraded) {
                                     if (isCorrectAnswer) {
                                       labelClass = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 font-bold';
@@ -382,8 +435,8 @@ export default function AssignmentDetailsPage() {
                                       />
                                       <span className={cn(
                                         "size-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-colors",
-                                        isSelected 
-                                          ? "bg-pink-500 text-white" 
+                                        isSelected
+                                          ? "bg-pink-500 text-white"
                                           : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                                       )}>
                                         {optionLetter}
@@ -403,9 +456,9 @@ export default function AssignmentDetailsPage() {
                                 {['True', 'False'].map((val) => {
                                   const isSelected = quizAnswers[q.id] === val;
                                   const isCorrectAnswer = isGraded && q.correctAnswer === val;
-                                  
+
                                   let labelClass = 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300';
-                                  
+
                                   if (isGraded) {
                                     if (isCorrectAnswer) {
                                       labelClass = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 font-bold';
@@ -514,8 +567,11 @@ export default function AssignmentDetailsPage() {
                       }
                       if (fileType === 'video') {
                         return (
-                          <div className="aspect-video w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                            <video src={assignment.attachmentUrl} controls className="w-full h-full" />
+                          <div className="w-full max-w-4xl overflow-hidden rounded-2xl">
+                            <VideoPlayer
+                              videoUrl={assignment.attachmentUrl}
+                              title={assignment.title ? `${assignment.title} — Attached Video` : "Attached Video"}
+                            />
                           </div>
                         );
                       }
@@ -595,6 +651,19 @@ export default function AssignmentDetailsPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSubmission}
+      />
+
+      {/* Single Assignment Task Export Modal */}
+      <SingleAssignmentExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        assignment={assignment}
+        schoolProfile={schoolProfile}
+        schoolId={schoolId}
+        studentName={studentProfile?.name || user?.name || "Scholar"}
+        className={(studentProfile as any)?.class?.name || (studentProfile as any)?.className || "Class Cohort"}
+        gradeLabel={gradeEvaluation?.grade}
+        percentage={gradeEvaluation?.percentage}
       />
     </div>
   );

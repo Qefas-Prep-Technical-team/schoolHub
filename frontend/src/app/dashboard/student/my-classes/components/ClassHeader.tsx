@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, LayoutGrid, List, X, Plus, GraduationCap } from 'lucide-react';
+import { Search, LayoutGrid, List, X, Plus, GraduationCap, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/HeaderTooltip';
@@ -12,6 +12,7 @@ interface ClassHeaderProps {
   viewMode?: 'grid' | 'table';
   setViewMode?: (mode: 'grid' | 'table') => void;
   onOpenJoinModal?: () => void;
+  onOpenExportModal?: () => void;
 }
 
 export function ClassHeader({ 
@@ -20,7 +21,8 @@ export function ClassHeader({
   totalClasses = 0,
   viewMode = 'grid',
   setViewMode,
-  onOpenJoinModal
+  onOpenJoinModal,
+  onOpenExportModal
 }: ClassHeaderProps) {
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-2">
@@ -84,6 +86,19 @@ export function ClassHeader({
               <List size={16} />
             </button>
           </div>
+        )}
+
+        {/* Export Button */}
+        {onOpenExportModal && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onOpenExportModal}
+            className="h-10 sm:h-11 px-4 rounded-xl border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-900 text-slate-700 dark:text-zinc-300 font-bold text-xs sm:text-sm flex items-center gap-2 shrink-0 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Download size={16} className="text-pink-600 dark:text-pink-400 stroke-[2.2]" />
+            <span>Export</span>
+          </Button>
         )}
 
         {/* Join Class Button */}

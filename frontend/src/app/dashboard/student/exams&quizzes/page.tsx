@@ -14,10 +14,14 @@ import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { Assessment, StatCard } from './components/types';
 import { timeFilters } from './components/data';
-import { Loader2, Search, X, LayoutGrid, List, GraduationCap, ChevronDown } from 'lucide-react';
+import { Loader2, Search, X, LayoutGrid, List, GraduationCap, ChevronDown, Download } from 'lucide-react';
 import Pagination from '@/components/ui/Pagination';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/HeaderTooltip';
+import { StudentAssessmentExportModal } from './components/StudentAssessmentExportModal';
+import { StudentAssessmentSpreadsheetData } from './utils/assessmentSpreadsheetExporter';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 
 interface RawSubjectPaper {
     durationMinutes?: number;
@@ -76,6 +80,7 @@ export default function StudentAssessmentsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const itemsPerPage = 10;
 
     // Detect small screens and prefer grid view by default on mobile
@@ -378,6 +383,38 @@ export default function StudentAssessmentsPage() {
         });
     }, [allAssessments, assessmentType, searchQuery, selectedClassId, studentProfile]);
 
+    const assessmentExportData: StudentAssessmentSpreadsheetData | null = useMemo(() => {
+        const studentName = String(studentProfile?.name || user?.name || 'Student');
+        const studentCode = String(studentProfile?.studentCode || user?.studentCode || 'N/A');
+        const className = studentClasses[0]?.name || 'Enrolled Class';
+
+        const assessmentsList = filteredAssessments.map((a) => {
+            const scoreNum = a.scorePercentage;
+            const evalResult = scoreNum != null ? getGradeEvaluation(scoreNum, customGradingSystem) : null;
+            return {
+                title: a.title,
+                type: a.type,
+                subject: a.subject,
+                className: a.className || className,
+                date: a.date,
+                score: a.score || '—',
+                grade: evalResult?.grade || '—',
+                standing: evalResult?.remark || '—',
+                status: a.status,
+                durationMinutes: a.durationMinutes,
+                questionsCount: a.questionsCount,
+            };
+        });
+
+        return {
+            studentName,
+            studentCode,
+            className,
+            schoolName: schoolProfile?.name || 'School Portal',
+            assessments: assessmentsList,
+        };
+    }, [filteredAssessments, studentProfile, user, studentClasses, schoolProfile, customGradingSystem]);
+
     if (isLoading) {
         return (
             <div className="w-full space-y-6 sm:space-y-8 animate-pulse font-sans">
@@ -404,7 +441,7 @@ export default function StudentAssessmentsPage() {
     return (
         <div className="w-full space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6">
             <div className="max-w-[1600px] mx-auto space-y-6 sm:space-y-8">
-                <PageHeader />
+                <PageHeader onExportClick={() => setIsExportModalOpen(true)} />
 
                 {/* Stats & Performance Grid */}
                 <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-3">
@@ -535,6 +572,15 @@ export default function StudentAssessmentsPage() {
                     </div>
                 )}
             </div>
+
+            {/* Assessment Dossier Export Modal */}
+            <StudentAssessmentExportModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                data={assessmentExportData}
+                schoolProfile={schoolProfile || studentProfile?.school || user?.schools?.[0]}
+                schoolId={schoolId}
+            />
         </div>
     );
 }

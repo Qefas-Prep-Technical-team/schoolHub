@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useMyPublishedResults } from "@/lib/api/hooks/useRecords";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -33,7 +33,8 @@ import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { getGradeEvaluation } from "@/utils/gradingSystem";
 import { toast } from "react-toastify";
-import { RoleResultExportModal } from "@/components/export/RoleResultExportModal";
+import { StudentTermResultExportModal } from "../components/StudentTermResultExportModal";
+import { TermResultSpreadsheetData } from "../utils/termResultSpreadsheetExporter";
 
 interface SubjectResultRecord {
   id: string;
@@ -134,93 +135,58 @@ function ResultViewInner() {
     (g) => g.sessionId === sessionId && g.term === term
   );
 
-  const handleExportPDF = async (isPaying: boolean = true) => {
-    const school = profile?.school || user?.schools?.[0];
+  const termExportData: TermResultSpreadsheetData | null = useMemo(() => {
+    if (!group) return null;
+    const termLabel = getTermLabel(term);
+    const sessionLabel = group.session?.name || "Academic Session";
+    const className = group.class?.name || profile?.classes?.[0]?.class?.name || "Enrolled Class";
+    const studentName = profile?.name || user?.name || "Student";
+    const studentCode = profile?.studentCode || user?.studentCode || "N/A";
 
-    setIsExporting(true);
-    const toastId = toast.loading("Generating Official PDF Result Sheet...", { autoClose: false });
+    const subjectResultsList: SubjectResultRecord[] = group.subjectResults ?? [];
+    const releasedSubs = subjectResultsList.filter((s) => s.scoresRevealed);
+    const scoreTotals = releasedSubs
+      .map((s) => Number(s.totalScore ?? 0))
+      .filter((n) => !isNaN(n));
+    const termAverage = scoreTotals.length > 0 ? scoreTotals.reduce((a, b) => a + b, 0) / scoreTotals.length : null;
 
-    try {
-      const termLabel = getTermLabel(term);
-      const sessionLabel = group?.session?.name || "Academic Session";
-      const className = group?.class?.name || profile?.classes?.[0]?.class?.name || "N/A";
-      const studentName = profile?.name || user?.name || "Student";
-      const studentCode = profile?.studentCode || user?.studentCode || "N/A";
+    const records = subjectResultsList.map((subject) => {
+      const released = Boolean(subject.scoresRevealed);
+      const total = released && subject.totalScore != null ? Number(subject.totalScore) : null;
+      const grade = released && total != null ? getGradeLetter(total, customGradingSystem) : "—";
+      const assignment = released ? (subject.assignmentScore != null ? String(subject.assignmentScore) : "—") : "N/A";
+      const quiz = released ? (subject.quizScore != null ? String(subject.quizScore) : "—") : "N/A";
+      const ca = released ? (subject.caScore != null ? String(subject.caScore) : "—") : "N/A";
+      const exam = released ? (subject.examScore != null ? String(subject.examScore) : "—") : "N/A";
+      const totalStr = released && total != null ? String(total) : "N/A";
+      const evalResult = total != null ? getGradeEvaluation(total, customGradingSystem) : null;
+      const status = released ? (evalResult?.remark || (evalResult?.grade !== "F9" && evalResult?.grade !== "F" ? "PASS" : "FAIL")) : "PENDING";
 
-      const tableHeaders = [
-        ["#", "Course Code", "Subject Title", "Assignment", "Quiz/Test", "CA", "Exam", "Total Score", "Grade", "Status"]
-      ];
+      return {
+        courseCode: subject.subject?.code || "—",
+        subjectTitle: subject.subject?.name || "Untitled Subject",
+        assignmentScore: assignment,
+        quizScore: quiz,
+        caScore: ca,
+        examScore: exam,
+        totalScore: totalStr,
+        grade,
+        status,
+      };
+    });
 
-      const tableData = (group?.subjectResults || []).map((subject, index) => {
-        const released = Boolean(subject.scoresRevealed);
-        const total = released && subject.totalScore != null ? Number(subject.totalScore) : null;
-        const grade = released && total != null ? getGradeLetter(total, customGradingSystem) : "—";
-        const assignment = released ? (subject.assignmentScore != null ? String(subject.assignmentScore) : "—") : "N/A";
-        const quiz = released ? (subject.quizScore != null ? String(subject.quizScore) : "—") : "N/A";
-        const ca = released ? (subject.caScore != null ? String(subject.caScore) : "—") : "N/A";
-        const exam = released ? (subject.examScore != null ? String(subject.examScore) : "—") : "N/A";
-        const totalStr = released && total != null ? String(total) : "N/A";
-        const evalResult = total != null ? getGradeEvaluation(total, customGradingSystem) : null;
-        const status = released ? (evalResult?.remark || (evalResult?.grade !== "F9" && evalResult?.grade !== "F" ? "PASS" : "FAIL")) : "PENDING";
-
-        return [
-          (index + 1).toString(),
-          subject.subject?.code || "—",
-          subject.subject?.name || "Untitled Subject",
-          assignment,
-          quiz,
-          ca,
-          exam,
-          totalStr,
-          grade,
-          status,
-        ];
-      });
-
-      await generatePDF({
-        title: `${termLabel} Term Result Sheet (${sessionLabel})`,
-        filename: `${studentName.replace(/\s+/g, '_')}_${term}_Term_Result.pdf`,
-        schoolProfile: school,
-        metaData: [
-          { label: "Student Name", value: studentName },
-          { label: "Student ID", value: studentCode },
-          { label: "Class", value: className },
-          { label: "Academic Session", value: sessionLabel },
-          { label: "Term", value: termLabel },
-          { label: "Evaluated Subjects", value: `${group?.revealedCount || 0} of ${group?.subjectCount || 0} released` },
-          { label: "Export Date", value: new Date().toLocaleDateString() }
-        ],
-        tableHeaders,
-        tableData,
-        signatures: isPaying
-          ? {
-            left: { label: "Class Teacher", name: "Assigned Instructor", subLabel: "Academic Evaluation" },
-            right: { label: "Principal / Director", name: (school as any)?.principal || "Head of Institution", subLabel: "Institutional Endorsement" }
-          }
-          : {
-            left: { label: "Class Teacher", name: "—", subLabel: "Unendorsed Record" },
-            right: { label: "Principal / Director", name: "—", subLabel: "Unendorsed Record" }
-          }
-      });
-
-      toast.update(toastId, {
-        render: "Official Result Sheet PDF exported successfully!",
-        type: "success",
-        isLoading: false,
-        autoClose: 3000,
-      });
-    } catch (err) {
-      console.error("Failed to export PDF:", err);
-      toast.update(toastId, {
-        render: "Failed to generate Result Sheet PDF",
-        type: "error",
-        isLoading: false,
-        autoClose: 3000,
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  };
+    return {
+      studentName,
+      studentCode,
+      className,
+      sessionName: sessionLabel,
+      termName: termLabel,
+      revealedCount: group.revealedCount || 0,
+      totalCount: group.subjectCount || 0,
+      averageScore: termAverage,
+      records,
+    };
+  }, [group, term, profile, user, customGradingSystem]);
 
   if (isLoading) {
     return (
@@ -307,11 +273,10 @@ function ResultViewInner() {
           </span>
           <Button
             onClick={() => setIsExportModalOpen(true)}
-            disabled={isExporting}
             className="h-9 px-3.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs gap-1.5 shadow-sm active:scale-95 transition-all"
           >
-            {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-            <span>Export Official PDF</span>
+            <Download className="w-3.5 h-3.5" />
+            <span>Export Result Sheet</span>
           </Button>
         </div>
       </div>
@@ -792,27 +757,20 @@ function ResultViewInner() {
 
             <Button
               onClick={() => setIsExportModalOpen(true)}
-              disabled={isExporting}
               className="h-9 px-4 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs gap-1.5 shadow-sm active:scale-95 transition-all"
             >
-              {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-              <span>Export Official Result PDF</span>
+              <Download className="w-3.5 h-3.5" />
+              <span>Export Result Sheet</span>
             </Button>
           </div>
         )}
 
-        <RoleResultExportModal
+        <StudentTermResultExportModal
           isOpen={isExportModalOpen}
           onClose={() => setIsExportModalOpen(false)}
-          onExportPdf={handleExportPDF}
-          isExporting={isExporting}
-          resultTitle={`${getTermLabel(group?.term || term)} Term Result Sheet`}
-          studentName={profile?.name || user?.name || "Student"}
-          className={group?.class?.name || profile?.classes?.[0]?.class?.name}
-          sessionName={group?.session?.name}
-          term={getTermLabel(group?.term || term)}
-          school={profile?.school || user?.schools?.[0]}
-          role="STUDENT"
+          data={termExportData}
+          schoolProfile={schoolProfile || profile?.school || user?.schools?.[0]}
+          schoolId={schoolId}
         />
       </div>
     </div>

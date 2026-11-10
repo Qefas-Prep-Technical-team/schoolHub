@@ -15,16 +15,16 @@ import DownloadReportButton from './components/DownloadReportButton'
 import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { 
-  LayoutGrid, 
-  List, 
-  Users, 
-  BookOpen, 
-  ArrowRight, 
-  RotateCw, 
-  SearchX, 
-  CheckCircle2, 
-  GraduationCap 
+import {
+  LayoutGrid,
+  List,
+  Users,
+  BookOpen,
+  ArrowRight,
+  RotateCw,
+  SearchX,
+  CheckCircle2,
+  GraduationCap
 } from 'lucide-react'
 
 interface RawAssignmentItem {
@@ -93,11 +93,10 @@ function AssignmentsPageSkeleton({ viewMode }: { viewMode: 'list' | 'grid' }) {
       {/* Cards Skeleton */}
       <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div 
-            key={i} 
-            className={`bg-white dark:bg-slate-900 rounded-[20px] border border-slate-200/80 dark:border-slate-800 p-6 flex ${
-              viewMode === 'grid' ? 'flex-col gap-4' : 'flex-col md:flex-row gap-6 items-start md:items-center'
-            } animate-pulse`}
+          <div
+            key={i}
+            className={`bg-white dark:bg-slate-900 rounded-[20px] border border-slate-200/80 dark:border-slate-800 p-6 flex ${viewMode === 'grid' ? 'flex-col gap-4' : 'flex-col md:flex-row gap-6 items-start md:items-center'
+              } animate-pulse`}
           >
             <div className="size-12 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0" />
             <div className="flex-1 w-full space-y-2">
@@ -121,7 +120,7 @@ function NoChildrenLinkedState() {
     <div className="w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6 animate-in fade-in duration-300">
       <div className="rounded-[24px] bg-gradient-to-br from-orange-50 via-white to-amber-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-orange-950/20 border border-orange-100 dark:border-slate-800 p-6 sm:p-10 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 -mr-12 -mt-12 size-64 rounded-full bg-orange-400/10 blur-3xl pointer-events-none" />
-        
+
         <div className="max-w-3xl space-y-6 relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 text-xs font-bold uppercase tracking-wider">
             <Users size={14} />
@@ -227,7 +226,7 @@ export default function ParentAssignmentsPage() {
 
   const { data: dashboardData, isLoading: isDashboardLoading } = useParentDashboard(selectedChildId)
 
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 9
 
@@ -237,10 +236,10 @@ export default function ParentAssignmentsPage() {
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [sortBy, setSortBy] = useState('due_asc')
 
-  const { 
-    data: assignmentsData, 
+  const {
+    data: assignmentsData,
     isLoading: isAssignmentsLoading,
-    refetch: refetchAssignments 
+    refetch: refetchAssignments
   } = useQuery({
     queryKey: ['student-assignments', selectedChildId, currentPage, itemsPerPage],
     queryFn: () => studentService.getStudentAssignments(selectedChildId!, currentPage, itemsPerPage),
@@ -273,7 +272,7 @@ export default function ParentAssignmentsPage() {
     // 1. Search Query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
-      result = result.filter((a) => 
+      result = result.filter((a) =>
         (a.title && a.title.toLowerCase().includes(q)) ||
         (a.subject && a.subject.toLowerCase().includes(q)) ||
         (a.department && a.department.toLowerCase().includes(q))
@@ -376,7 +375,7 @@ export default function ParentAssignmentsPage() {
   // 3. Main Loaded State
   return (
     <div className="w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6 animate-in fade-in duration-500">
-      
+
       {/* Multi-Child Switcher if parent has more than 1 child */}
       {children.length > 1 && (
         <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-none">
@@ -478,7 +477,7 @@ export default function ParentAssignmentsPage() {
       </div>
 
       {/* 4 KPI Overview Widgets */}
-      <OverviewWidgets 
+      <OverviewWidgets
         totalAssessments={stats.totalCount}
         gradedCount={stats.gradedCount}
         averageScore={stats.averageScore}
@@ -503,7 +502,7 @@ export default function ParentAssignmentsPage() {
       {/* Assignments Grid / List Content */}
       <div className="space-y-4">
         {rawAssignments.length === 0 ? (
-          <NoAssignmentsState 
+          <NoAssignmentsState
             childName={childName}
             onRefresh={() => refetchAssignments()}
           />
@@ -535,7 +534,7 @@ export default function ParentAssignmentsPage() {
           <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
             {filteredAssignments.map((assignmentObj, i) => {
               const rawStatus = (assignmentObj.status || 'PENDING').toLowerCase()
-              
+
               let cardStatus: 'late' | 'urgent' | 'pending' | 'graded' = 'pending'
               if (rawStatus === 'overdue' || rawStatus === 'late') cardStatus = 'late'
               else if (rawStatus === 'submitted') cardStatus = 'urgent'
@@ -566,10 +565,10 @@ export default function ParentAssignmentsPage() {
         {/* Pagination Controls */}
         {totalPages > 1 && (
           <div className="pt-4 flex justify-center">
-            <Pagination 
-              currentPage={currentPage} 
-              totalPages={totalPages} 
-              onPageChange={setCurrentPage} 
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
             />
           </div>
         )}

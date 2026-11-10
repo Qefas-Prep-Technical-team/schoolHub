@@ -1,4 +1,5 @@
 import prisma from "../../config/database";
+import { deleteFileByUrlService } from "../upload/upload.service";
 
 // Helper: verify teacherId exists in the Teacher table before using as FK
 async function resolveTeacherId(teacherId: string | null | undefined): Promise<string | null> {
@@ -695,8 +696,28 @@ export const updateAssignmentSettingsService = async (assignmentId: string, scho
   if (data.maxScore !== undefined) updateData.totalMarks = data.maxScore;
   if (data.totalMarks !== undefined) updateData.totalMarks = data.totalMarks;
   if (data.scoreReleaseDate !== undefined) updateData.scoreReleaseDate = data.scoreReleaseDate;
-  if (data.attachmentUrl !== undefined) updateData.attachmentUrl = data.attachmentUrl;
-  if (data.videoUrl !== undefined) updateData.videoUrl = data.videoUrl;
+  if (data.attachmentUrl !== undefined) {
+    // If the old attachmentUrl was replaced or removed, clean up old storage record
+    if (assignment.attachmentUrl && assignment.attachmentUrl !== data.attachmentUrl) {
+      try {
+        await deleteFileByUrlService(assignment.attachmentUrl, schoolId);
+      } catch (err) {
+        console.error("[Update Assignment] Failed to remove previous attachment from storage:", err);
+      }
+    }
+    updateData.attachmentUrl = data.attachmentUrl;
+  }
+  if (data.videoUrl !== undefined) {
+    // If the old videoUrl was an uploaded storage file and got replaced, clean it up
+    if (assignment.videoUrl && assignment.videoUrl !== data.videoUrl && !assignment.videoUrl.includes("youtube.com") && !assignment.videoUrl.includes("youtu.be")) {
+      try {
+        await deleteFileByUrlService(assignment.videoUrl, schoolId);
+      } catch (err) {
+        console.error("[Update Assignment] Failed to remove previous video from storage:", err);
+      }
+    }
+    updateData.videoUrl = data.videoUrl;
+  }
   if (data.referenceUrl !== undefined) updateData.referenceUrl = data.referenceUrl;
 
   return prisma.assignment.update({
@@ -736,6 +757,23 @@ export const deleteAssignmentService = async (assignmentId: string, schoolId: st
   await prisma.assignmentQuestion.deleteMany({
     where: { assignmentId }
   });
+
+  // If there are uploaded attachments or videos hosted in storage, delete them to free up quota
+  if (assignment.attachmentUrl) {
+    try {
+      await deleteFileByUrlService(assignment.attachmentUrl, schoolId);
+    } catch (err) {
+      console.error("[Delete Assignment] Failed to delete attachment file from storage:", err);
+    }
+  }
+
+  if (assignment.videoUrl && !assignment.videoUrl.includes("youtube.com") && !assignment.videoUrl.includes("youtu.be") && !assignment.videoUrl.includes("vimeo.com")) {
+    try {
+      await deleteFileByUrlService(assignment.videoUrl, schoolId);
+    } catch (err) {
+      console.error("[Delete Assignment] Failed to delete video file from storage:", err);
+    }
+  }
 
   return prisma.assignment.delete({
     where: { id: assignmentId }

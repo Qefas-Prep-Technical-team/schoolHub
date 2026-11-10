@@ -12,6 +12,11 @@ import { cn } from '@/lib/utils';
 import { toast } from 'react-toastify';
 import { generatePDF } from '@/utils/pdfGenerator';
 import { assertSchoolPayingPlan } from '@/utils/subscriptionPlanCheck';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
+import {
+  ParentSubjectPerformanceExportModal,
+  SubjectPerformanceItem,
+} from './components/ParentSubjectPerformanceExportModal';
 
 function getGradeLetter(score: number): string {
   if (score >= 90) return 'A+';
@@ -33,122 +38,86 @@ export default function PerformancePage() {
     const { selectedChildId, setSelectedChildId } = useParentStore();
     const { data: student } = useChildExams(selectedChildId);
     const { data: children = [] } = useParentChildren();
-    const [isExporting, setIsExporting] = useState(false);
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
     const studentName = student?.name || 'Student';
+    const studentCode = student?.id ? student.id.slice(-6).toUpperCase() : 'N/A';
     const className = student?.classes?.[0]?.class?.name || 'Class';
     const deptName = student?.department?.name || 'Curriculum';
 
-    const handleExportReport = async () => {
-        if (!student) return;
+    // Build subject list synchronized with school grading system
+    const customGradingSystem = (student?.school as { gradingSystem?: unknown[] } | undefined)?.gradingSystem;
 
-        // Verify that the child's school is on a paying plan (plans other than FREE)
-        if (!assertSchoolPayingPlan(student.school)) {
-            return;
-        }
+    const subjectPerformanceList: SubjectPerformanceItem[] = (() => {
+        if (!student) return [];
+        const deptSubjects = student.department?.subjects || [];
+        const grades = student.grades || [];
 
-        setIsExporting(true);
-        const toastId = toast.loading("Generating Department Subject Report...", { autoClose: false });
+        const subjectsMap = new Map<string, {
+            name: string;
+            teacher: string;
+            totalScore: number;
+            totalMaxMarks: number;
+            count: number;
+        }>();
 
-        try {
-            const deptSubjects = student.department?.subjects || [];
-            const grades = student.grades || [];
-
-            const subjectsMap = new Map<string, {
-                name: string;
-                teacher: string;
-                totalScore: number;
-                totalMaxMarks: number;
-                count: number;
-            }>();
-
-            if (deptSubjects.length > 0) {
-                for (const ds of deptSubjects) {
-                    if (ds.subject?.name) {
-                        subjectsMap.set(ds.subject.name.toLowerCase(), {
-                            name: ds.subject.name,
-                            teacher: 'Department Instructor',
-                            totalScore: 0,
-                            totalMaxMarks: 0,
-                            count: 0
-                        });
-                    }
+        if (deptSubjects.length > 0) {
+            for (const ds of deptSubjects) {
+                if (ds.subject?.name) {
+                    subjectsMap.set(ds.subject.name.toLowerCase(), {
+                        name: ds.subject.name,
+                        teacher: 'Department Instructor',
+                        totalScore: 0,
+                        totalMaxMarks: 0,
+                        count: 0
+                    });
                 }
             }
-
-            for (const g of grades) {
-                const subName = g.subject || g.subjectPaper?.subject?.name;
-                if (!subName) continue;
-                const key = subName.toLowerCase();
-
-                if (deptSubjects.length > 0 && !subjectsMap.has(key)) continue;
-
-                const existing = subjectsMap.get(key) || {
-                    name: subName,
-                    teacher: g.subjectPaper?.teacher?.name || 'Class Teacher',
-                    totalScore: 0,
-                    totalMaxMarks: 0,
-                    count: 0
-                };
-
-                if (g.subjectPaper?.teacher?.name) existing.teacher = g.subjectPaper.teacher.name;
-                existing.totalScore += Number(g.score || 0);
-                existing.totalMaxMarks += Number(g.maxMarks || 100);
-                existing.count += 1;
-                subjectsMap.set(key, existing);
-            }
-
-            const tableData = Array.from(subjectsMap.values()).map((s, index) => {
-                const avg = s.totalMaxMarks > 0 
-                    ? Math.round((s.totalScore / s.totalMaxMarks) * 100) 
-                    : (s.count > 0 ? Math.round(s.totalScore / s.count) : 0);
-                const grade = s.count > 0 ? getGradeLetter(avg) : 'N/A';
-                const tier = s.count > 0 ? getPerformanceTier(avg) : 'Pending Evaluation';
-
-                return [
-                    String(index + 1),
-                    s.name,
-                    s.teacher,
-                    String(s.count),
-                    s.count > 0 ? `${avg}%` : 'N/A',
-                    grade,
-                    tier
-                ];
-            });
-
-            await generatePDF({
-                title: 'Department Subject Mastery Report',
-                filename: `${student.name.replace(/\s+/g, '_')}_Subject_Performance.pdf`,
-                schoolProfile: student.school,
-                metaData: [
-                    { label: 'Student Name', value: student.name },
-                    { label: 'Student ID', value: student.id ? student.id.slice(-6).toUpperCase() : 'N/A' },
-                    { label: 'Class', value: className },
-                    { label: 'Department', value: deptName },
-                    { label: 'Subjects Analyzed', value: String(tableData.length) },
-                    { label: 'Date', value: new Date().toLocaleDateString('en-GB') }
-                ],
-                tableHeaders: [['#', 'Subject Name', 'Instructor', 'Assessments Taken', 'Average Score', 'Letter Grade', 'Mastery Tier']],
-                tableData
-            });
-
-            toast.update(toastId, {
-                render: "Report Exported Successfully!",
-                type: "success",
-                isLoading: false,
-                autoClose: 3000
-            });
-        } catch (error) {
-            console.error('Failed to export PDF:', error);
-            toast.update(toastId, {
-                render: "Failed to export PDF",
-                type: "error",
-                isLoading: false,
-                autoClose: 3000
-            });
-        } finally {
-            setIsExporting(false);
         }
+
+        for (const g of grades) {
+            const subName = g.subject || g.subjectPaper?.subject?.name;
+            if (!subName) continue;
+            const key = subName.toLowerCase();
+
+            if (deptSubjects.length > 0 && !subjectsMap.has(key)) continue;
+
+            const existing = subjectsMap.get(key) || {
+                name: subName,
+                teacher: g.subjectPaper?.teacher?.name || 'Class Teacher',
+                totalScore: 0,
+                totalMaxMarks: 0,
+                count: 0
+            };
+
+            if (g.subjectPaper?.teacher?.name) existing.teacher = g.subjectPaper.teacher.name;
+            existing.totalScore += Number(g.score || 0);
+            existing.totalMaxMarks += Number(g.maxMarks || 100);
+            existing.count += 1;
+            subjectsMap.set(key, existing);
+        }
+
+        return Array.from(subjectsMap.values()).map((s) => {
+            const avg = s.totalMaxMarks > 0 
+                ? Math.round((s.totalScore / s.totalMaxMarks) * 100) 
+                : (s.count > 0 ? Math.round(s.totalScore / s.count) : 0);
+            const evalResult = getGradeEvaluation(avg, customGradingSystem);
+            const grade = s.count > 0 ? evalResult.grade : 'N/A';
+            const tier = s.count > 0 ? (evalResult.remark || getPerformanceTier(avg)) : 'Pending Evaluation';
+
+            return {
+                name: s.name,
+                teacher: s.teacher,
+                average: avg,
+                grade,
+                tier,
+                assessmentsCount: s.count,
+            };
+        });
+    })();
+
+    const handleExportReport = () => {
+        setIsExportModalOpen(true);
     };
 
     return (
@@ -207,20 +176,15 @@ export default function PerformancePage() {
                             </div>
                         )}
 
-                        {/* Export Button (Guarded by Paying School Plan) */}
+                        {/* Export Button (Guarded by Paying School Plan & Quota) */}
                         <button
                             type="button"
                             onClick={handleExportReport}
-                            disabled={isExporting}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition-all active:scale-95 cursor-pointer shrink-0"
-                            title="Export official PDF subject performance report"
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition-all active:scale-95 cursor-pointer shrink-0"
+                            title="Export subject mastery dossier"
                         >
-                            {isExporting ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <Download className="w-4 h-4" />
-                            )}
-                            <span>{isExporting ? "Exporting..." : "Export Report"}</span>
+                            <Download className="w-4 h-4" />
+                            <span>Export Dossier</span>
                         </button>
                     </div>
                 </div>
@@ -229,6 +193,19 @@ export default function PerformancePage() {
                 <div className="pt-2">
                     <SubjectPerformanceList />
                 </div>
+
+                {/* Multi-Format Academic Export Modal */}
+                <ParentSubjectPerformanceExportModal
+                    isOpen={isExportModalOpen}
+                    onClose={() => setIsExportModalOpen(false)}
+                    studentName={studentName}
+                    studentCode={studentCode}
+                    className={className}
+                    deptName={deptName}
+                    schoolProfile={student?.school}
+                    schoolId={student?.school?.id}
+                    subjects={subjectPerformanceList}
+                />
             </main>
         </div>
     );

@@ -5,9 +5,7 @@ import Link from 'next/link'
 import { ChevronRight, Download, User, Calendar, ArrowLeft, RotateCw } from 'lucide-react'
 import { ChildSummary } from '@/lib/api/services/parentService'
 import { ReportCardData } from './types'
-import { generatePDF } from '@/utils/pdfGenerator'
-import { toast } from 'react-toastify'
-import { assertSchoolPayingPlan } from '@/utils/subscriptionPlanCheck'
+import { ParentReportCardExportModal } from './ParentReportCardExportModal'
 
 interface BreadcrumbActionsProps {
   data: ReportCardData
@@ -26,99 +24,11 @@ export default function BreadcrumbActions({
   onSelectChild,
   onSelectTerm,
 }: BreadcrumbActionsProps) {
-  const [isExporting, setIsExporting] = useState<boolean>(false)
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false)
   const termOptions = ['All Terms', 'Term 1', 'Term 2', 'Term 3']
 
-  const handleDownloadPDF = async () => {
-    if (isExporting) return
-
-    // Verify school is on a paying plan (plans apart from FREE)
-    if (!assertSchoolPayingPlan(data.schoolProfile)) {
-      return
-    }
-
-    setIsExporting(true)
-    const toastId = toast.loading("Generating PDF...", { autoClose: false })
-
-    try {
-      const tableHeaders = [
-        ['S/N', 'Subject Name', 'C.A. (40)', 'Terminal Exam (60)', 'Total Mark (100)', 'Grade', 'Teacher Remark']
-      ]
-
-      const tableData = data.subjects.map((sub, i) => [
-        String(i + 1),
-        sub.name,
-        `${sub.caScore}/${sub.caMax}`,
-        `${sub.examScore}/${sub.examMax}`,
-        `${sub.totalScore}/${sub.totalMax} (${sub.percentage}%)`,
-        sub.grade,
-        sub.remark
-      ])
-
-      await generatePDF({
-        title: `${data.schoolName.toUpperCase()} - STUDENT ACTIVITY & ASSESSMENT REPORT`,
-        filename: `${data.studentName.replace(/\s+/g, '_')}_Activity_Report_${data.term.replace(/\s+/g, '_')}.pdf`,
-        schoolProfile: {
-          name: data.schoolName,
-          address: data.schoolAddress,
-          email: data.schoolEmail,
-          phone: data.schoolPhone,
-          logo: data.schoolLogo
-        },
-        metaData: [
-          { label: 'Student Name', value: data.studentName },
-          { label: 'Student ID', value: data.studentCode },
-          { label: 'Current Class', value: data.currentClass || 'Standard Grade' },
-          { label: 'Academic Session', value: data.session },
-          { label: 'Evaluation Period', value: data.term },
-          { label: 'Document Type', value: 'Qefas Hub Activity Report (Interim)' },
-          { label: 'Cumulative Average', value: `${data.averageScore}% (Grade ${data.overallGrade})` },
-          { label: 'Attendance Rate', value: `${data.attendanceRate}% Recorded` },
-          { label: 'Academic Standing', value: data.standing },
-          { label: 'Official Status', value: 'Interim Record • Final School Report Card on Final Results Page' }
-        ],
-        tableHeaders,
-        tableData,
-        additionalTables: [
-          {
-            title: 'Institutional Notice & Platform Disclosure',
-            headers: [['Topic', 'Official Declaration']],
-            data: [
-              [
-                'Document Scope',
-                'This report reflects all continuous assessment activities, assignments, and test scores logged on Qefas Hub.'
-              ],
-              [
-                'Final School Report Card',
-                'This document is NOT the final terminal school report card. The official final terminal school report card endorsed by the school administration appears on the Final Results portal.'
-              ],
-              [
-                'Advancement Recommendation',
-                `${data.standing} — ${data.promotionStatus || 'Cleared for Class Advancement'}`
-              ]
-            ]
-          }
-        ],
-        orientation: 'portrait'
-      })
-
-      toast.update(toastId, {
-        render: "PDF Exported Successfully!",
-        type: "success",
-        isLoading: false,
-        autoClose: 3000
-      })
-    } catch (error) {
-      console.error('Failed to export PDF:', error)
-      toast.update(toastId, {
-        render: "Failed to export PDF",
-        type: "error",
-        isLoading: false,
-        autoClose: 3000
-      })
-    } finally {
-      setIsExporting(false)
-    }
+  const handleDownloadPDF = () => {
+    setIsExportModalOpen(true)
   }
 
   return (
@@ -204,23 +114,25 @@ export default function BreadcrumbActions({
           </div>
         </div>
 
-        {/* Button: PDF Export */}
+        {/* Button: PDF Export / Dossier Export */}
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handleDownloadPDF}
-            disabled={isExporting}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-xs transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
           >
-            {isExporting ? (
-              <RotateCw size={15} className="animate-spin" />
-            ) : (
-              <Download size={15} />
-            )}
-            <span>{isExporting ? "Generating PDF..." : "Download PDF"}</span>
+            <Download size={15} />
+            <span>Export Report Card</span>
           </button>
         </div>
       </div>
+
+      {/* Multi-Format Academic Export Modal */}
+      <ParentReportCardExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        data={data}
+      />
     </div>
   )
 }

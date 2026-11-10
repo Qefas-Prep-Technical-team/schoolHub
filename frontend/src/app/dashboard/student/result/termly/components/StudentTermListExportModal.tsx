@@ -1,0 +1,348 @@
+"use client";
+
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Loader2, Download, FileSpreadsheet, FileText, CheckCircle2 } from "lucide-react";
+import { toast } from "react-toastify";
+import { isSchoolOnPayingPlan } from "@/utils/subscriptionPlanCheck";
+import {
+  getMonthlyExportUsage,
+  incrementMonthlyExportUsage,
+  FREE_TIER_MONTHLY_EXPORT_LIMIT,
+} from "@/utils/exportQuotaManager";
+import { dispatchExportLeadershipNotification } from "@/lib/api/services/exportNotificationService";
+import { resolveDigitalSignatures } from "@/app/dashboard/admin/grades/utils/signatureResolver";
+import { ExportQuotaBanner } from "@/app/dashboard/admin/grades/components/export/ExportQuotaBanner";
+import { generatePDF } from "@/utils/pdfGenerator";
+import {
+  type TermListSpreadsheetRow,
+  exportTermListToExcel,
+  exportTermListToCSV,
+} from "../utils/termResultSpreadsheetExporter";
+
+export interface StudentTermListExportModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  studentName: string;
+  studentCode: string;
+  records: TermListSpreadsheetRow[];
+  schoolProfile?: any;
+  schoolId?: string;
+}
+
+export function StudentTermListExportModal({
+  isOpen,
+  onClose,
+  studentName,
+  studentCode,
+  records,
+  schoolProfile,
+  schoolId,
+}: StudentTermListExportModalProps) {
+  const [selectedFormat, setSelectedFormat] = useState<"pdf" | "excel" | "csv">("pdf");
+  const [isExporting, setIsExporting] = useState(false);
+
+  const isPaying = Boolean(
+    isSchoolOnPayingPlan(schoolProfile) ||
+      (schoolProfile?.plan && schoolProfile.plan.toUpperCase() !== "FREE")
+  );
+
+  const quotaContextId = schoolId || "student_termlist_export";
+  const [quota, setQuota] = useState(() => getMonthlyExportUsage(quotaContextId));
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setQuota(getMonthlyExportUsage(quotaContextId));
+    }
+  }, [isOpen, quotaContextId]);
+
+  if (!isOpen) return null;
+
+  const schoolName = schoolProfile?.name || "School Portal";
+
+  const handleDownload = async () => {
+    if (!isPaying && quota.remaining <= 0) {
+      toast.error(
+        `Monthly free tier download quota (${FREE_TIER_MONTHLY_EXPORT_LIMIT} exports) exceeded. Contact your administration to upgrade.`
+      );
+      return;
+    }
+
+    setIsExporting(true);
+
+    try {
+      if (selectedFormat === "excel") {
+        if (!isPaying) {
+          toast.error("Spreadsheet exports (.xlsx) are only available on institutional paid plans.");
+          setIsExporting(false);
+          return;
+        }
+        exportTermListToExcel(studentName, records, schoolName);
+      } else if (selectedFormat === "csv") {
+        if (!isPaying) {
+          toast.error("CSV exports (.csv) are only available on institutional paid plans.");
+          setIsExporting(false);
+          return;
+        }
+        exportTermListToCSV(studentName, records, schoolName);
+      } else {
+        // PDF Export
+        const digitalSignatures = isPaying
+          ? await resolveDigitalSignatures(schoolProfile, isPaying)
+          : undefined;
+
+        const tableHeaders = [
+          ["#", "Academic Session", "Class Cohort", "Term", "Evaluated Subjects", "Released", "Status"],
+        ];
+
+        const tableData = records.map((r, idx) => [
+          (idx + 1).toString(),
+          r.sessionName,
+          r.className,
+          r.termLabel,
+          r.totalSubjects.toString(),
+          r.revealedSubjects.toString(),
+          r.releaseStatus,
+        ]);
+
+        const metaData = [
+          { label: "Student Name", value: studentName },
+          { label: "Student ID", value: studentCode },
+          { label: "Enrolled Terms", value: `${records.length} Terms Recorded` },
+          { label: "Export Date", value: new Date().toLocaleDateString() },
+        ];
+
+        const safeStudent = studentName.replace(/\s+/g, "_");
+
+        await generatePDF({
+          title: `Published Academic Terms Directory`,
+          filename: `${safeStudent}_Published_Terms_Directory.pdf`,
+          schoolProfile,
+          metaData,
+          tableHeaders,
+          tableData,
+          signatures: isPaying
+            ? {
+                left: {
+                  label: "Academic Counselor",
+                  name: "Guidance & Counseling Department",
+                  subLabel: "Academic Verification",
+                },
+                right: {
+                  label: digitalSignatures?.adminTitle || "Principal / Director",
+                  name: digitalSignatures?.adminName || schoolProfile?.principalName || "Head of Institution",
+                  signatureUrl: digitalSignatures?.principalSigUrl,
+                  subLabel: "Institutional Endorsement",
+                },
+              }
+            : {
+                left: { label: "Academic Counselor", name: "—", subLabel: "Unendorsed Record" },
+                right: { label: "Principal / Director", name: "—", subLabel: "Unendorsed Record" },
+              },
+          orientation: "portrait",
+        });
+      }
+
+      // Decrement quota for free users
+      if (!isPaying) {
+        incrementMonthlyExportUsage(quotaContextId);
+        setQuota(getMonthlyExportUsage(quotaContextId));
+      }
+
+      // Dispatch audit notification
+      if (schoolId) {
+        dispatchExportLeadershipNotification({
+          schoolId,
+          actorName: studentName,
+          actorRole: "STUDENT",
+          resourceTitle: `Published Academic Terms Directory`,
+          recordCount: records.length,
+          format: selectedFormat.toUpperCase() as "PDF" | "EXCEL" | "CSV",
+        }).catch((err) => console.warn("Leadership audit notification deferred:", err));
+      }
+
+      toast.success(
+        `${selectedFormat.toUpperCase()} directory of terms exported successfully!`
+      );
+      onClose();
+    } catch (err: unknown) {
+      console.error("Term list export failed:", err);
+      toast.error("Failed to export terms directory. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !isExporting && !open && onClose()}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-base sm:text-lg font-bold">
+            Export Published Terms Directory
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            {studentName} • {records.length} Published Terms
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {/* Quota Banner */}
+          <ExportQuotaBanner
+            isPaying={isPaying}
+            used={quota.used}
+            limit={quota.limit}
+            remaining={quota.remaining}
+          />
+
+          {/* Export Format Selector */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-foreground">Select Export Format</label>
+            <div className="grid grid-cols-3 gap-2">
+              {/* PDF Option */}
+              <button
+                type="button"
+                onClick={() => setSelectedFormat("pdf")}
+                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                  selectedFormat === "pdf"
+                    ? "border-pink-600 bg-pink-50/50 dark:bg-pink-950/20 ring-1 ring-pink-600"
+                    : "border-border hover:border-slate-300 dark:hover:border-zinc-700 bg-card"
+                }`}
+              >
+                <div className="flex items-center justify-between w-full mb-1.5">
+                  <FileText
+                    className={`w-5 h-5 ${
+                      selectedFormat === "pdf" ? "text-pink-600" : "text-muted-foreground"
+                    }`}
+                  />
+                  {selectedFormat === "pdf" && <CheckCircle2 className="w-4 h-4 text-pink-600" />}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground">Official PDF</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {isPaying ? "Signed & Endorsed" : "Standard Format"}
+                  </p>
+                </div>
+              </button>
+
+              {/* Excel Option */}
+              <button
+                type="button"
+                disabled={!isPaying}
+                onClick={() => setSelectedFormat("excel")}
+                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                  !isPaying
+                    ? "opacity-50 cursor-not-allowed border-dashed bg-muted/30"
+                    : selectedFormat === "excel"
+                    ? "border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 ring-1 ring-emerald-600"
+                    : "border-border hover:border-slate-300 dark:hover:border-zinc-700 bg-card"
+                }`}
+              >
+                <div className="flex items-center justify-between w-full mb-1.5">
+                  <FileSpreadsheet
+                    className={`w-5 h-5 ${
+                      selectedFormat === "excel" ? "text-emerald-600" : "text-muted-foreground"
+                    }`}
+                  />
+                  {selectedFormat === "excel" && (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground">Excel (.xlsx)</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {isPaying ? "Tabular Sheet" : "Pro Plan Only"}
+                  </p>
+                </div>
+              </button>
+
+              {/* CSV Option */}
+              <button
+                type="button"
+                disabled={!isPaying}
+                onClick={() => setSelectedFormat("csv")}
+                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                  !isPaying
+                    ? "opacity-50 cursor-not-allowed border-dashed bg-muted/30"
+                    : selectedFormat === "csv"
+                    ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/20 ring-1 ring-blue-600"
+                    : "border-border hover:border-slate-300 dark:hover:border-zinc-700 bg-card"
+                }`}
+              >
+                <div className="flex items-center justify-between w-full mb-1.5">
+                  <FileSpreadsheet
+                    className={`w-5 h-5 ${
+                      selectedFormat === "csv" ? "text-blue-600" : "text-muted-foreground"
+                    }`}
+                  />
+                  {selectedFormat === "csv" && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground">CSV (.csv)</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    {isPaying ? "Raw Data" : "Pro Plan Only"}
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Directory Summary Card */}
+          <div className="p-3.5 rounded-xl border border-border/80 bg-muted/20 space-y-2 text-xs">
+            <div className="flex justify-between py-1 border-b border-border/50">
+              <span className="text-muted-foreground">Student Name</span>
+              <span className="font-bold text-foreground">{studentName}</span>
+            </div>
+            <div className="flex justify-between py-1 border-b border-border/50">
+              <span className="text-muted-foreground">Student ID</span>
+              <span className="font-bold text-foreground">{studentCode}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-muted-foreground">Total Terms Available</span>
+              <span className="font-bold text-foreground">{records.length} Terms</span>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="flex-col sm:flex-row gap-2 pt-2 border-t border-border/60">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isExporting}
+            onClick={onClose}
+            className="sm:w-auto w-full text-xs"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            disabled={isExporting || (!isPaying && quota.remaining <= 0)}
+            onClick={handleDownload}
+            className="sm:w-auto w-full text-xs font-semibold gap-1.5 bg-pink-600 hover:bg-pink-700 text-white"
+          >
+            {isExporting ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Exporting {selectedFormat.toUpperCase()}...
+              </>
+            ) : !isPaying && quota.remaining <= 0 ? (
+              "Monthly Quota Exceeded (10/10)"
+            ) : (
+              <>
+                <Download className="w-3.5 h-3.5" />
+                Export {selectedFormat.toUpperCase()} Directory
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

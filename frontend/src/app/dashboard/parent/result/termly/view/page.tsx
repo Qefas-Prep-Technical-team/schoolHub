@@ -28,6 +28,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { assertSchoolPayingPlan } from "@/utils/subscriptionPlanCheck";
+import { ParentTermlyResultExportModal } from "./components/ParentTermlyResultExportModal";
+import { TermResultSpreadsheetData } from "@/app/dashboard/student/result/termly/utils/termResultSpreadsheetExporter";
 
 interface SubjectResultRecord {
   id: string;
@@ -72,9 +74,9 @@ function getTermLabel(term: string): string {
 
 function getTermGradient(term: string): string {
   const map: Record<string, string> = {
-    FIRST:  "from-violet-600 via-indigo-600 to-indigo-700",
+    FIRST: "from-violet-600 via-indigo-600 to-indigo-700",
     SECOND: "from-pink-500 via-rose-500 to-pink-600",
-    THIRD:  "from-amber-500 via-orange-500 to-amber-600",
+    THIRD: "from-amber-500 via-orange-500 to-amber-600",
   };
   return map[term] || "from-zinc-700 to-zinc-800";
 }
@@ -104,8 +106,8 @@ function ResultViewInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams.get("sessionId") ?? "";
-  const term      = searchParams.get("term") ?? "";
-  const childId   = searchParams.get("childId") ?? "";
+  const term = searchParams.get("term") ?? "";
+  const childId = searchParams.get("childId") ?? "";
 
   const { selectedChildId } = useParentStore();
   const effectiveChildId = childId || selectedChildId || "";
@@ -121,6 +123,7 @@ function ResultViewInner() {
 
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.innerWidth < 768) {
@@ -180,62 +183,58 @@ function ResultViewInner() {
     };
   }, [group]);
 
-  const handleExportPDF = async () => {
-    if (!assertSchoolPayingPlan(childDetails?.school)) {
-      return;
-    }
+  // Prepare comprehensive TermResultSpreadsheetData for multi-format export
+  const termSpreadsheetData: TermResultSpreadsheetData | null = useMemo(() => {
+    if (!group) return null;
 
     const termLabel = getTermLabel(term);
-    const sessionLabel = group?.session?.name || "Academic Session";
-    const className = group?.class?.name || "N/A";
+    const sessionLabel = group.session?.name || "Academic Session";
+    const className = group.class?.name || "N/A";
     const studentName = childDetails?.name || "Student";
     const studentCode = childDetails?.studentCode || "N/A";
 
-    const tableHeaders = [
-      ["#", "Course Code", "Subject Title", "Assignment", "C.A. / Quiz", "Exam", "Total Score", "Grade", "Status"]
-    ];
-
-    const tableData = (group?.subjectResults || []).map((subject, index) => {
+    const records = (group.subjectResults || []).map((subject) => {
       const released = Boolean(subject.scoresRevealed);
       const total = released && subject.totalScore != null ? Number(subject.totalScore) : null;
       const grade = released && total != null ? getGradeLetter(total, schoolGradingSystem) : "—";
-      const assignment = released ? (subject.assignmentScore != null ? String(subject.assignmentScore) : "—") : "N/A";
-      const ca = released ? ((subject.caScore ?? subject.quizScore) != null ? String(subject.caScore ?? subject.quizScore) : "—") : "N/A";
-      const exam = released ? (subject.examScore != null ? String(subject.examScore) : "—") : "N/A";
-      const totalStr = released && total != null ? String(total) : "N/A";
+      const assignment = released ? (subject.assignmentScore != null ? subject.assignmentScore : "—") : "N/A";
+      const ca = released ? ((subject.caScore ?? subject.quizScore) != null ? (subject.caScore ?? subject.quizScore)! : "—") : "N/A";
+      const exam = released ? (subject.examScore != null ? subject.examScore : "—") : "N/A";
+      const totalScore = released && total != null ? total : "N/A";
       const status = released ? (total != null && total >= 50 ? "PASS" : "CREDIT/FAIL") : "PENDING";
 
-      return [
-        (index + 1).toString(),
-        subject.subject?.code || "—",
-        subject.subject?.name || "Untitled Subject",
-        assignment,
-        ca,
-        exam,
-        totalStr,
+      return {
+        courseCode: subject.subject?.code || "—",
+        subjectTitle: subject.subject?.name || "Untitled Subject",
+        assignmentScore: assignment,
+        quizScore: ca,
+        caScore: ca,
+        examScore: exam,
+        totalScore,
         grade,
         status,
-      ];
+      };
     });
 
-    await generatePDF({
-      title: `${termLabel} Term Result Sheet (${sessionLabel})`,
-      filename: `${studentName.replace(/\s+/g, "_")}_${term}_Term_Result_Sheet.pdf`,
-      schoolProfile: childDetails?.school,
-      metaData: [
-        { label: "Student Name", value: studentName },
-        { label: "Student ID", value: studentCode },
-        { label: "Academic Session", value: sessionLabel },
-        { label: "Term", value: termLabel },
-        { label: "Class / Grade", value: className },
-        { label: "Average Score", value: avg != null ? `${avg.toFixed(1)}%` : "N/A" },
-        { label: "Highest Score", value: highest != null ? `${highest}%` : "N/A" },
-        { label: "Released Coverage", value: `${group?.revealedCount || 0} / ${group?.subjectCount || 0} Subjects` },
-      ],
-      tableHeaders,
-      tableData,
-      orientation: "portrait",
-    });
+    return {
+      studentName,
+      studentCode,
+      className,
+      sessionName: sessionLabel,
+      termName: termLabel,
+      revealedCount: group.revealedCount || 0,
+      totalCount: group.subjectCount || 0,
+      averageScore: avg,
+      records,
+    };
+  }, [group, term, childDetails, schoolGradingSystem, avg]);
+
+  const handleExportPDF = () => {
+    if (effectiveChildId) {
+      router.push(`/dashboard/parent/child-details/${effectiveChildId}?action=transcript`);
+    } else {
+      setIsExportModalOpen(true);
+    }
   };
 
   if (isLoading) {
@@ -283,7 +282,7 @@ function ResultViewInner() {
 
   return (
     <div className="w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6 animate-in fade-in duration-500">
-      
+
       {/* Top Back Navigation */}
       <div className="flex items-center justify-between gap-3">
         <button
@@ -319,9 +318,9 @@ function ResultViewInner() {
                 <span className="font-bold text-white text-base sm:text-lg">
                   {childDetails?.name || "Student"}
                 </span>
-                {childDetails?.studentCode && (
+                {childDetails?.studentCode && !childDetails.studentCode.includes('-') && (
                   <span className="text-[10px] sm:text-[11px] bg-white/20 px-2 py-0.5 rounded-md font-semibold tracking-wide">
-                    ID: {childDetails.studentCode}
+                    Code: {childDetails.studentCode}
                   </span>
                 )}
               </div>
@@ -408,7 +407,7 @@ function ResultViewInner() {
             <h2 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100">
               Subject Score Sheet
             </h2>
-            <HeaderTooltip 
+            <HeaderTooltip
               content="Detailed grade registry showing component breakdown for each subject: homework assignments, continuous assessments, and final exam papers."
             />
             <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full ml-1">
@@ -473,7 +472,7 @@ function ResultViewInner() {
               className="h-8 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs shadow-sm flex items-center gap-1.5 cursor-pointer shrink-0"
             >
               <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Export PDF</span>
+              <span className="hidden sm:inline">Export Official Transcript</span>
             </Button>
           </div>
         </div>
@@ -493,7 +492,7 @@ function ResultViewInner() {
               const grade = getGradeLetter(total, schoolGradingSystem);
 
               return (
-                <div 
+                <div
                   key={subject.id}
                   className="bg-white dark:bg-zinc-950 rounded-2xl border border-slate-200/80 dark:border-zinc-800 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
                 >
@@ -690,12 +689,21 @@ function ResultViewInner() {
                 className="h-9 px-3.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs shadow-sm flex items-center gap-1.5 cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
-                Export PDF
+                Export Official Transcript
               </Button>
             </div>
           </div>
         )}
       </div>
+
+      {/* Multi-format Reusable Academic Export Modal */}
+      <ParentTermlyResultExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        data={termSpreadsheetData}
+        schoolProfile={childDetails?.school}
+        schoolId={(childDetails as unknown as { schoolId?: string })?.schoolId || childDetails?.school?.id}
+      />
     </div>
   );
 }

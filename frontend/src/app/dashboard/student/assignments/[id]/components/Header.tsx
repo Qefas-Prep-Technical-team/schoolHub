@@ -3,11 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Assignment } from './types';
-import { Award, Clock, CheckCircle2, Hourglass, Calendar, AlertCircle, ChevronLeft } from 'lucide-react';
+import { Award, Clock, CheckCircle2, Hourglass, Calendar, AlertCircle, ChevronLeft, Download } from 'lucide-react';
 import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   assignment: Assignment;
+  onOpenExportModal?: () => void;
+  gradeEvaluation?: { grade?: string; remark?: string; color?: string; bg?: string } | null;
 }
 
 interface TimeRemaining {
@@ -17,7 +20,7 @@ interface TimeRemaining {
   seconds: number;
 }
 
-export default function Header({ assignment }: Props) {
+export default function Header({ assignment, onOpenExportModal, gradeEvaluation }: Props) {
   const router = useRouter();
 
   const calculateTimeRemaining = (): TimeRemaining => {
@@ -52,9 +55,9 @@ export default function Header({ assignment }: Props) {
   const isPastDue = assignment?.dueDate && new Date().getTime() > new Date(assignment.dueDate).getTime();
   const isGraded = assignment.status === 'GRADED' || assignment.status === 'graded' || assignment.submissions?.[0]?.status === 'GRADED' || assignment.submissions?.[0]?.status === 'graded';
   const isSubmitted = assignment.status === 'SUBMITTED' || assignment.status === 'submitted' || assignment.submissions?.[0]?.status === 'SUBMITTED' || assignment.submissions?.[0]?.status === 'submitted' || isGraded;
-  
-  const effectiveStatus = (isPastDue && !isGraded && !isSubmitted) 
-    ? 'overdue' 
+
+  const effectiveStatus = (isPastDue && !isGraded && !isSubmitted)
+    ? 'overdue'
     : (isGraded ? 'graded' : isSubmitted ? 'submitted' : assignment?.status || 'pending');
 
   const getStatusBadge = (status: string) => {
@@ -72,7 +75,7 @@ export default function Header({ assignment }: Props) {
 
   return (
     <header className="mb-5 sm:mb-8 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 sm:p-6 md:p-8 shadow-xs">
-      
+
       {/* Mobile-Friendly Top Bar */}
       <div className="flex items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-100 dark:border-slate-800/80">
         <button
@@ -84,24 +87,39 @@ export default function Header({ assignment }: Props) {
           <span>Back to Assignments</span>
         </button>
 
-        <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700">
-          {assignment.subject?.name || 'Academic Course'}
-        </span>
+        <div className="flex items-center gap-2">
+          {onOpenExportModal && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onOpenExportModal}
+              className="h-8 px-2.5 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-95"
+            >
+              <Download className="h-3.5 w-3.5 text-pink-600 dark:text-pink-400" />
+              <span>Export</span>
+            </Button>
+          )}
+
+          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700">
+            {assignment.subject?.name || 'Academic Course'}
+          </span>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        
+
         {/* Left Section: Teacher Info, Title, Metadata */}
         <div className="flex-1 min-w-0">
-          
+
           {/* Teacher and Subject Header */}
           <div className="flex items-center gap-2.5 sm:gap-3 mb-2.5 sm:mb-3">
             <div className="size-9 sm:size-11 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs">
               {assignment.teacher?.user?.avatarUrl ? (
-                <img 
-                  src={assignment.teacher.user.avatarUrl} 
-                  alt={`${assignment.teacher.firstName}'s avatar`} 
-                  className="h-full w-full object-cover" 
+                <img
+                  src={assignment.teacher.user.avatarUrl}
+                  alt={`${assignment.teacher.firstName}'s avatar`}
+                  className="h-full w-full object-cover"
                 />
               ) : (
                 <span className="text-xs sm:text-sm font-black text-pink-600 dark:text-pink-400">
@@ -118,12 +136,12 @@ export default function Header({ assignment }: Props) {
               </p>
             </div>
           </div>
-          
+
           {/* Assignment Title */}
           <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight break-words mb-3">
             {assignment.title}
           </h1>
-          
+
           {/* Badges and metadata pills */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl font-bold uppercase tracking-wider border shadow-2xs ${getStatusBadge(effectiveStatus)}`}>
@@ -149,7 +167,7 @@ export default function Header({ assignment }: Props) {
             )}
           </div>
         </div>
-        
+
         {/* Right Section: Compact High-Tech Timer / Score Card */}
         <div className="w-full lg:w-auto lg:min-w-[260px] shrink-0 pt-1 lg:pt-0">
           {isGraded ? (
@@ -166,6 +184,18 @@ export default function Header({ assignment }: Props) {
                   / {assignment.totalMarks || 100} pts
                 </span>
               </div>
+              {gradeEvaluation?.grade && (
+                <div className="mt-2 flex items-center gap-1.5">
+                  <span className={`px-2 py-0.5 rounded-lg text-xs font-black uppercase tracking-wider border shadow-2xs ${gradeEvaluation.bg || 'bg-emerald-100'} ${gradeEvaluation.color || 'text-emerald-800'}`}>
+                    Grade: {gradeEvaluation.grade}
+                  </span>
+                  {gradeEvaluation.remark && (
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                      • {gradeEvaluation.remark}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           ) : isSubmitted ? (
             <div className="flex flex-col items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/20 p-3.5 sm:p-5 border border-blue-200/80 dark:border-blue-800/50 shadow-xs text-center">

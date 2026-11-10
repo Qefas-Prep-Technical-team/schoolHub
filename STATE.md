@@ -1,3 +1,199 @@
+### Tuesday, November 10, 2026
+- [x] Full System Build Verification & Environment Diagnostics:
+  - **Disk Space Recovery**: Diagnosed and cleared 5.75 GB of bloated webpack cache in `frontend/.next/cache`, recovering disk capacity to prevent `ENOSPC` write failures.
+  - **Frontend Production Build**: Successfully completed `next build --webpack` across all 208 static and dynamic app routes with 0 compile errors.
+  - **Backend Strict TypeScript Check**: Ran `tsc --project ./backend/tsconfig.json --noEmit` with 0 type errors.
+
+### Tuesday, November 10, 2026
+- [x] Parent Attendance Real-Time Refresh & Synchronization (`/dashboard/parent/attendance`):
+  - In [page.tsx](frontend/src/app/dashboard/parent/attendance/page.tsx), converted `handleManualRefresh` into an asynchronous multi-query synchronization handler using `Promise.all`.
+  - Refetches children list, parent dashboard stats, child details, and rich student attendance logs in parallel.
+  - Added an active `isRefreshing` loading state with spinning animation (`animate-spin`) on the refresh icon across both the [StudentProfile](frontend/src/app/dashboard/parent/attendance/components/StudentProfile.tsx) hero header and the empty state card.
+  - Dynamically updates the "Last Synced" timestamp with the exact time of the latest successful synchronization.
+  - Disabled refresh buttons while synchronization is in progress to prevent duplicate network requests.
+  - Verified with `tsc --noEmit` (0 errors).
+
+### Tuesday, November 10, 2026
+- [x] Text Wrapping & Layout Alignment Fix in Assignment Card PDF Export (`/dashboard/student/assignments/[id]`):
+  - Fixed text floating off page and out of container borders in `SingleAssignmentExportModal.tsx`.
+  - Added dynamic row height calculation (`optRowHeights`) based on the longest wrapped line between paired options.
+  - Constrained option text wrapping (`splitTextToSize`) by subtracting the width of the letter badge box, trailing status tag (`✓ CORRECT KEY` / `✗ YOUR CHOICE`), and safety margins.
+  - Padded prompt lines and short-answer boxes with explicit boundary checks to prevent overflow outside card frames.
+  - Verified with `tsc --noEmit` (0 errors).
+
+### Tuesday, November 10, 2026
+- [x] Custom High-Fidelity Assessment Review Card PDF Export (`/dashboard/student/assignments/[id]`):
+  - Completely replaced rigid autotable columns in `SingleAssignmentExportModal.tsx` with a dedicated, custom landscape vector card layout mirroring the web assignment review UI.
+  - Features of the custom card layout:
+    - **Header & Ribbon**: Slate-900 institutional banner with school name, assignment title, total score pill (with percentage), and metadata row (Student, Class Cohort, Subject, Date).
+    - **Question Card Containers**: Distinct white cards with subtle slate border and margin separation across pages.
+    - **Interactive Multi-Choice Options**: Rendered as two-column interactive option cards with letter boxes (A, B, C, D).
+    - **Visual Color Markers**:
+      - Official Correct Key: Emerald green border, green fill (`#F0FDF4`), bold green typography (`#065F46`), and `✓ CORRECT KEY` / `✓ CORRECT & CHOSEN` tags.
+      - Incorrect Student Choice: Rose red border, rose fill (`#FFF1F2`), bold red typography (`#9F1239`), and `✗ YOUR CHOICE` tag.
+      - Neutral Options: Clean slate-50 styling.
+    - **Outcome Pill**: Top-right corner pill per question indicating `[✓ CORRECT] +Marks` or `[✗ INCORRECT] 0 pt`.
+    - **Short Answer Support**: Dual parallel side-by-side comparison boxes for student response vs instructor evaluation criteria.
+    - **Page Flow & Endorsement**: Automatic multi-page pagination with running header/footer and institutional signature line.
+  - Successfully validated with `tsc --noEmit` (0 errors).
+
+### Tuesday, November 10, 2026
+- [x] Landscape Layout & Visual Option Markers for Assignment Export (`/dashboard/student/assignments/[id]`):
+  - Updated `SingleAssignmentExportModal.tsx` to export the PDF in **landscape mode** (`orientation: "landscape"`), granting expansive horizontal real estate (125mm wide prompt block).
+  - In each question block, formatted every option with clear visual markers directly reflecting student response vs correct answer:
+    - `[✓ CORRECT & CHOSEN] (A) Text` for scholar's accurate answer.
+    - `[✓ OFFICIAL KEY] (B) Text` highlighting the correct answer key in green.
+    - `[✗ WRONG SELECTION] (C) Text` marking erroneous scholar selections in rose red.
+    - `[  ] (D) Text` for unselected neutral options.
+  - Styled table cells with targeted colors:
+    - **Official Answer Key**: Soft emerald background (`#F0FDF4`) and bold green text (`#166534`).
+    - **Your Selection**: Mint green when correct, light rose (`#FFF1F2`) with dark red text (`#9F1239`) when incorrect.
+    - **Evaluation column**: Full emerald pill for `✓ CORRECT` and rose red pill for `✗ INCORRECT`.
+  - Verified with `tsc --noEmit` (0 errors).
+
+### Tuesday, November 10, 2026
+- [x] Past Question & Assignment Review Export Enhancement (`/dashboard/student/assignments/[id]`):
+  - Upgraded `SingleAssignmentExportModal.tsx` to present assignment review exports (PDF, Excel, and CSV) like a formatted past examination question paper.
+  - Included each question's prompt, options (A, B, C, D or True/False), student's selected answer, and the official correct answer key.
+  - Added visual correctness indicators and dynamic badge styling:
+    - **PDF**: Emerald green background (`#D1FAE5`) with dark green text (`#065F46`) for CORRECT; Rose red background (`#FFE4E6`) with dark red text (`#9F1239`) for INCORRECT; Slate for teacher-evaluated.
+    - Set custom autotable column dimensions and alignments for prompt blocks, official answer keys, and results.
+    - **Excel (.xlsx) & CSV (.csv)**: Included granular question type, options A-D columns, student answer, official key, result status, marks earned, and maximum marks.
+  - Validated frontend with `tsc --noEmit` (0 errors).
+
+### Tuesday, November 10, 2026
+- [x] Updated Parent Termly Results Hub & Sub-routes (/dashboard/parent/result/termly & /view):
+  - In termly result breakdown (`/dashboard/parent/result/termly/view/page.tsx`), wired PDF export triggers to redirect directly to the official transcript generator (`/dashboard/parent/child-details/[childId]?action=transcript`).
+  - Sanitized student identification in `ParentTermlyResultExportModal.tsx` and `termly/view/page.tsx` to ensure only official student codes are presented, strictly omitting raw database UUIDs.
+  - Preserved dynamic grading scale synchronization using `getGradeEvaluation(score, schoolGradingSystem)`.
+  - Maintained full responsive layout width (`max-w-[1600px]`).
+  - Verified 0 TypeScript compilation errors.
+
+- [x] Enhanced Parent Offline Grades Hub & Sub-routes (/dashboard/parent/offline-grades):
+  - Standardized grade column headers from legacy 'WAEC Grade' to institutional 'Evaluated Grade' across table views and PDF dossier headers to maintain dynamic grading system synchronization.
+  - Ensured redirection to the official transcript generation interface with `action=transcript` when parents request academic record downloads.
+  - Verified zero raw user or database IDs are leaked in any export format (PDF, Excel .xlsx, CSV).
+  - Maintained responsive layout standard (`max-w-[1600px]`).
+  - Verified 0 TypeScript compilation errors.
+
+- [x] Updated Parent Offline Grades Export and Transcript Redirection (/dashboard/parent/offline-grades):
+  - Configured download/export action on the page to redirect parents directly to the student's official transcript interface (`/dashboard/parent/child-details/[childId]?action=transcript`).
+  - Added support for `action=transcript` in child details (`frontend/src/app/dashboard/parent/child-details/[childId]/page.tsx`) to immediately open the official signed transcript generation dialogue.
+  - Sanitized student identification across all export artifacts (`ParentOfflineGradeExportModal.tsx`, `offlineGradeSpreadsheetExporter.ts`):
+    - Ensured raw internal database IDs (`userId` or UUID strings) are never exported.
+    - Swapped generic "Student ID" labels for official "Student Code" and filtered out any internal UUIDs.
+  - Verification:
+    - Confirmed zero TypeScript compilation errors via `tsc --noEmit`.
+
+- [x] Integrated Reusable Academic Export & Grading Sync across Parent Exams & Results Hub (/dashboard/parent/exams&results) and Sub-routes:
+  - Applied school_grading_system_sync:
+    - Synchronized letter grades, tier evaluations, remarks, and pill badges dynamically with connected school's configured grading system using getGradeEvaluation(score, customGradingSystem) and getEffectiveGradingSystem().
+    - Removed hardcoded grade thresholds across stat-cards.tsx, final-results.tsx, exam-list.tsx, sidebar-right.tsx, /analytics, /details, and /calender (calendarUtils.ts), with strict fallback to default 9-tier matrix.
+  - Applied reusable_academic_export_and_quota:
+    - Built parentExamsSpreadsheetExporter.ts providing structured Excel (.xlsx) and CSV (.csv) dossier exports.
+    - Implemented ParentExamsExportModal.tsx on main hub /dashboard/parent/exams&results with ExportQuotaBanner (10 free downloads/month, Pro lock on spreadsheets, digital signature resolution for paid plans vs unendorsed preview for free, and leadership audit notifications).
+    - Added 'Export Dossier' quick action to header toolbar in page.tsx.
+  - Standardized Layout Width:
+    - Standardized container constraints from max-w-[99%] / max-w-[98%] to max-w-[1600px] across main hub, /analytics, /details, /report-card, and /calender.
+  - Verification:
+    - Verified full TypeScript compilation across frontend/tsconfig.json with 0 errors.
+
+- [x] Fixed Module Resolution Import in Backend Assignment Service:
+  - Replaced explicit .js extension import with standard TypeScript module import for deleteFileByUrlService in backend/src/modules/assignment/assignment.service.ts.
+  - Verified runtime resolution with ts-node and confirmed successful service loading.
+- [x] Standardized Layout Width & Responsive Viewport Fitting (/dashboard/parent/assignments/details/[id]):
+  - Replaced constrained flex-1 container with full standard parent portal layout width (max-w-[1600px] mx-auto py-6 sm:py-8 px-3.5 sm:px-6 lg:px-8 pb-16 md:pb-6).
+  - Updated loading and empty states to mirror the 1600px grid system, ensuring hero card, coursework files, video lessons, feedback, and study context utilize the available space.
+  - Verified zero TypeScript compilation errors.
+- [x] Standardized Layout Width & Responsive Viewport Fitting (/dashboard/student/assignments/[id]):
+  - Replaced narrow max-w-5xl constraint with full standard dashboard container (max-w-[1600px] mx-auto px-3.5 py-4 sm:px-6 sm:py-6 lg:px-8).
+  - Updated sticky action footer (ActionFooter.tsx) and page loading skeleton to span the standard max-w-[1600px] container, ensuring comfortable spacing across widescreen displays and mobile viewports.
+  - Verified zero TypeScript compilation errors.
+- [x] Standardized Coursework File Uploads & Automated File Cleanup (/dashboard/teacher/assignments/[id]):
+  - Added direct file upload capability (UploadCloud picker) alongside external link inputs for attached coursework files (PDFs, Word docs, spreadsheets, slides, images, archives) in the Instructions & Resources editor.
+  - Added direct 'Remove File' option with file confirmation and client-side cleanup via imageService.deleteByUrl.
+  - Implemented automatic storage cleanup on the backend (assignment.service.ts) using deleteFileByUrlService whenever assignments are deleted or their attached files/videos are replaced or removed.
+  - Verified both frontend and backend TypeScript compilation with 0 errors.
+- [x] Standardized Attached Files, Video Player & Empty State Handling across Student & Parent Assignments:
+  - Enhanced Parent Assignment Details (/dashboard/parent/assignments/details/[id]) to display attached coursework materials with direct download, external preview, image modal rendering, and inline video playback.
+  - Refined Student Assignment Hub (/dashboard/student/assignments):
+    - Replaced generic skeletons with an animated shimmer loading layout featuring spinning indicators, placeholder cards with headers, and content skeletons.
+    - Added polished empty states distinguishing between 'No Assignments Published Yet' (all clear across school) and 'No matching assignments found' (search/filter resets).
+  - Verified video playback in Student Assignment Details (/dashboard/student/assignments/[id]) using full-featured VideoPlayer for both videoUrl and attached video files.
+  - Zero TypeScript compilation errors.
+- [x] Standardized Video Player & Video Upload Handling for Assignment Details (/dashboard/parent/assignments/details/[id] & /dashboard/teacher/assignments/[id]):
+  - Enhanced VideoPlayer parser (VideoPlayer.tsx) to seamlessly handle YouTube (Standard, Shorts, embeds), Google Drive previews, Vimeo, Loom, Supabase Storage URLs, Bunny.net CDN, direct MP4/WebM/MOV streams, and blob/data URIs.
+  - Updated Parent Assignment Details page (/dashboard/parent/assignments/details/[id]) to pass rich contextual title to VideoPlayer and render responsive 16:9 embedded player with full controls.
+  - Updated Teacher Assignment Details page (/dashboard/teacher/assignments/[id]) with direct video file upload picker (imageService.proxyUploadToBunny) alongside video link inputs so teachers can upload files or paste video links with immediate validation.
+  - Verified zero TypeScript compilation errors.
+- [x] Added Default Grid View to Parent Assignments Hub (/dashboard/parent/assignments):
+  - Set grid view as the default layout option (viewMode defaults to grid) with seamless list/grid toggling.
+  - Refined AssignmentCard layout and actions in grid mode to ensure optimal spacing, footer borders, score badges, and action buttons.
+  - Verified zero TypeScript compilation errors.
+- [x] Standardized Academic Export & Grading Scale Sync across Parent Classroom Hub (/dashboard/parent/class and sub-routes):
+  - Applied reusable_academic_export_and_quota and school_grading_system_sync skills to the parent classroom hub, subjects, and timetable views.
+  - Created parentClassSpreadsheetExporter.ts in frontend/src/app/dashboard/parent/class/utils/ supporting multi-format downloads (Excel .xlsx and CSV .csv) for the classroom cohort dossier, enrolled subjects, academic standing, and teacher assignments.
+  - Created ParentClassExportModal in frontend/src/app/dashboard/parent/class/components/ with ExportQuotaBanner (free tier 10 downloads/month cap, spreadsheets Pro badge, signature verification gates) and automated school leadership audit notifications (dispatchExportLeadershipNotification).
+  - Integrated dynamic school grading system synchronization using getGradeEvaluation with fallback to the default 9-tier institutional grading matrix across cohort metrics, GPA, and letter grades.
+  - Updated ClassOverview.tsx to provide an official Export Dossier workflow alongside Switch Class with memoized dossier export payloads and dynamic evaluation badges.
+  - Full TypeScript verification passed with 0 errors.
+- [x] Standardized Academic Export & Grading Scale Sync across Linked Students Directory (/dashboard/parent/my-children and sub-routes):
+  - Applied reusable_academic_export_and_quota and school_grading_system_sync skills across the parent Linked Students directory.
+  - Created parentChildrenSpreadsheetExporter.ts in frontend/src/app/dashboard/parent/my-children/utils/ supporting multi-format downloads (Excel .xlsx and CSV .csv) for the family linked students directory with student code, class cohort, attendance rate, academic averages, evaluated letter grade, standing remark, and linkage status.
+  - Created ParentChildrenExportModal in frontend/src/app/dashboard/parent/my-children/components/ with ExportQuotaBanner (free tier 10 downloads/month cap, spreadsheets locked to Pro, unendorsed lines on free tier vs verified leadership digital signatures on paid plans) and automated leadership audit notification dispatch.
+  - Added Export Directory action button to PageHeading.tsx and wired the modal directly to ChildrenPage.
+  - Synchronized student card badges and letter grades in ChildrenGrid.tsx to dynamically derive evaluations from getGradeEvaluation(averageGrade, customGradingSystem) with fallback to DEFAULT_GRADING_SYSTEM.
+  - Verified 0 TypeScript errors with node ./frontend/node_modules/typescript/bin/tsc --project ./frontend/tsconfig.json --noEmit.
+
+### Tuesday, November 10, 2026
+- [x] Standardized Academic Export & Grading Scale Sync across Parent Portal (/dashboard/parent and sub-routes):
+  - Applied reusable_academic_export_and_quota and school_grading_system_sync skills across the parent portal and its sub-routes.
+  - Created ParentOfflineGradeExportModal and offlineGradeSpreadsheetExporter.ts in frontend/src/app/dashboard/parent/offline-grades/ supporting multi-format downloads (PDF, Excel .xlsx, CSV .csv) with ExportQuotaBanner (10 free downloads/month, spreadsheets locked to Pro, unendorsed lines on free vs verified leadership digital signatures on paid).
+  - Created ParentTermlyResultExportModal in frontend/src/app/dashboard/parent/result/termly/view/components/ supporting multi-format term result sheet downloads (PDF, Excel, CSV) with digital endorsements and quota management.
+  - Created ParentReportCardExportModal and reportCardSpreadsheetExporter.ts in frontend/src/app/dashboard/parent/exams&results/report-card/ replacing hard blockers with fair monthly quotas and Pro spreadsheet access.
+  - Created ParentExamDetailExportModal in frontend/src/app/dashboard/parent/exams&results/details/components/export/ supporting full question solution keys, teacher notes, and exam review exports.
+  - Created ParentSubjectPerformanceExportModal in frontend/src/app/dashboard/parent/performance/subject-performance/components/ for curriculum mastery and course score exports.
+  - Integrated StudentAssignmentExportModal in frontend/src/app/dashboard/parent/assignments/components/DownloadReportButton.tsx for multi-format coursework portfolio downloads.
+  - Synchronized custom school grading system via getGradeEvaluation(percentage, customGradingSystem) with DEFAULT_GRADING_SYSTEM fallback across parent report cards, exam details, subject performance lists, and offline marksheets.
+  - Verified 0 TypeScript errors with node ./frontend/node_modules/typescript/bin/tsc --project ./frontend/tsconfig.json --noEmit.
+
+### Tuesday, November 10, 2026
+- [x] Standardized Academic Export & Grading Scale Sync across Student Assessments & Exams (/dashboard/student/exams&quizzes and sub-routes):
+  - Applied reusable_academic_export_and_quota and school_grading_system_sync skills across the Assessments hub and its sub-routes.
+  - Created spreadsheet exporter in frontend/src/app/dashboard/student/exams&quizzes/utils/assessmentSpreadsheetExporter.ts supporting multi-format downloads (Excel .xlsx and CSV .csv) for both the full assessment history and single examination solution key review.
+  - Implemented StudentAssessmentExportModal in frontend/src/app/dashboard/student/exams&quizzes/components/StudentAssessmentExportModal.tsx with ExportQuotaBanner (free tier 10 downloads/month quota enforcement, spreadsheets locked to Pro, unendorsed signatures on free tier vs verified leadership digital signatures on paid plans) and automated leadership audit notification dispatch.
+  - Implemented StudentExamReviewExportModal in frontend/src/app/dashboard/student/exams&quizzes/[examId]/review/components/StudentExamReviewExportModal.tsx replacing hard subscription blockers with fair monthly quota downloads and official solution key exports in PDF, Excel, and CSV.
+  - Integrated custom grading scale synchronization via getGradeEvaluation(percentage, customGradingSystem) with DEFAULT_GRADING_SYSTEM fallback across the assessment dashboard, stat cards, performance charts, completed assessments grid, and review questions.
+  - Verified 0 TypeScript errors with node ./frontend/node_modules/typescript/bin/tsc --project ./frontend/tsconfig.json --noEmit.
+
+### Tuesday, November 10, 2026
+- [x] Standardized Academic Export & Grading Scale Sync across Student Official Transcript (/dashboard/student/transcript):
+  - Applied reusable_academic_export_and_quota and school_grading_system_sync across the student official academic transcript page.
+  - Created official transcript spreadsheet exporter in frontend/src/app/dashboard/student/transcript/utils/transcriptSpreadsheetExporter.ts supporting multi-format downloads (Excel .xlsx and CSV .csv) with Academic Session, Term, Course Code, Subject Title, Breakdown Scores (Assignment, Quiz, CA, Exam), Total Score, Letter Grade, Grade Point, and Standing/Remarks.
+  - Implemented StudentOfficialTranscriptExportModal in frontend/src/app/dashboard/student/transcript/components/StudentOfficialTranscriptExportModal.tsx supporting multi-format downloads (PDF, Excel, CSV) with ExportQuotaBanner (free tier 10/month cap, spreadsheets locked to Pro, unendorsed lines on free vs verified leadership digital signatures on paid), leadership signature endorsement, and audit notification dispatch (dispatchExportLeadershipNotification).
+  - Integrated modal opening into TranscriptTopBar download trigger in page.tsx while respecting clearance lock gates, fee payment requirements, and multi-session/term scopes.
+  - Ensured dynamic synchronization with school custom grading systems (schoolProfile?.gradingSystem) across CGPA calculations, letter grades, grade points, and remarks via getGradeLetter, getGradePoint, getRemark, and getGradeEvaluation with fallback to DEFAULT_GRADING_SYSTEM.
+  - Verified clean TypeScript compilation with 0 errors via tsc --project ./frontend/tsconfig.json --noEmit.
+
+### Tuesday, November 10, 2026
+- [x] Standardized Academic Export & Grading Scale Sync across Student Termly Results Hub & View Sub-Route (/dashboard/student/result/termly & /dashboard/student/result/termly/view):
+  - Applied reusable_academic_export_and_quota and school_grading_system_sync across the student termly published results hub and term result sheet view.
+  - Created termly spreadsheet exporter in frontend/src/app/dashboard/student/result/termly/utils/termResultSpreadsheetExporter.ts supporting multi-format downloads (Excel .xlsx and CSV .csv) for both single term result sheets and full published terms directories.
+  - Implemented StudentTermListExportModal in frontend/src/app/dashboard/student/result/termly/components/StudentTermListExportModal.tsx enabling directory exports across all published terms with ExportQuotaBanner, digital signature resolution, and leadership audit notifications.
+  - Implemented StudentTermResultExportModal in frontend/src/app/dashboard/student/result/termly/components/StudentTermResultExportModal.tsx supporting multi-format downloads, ExportQuotaBanner (free tier 10/month cap, spreadsheets locked to Pro, unendorsed lines on free vs verified leadership digital signatures on paid), digital signature resolution, and leadership audit notifications.
+  - Upgraded view/page.tsx to bind StudentTermResultExportModal, unifying score evaluations, letter grades, and standings with getGradeEvaluation(total, customGradingSystem) and fallback to DEFAULT_GRADING_SYSTEM.
+  - Verified clean TypeScript compilation with 0 errors via tsc --project ./frontend/tsconfig.json --noEmit.
+
+### Tuesday, November 10, 2026
+- [x] Standardized Academic Export & Grading Scale Sync across Student Grades and Dossier Sub-Route (/dashboard/student/grades & /dashboard/student/grades/view/[type]/[id]):
+  - Applied reusable_academic_export_and_quota and school_grading_system_sync across the student grades hub and its result dossier view.
+  - Created student transcript spreadsheet exporter in frontend/src/app/dashboard/student/grades/utils/studentTranscriptSpreadsheetExporter.ts supporting multi-format downloads (Excel .xlsx and CSV .csv) with Academic Term, Course / Subject, Credit Units, Score, Grade, Grade Points, and Remarks.
+  - Implemented StudentTranscriptExportModal in frontend/src/app/dashboard/student/grades/components/StudentTranscriptExportModal.tsx with ExportQuotaBanner (free tier 10/month cap, spreadsheets locked to Pro, unendorsed dashed lines on free vs verified leadership digital signatures on paid), resolveDigitalSignatures, and dispatchExportLeadershipNotification.
+  - Created result dossier spreadsheet exporter in frontend/src/app/dashboard/student/grades/utils/resultDossierSpreadsheetExporter.ts supporting Excel and CSV formats with Component Name, Score Obtained, Total Marks, Percentage, Grade, and Performance Remarks.
+  - Implemented ResultDossierExportModal in frontend/src/app/dashboard/student/grades/view/[type]/[id]/components/ResultDossierExportModal.tsx supporting multi-format downloads, ExportQuotaBanner, digital signature endorsement, and leadership audit notifications.
+  - Replaced legacy blocking export in view/[type]/[id]/page.tsx with modal trigger and unified score evaluations using getGradeEvaluation(percentage, customGradingSystem) with fallback to DEFAULT_GRADING_SYSTEM.
+  - Verified clean TypeScript compilation with 0 errors via tsc --project ./frontend/tsconfig.json --noEmit.
+
 ### Monday, November 9, 2026
 - [x] Fixed Modal Centering on Offline Grades (/dashboard/admin/offline-grades & /dashboard/teacher/offline-grades):
   - Resolved issue where modal pop-ups appeared docked in the corner/edge of the screen instead of being centered.
@@ -7586,3 +7782,40 @@ pm --prefix frontend run build (Next.js 16.3.7 with webpack).
 ode_modules/.prisma/client.
   - Successfully executed 
 pm --prefix backend run build (prisma generate && tsc && tsc-alias) with 0 errors.
+
+### Tuesday, November 10, 2026 - Student My-Classes Export & Grading System Sync
+- [x] **Enforced reusable_academic_export_and_quota on Student Classes (/dashboard/student/my-classes)**:
+  - Created [studentClassSpreadsheetExporter.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/utils/studentClassSpreadsheetExporter.ts) supporting Excel (.xlsx) and CSV (.csv) exports for enrolled student classes.
+  - Built modular [StudentClassExportModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/components/StudentClassExportModal.tsx) integrating:
+    - Tier-based quota tracking with ExportQuotaBanner (free tier capped at 10/month; spreadsheet formats locked to Pro plan).
+    - Multi-format generation (PDF, Excel, CSV) with digital leadership signature resolution via resolveDigitalSignatures().
+    - Automated leadership audit notification dispatch to school leadership via dispatchExportLeadershipNotification().
+    - Department scope filtering (All Enrolled Classes, Department Curricula Only, General Curriculum Only) and batch record limits.
+  - Updated [ClassHeader.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/components/ClassHeader.tsx) and [AcademicSummary.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/components/AcademicSummary.tsx) to provide prominent Export actions.
+  - Refactored [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/page.tsx) to resolve connected school profile and trigger StudentClassExportModal.
+- [x] **Enforced reusable_academic_export_and_quota on Class Details Sub-route (/dashboard/student/my-classes/[id])**:
+  - Created [classAssessmentSpreadsheetExporter.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/utils/classAssessmentSpreadsheetExporter.ts) supporting Excel (.xlsx) and CSV (.csv) for class assessment records.
+  - Built modular [ClassAssessmentExportModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/components/ClassAssessmentExportModal.tsx) for downloading official class assessment marksheets with quota enforcement, leadership audit notifications, and digital signature endorsements.
+  - Added Export action in [AssignmentsTable.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/components/AssignmentsTable.tsx) and wired the modal into [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/my-classes/[id]/page.tsx).
+- [x] **Enforced school_grading_system_sync across Main & Sub-routes**:
+  - Confirmed and synchronized all score evaluations, standing grades, badges, and percentages dynamically with the connected school's custom grading system (via getGradeEvaluation(percentage, customGradingSystem)) with fallback to the standard 9-tier matrix.
+- [x] **Verification**:
+  - Executed npx tsc --noEmit in frontend with 0 errors.
+
+### Tuesday, November 10, 2026 - Student Assignments Export & Grading System Sync
+- [x] **Enforced reusable_academic_export_and_quota on Student Assignments Hub (/dashboard/student/assignments)**:
+  - Created [studentAssignmentSpreadsheetExporter.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/utils/studentAssignmentSpreadsheetExporter.ts) supporting Excel (.xlsx) and CSV (.csv) exports for student coursework assignments.
+  - Built modular [StudentAssignmentExportModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/components/StudentAssignmentExportModal.tsx) integrating:
+    - Tier-based monthly quota enforcement (ExportQuotaBanner, free tier capped at 10/month; spreadsheet exports locked to Pro).
+    - Multi-format generation (PDF, Excel, CSV) with digital leadership signature resolution via resolveDigitalSignatures().
+    - Automated leadership audit notification dispatch to school administrators via dispatchExportLeadershipNotification().
+    - Status filtering (All, Graded, Submitted, Pending, Overdue) and record limit controls.
+  - Added prominent **Export Portfolio** action button to the header in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/page.tsx).
+- [x] **Enforced reusable_academic_export_and_quota on Assignment Details Sub-route (/dashboard/student/assignments/[id])**:
+  - Built [SingleAssignmentExportModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/components/SingleAssignmentExportModal.tsx) for downloading verified single assignment evaluation sheets, itemized question responses, and score slips.
+  - Added Export trigger button to [Header.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/components/Header.tsx) and wired the modal into [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/page.tsx).
+- [x] **Enforced school_grading_system_sync across Main & Sub-routes**:
+  - Evaluated scores and grade averages dynamically with getGradeEvaluation(percentage, customGradingSystem) in [page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/page.tsx), [AssignmentCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/components/AssignmentCard.tsx), and assignment details [Header.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/student/assignments/[id]/components/Header.tsx).
+  - Ensured strict fallback to the default 9-tier matrix whenever custom grade boundaries are unset.
+- [x] **Verification**:
+  - Executed npx tsc --noEmit in frontend with 0 errors.

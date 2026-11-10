@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles, BookOpen, BarChart3, CalendarDays, GraduationCap } from 'lucide-react';
+import { Sparkles, BookOpen, BarChart3, CalendarDays, GraduationCap, Download } from 'lucide-react';
 import Link from 'next/link';
 import { HeaderTooltip } from '@/app/dashboard/student/components/dashboard/HeaderTooltip';
 
@@ -9,9 +9,10 @@ interface AcademicSummaryProps {
   totalMarks: number;
   classPosition: string | null;
   onOpenJoinModal?: () => void;
+  onOpenExportModal?: () => void;
 }
 
-export function AcademicSummary({ totalSubjects, totalMarks, classPosition, onOpenJoinModal }: AcademicSummaryProps) {
+export function AcademicSummary({ totalSubjects, totalMarks, classPosition, onOpenJoinModal, onOpenExportModal }: AcademicSummaryProps) {
   return (
     <section className="
       relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-8 md:p-12
@@ -39,8 +40,8 @@ export function AcademicSummary({ totalSubjects, totalMarks, classPosition, onOp
           <span className="text-[10px] font-black uppercase tracking-widest text-pink-300">
             Academic Registry
           </span>
-          <HeaderTooltip 
-            content="Summary of your registered classes, active curriculum subjects, and continuous performance standing." 
+          <HeaderTooltip
+            content="Summary of your registered classes, active curriculum subjects, and continuous performance standing."
             className="text-pink-300 hover:text-white"
           />
         </div>
@@ -75,6 +76,22 @@ export function AcademicSummary({ totalSubjects, totalMarks, classPosition, onOp
             >
               <Sparkles size={14} className="shrink-0" />
               Join Class
+            </button>
+          )}
+          {onOpenExportModal && (
+            <button
+              type="button"
+              onClick={onOpenExportModal}
+              className="
+                w-full sm:w-auto inline-flex items-center justify-center gap-2
+                rounded-xl px-5 h-11 font-bold text-xs uppercase tracking-wider
+                transition-all duration-300 ease-out cursor-pointer
+                text-slate-200 bg-white/10 border border-white/20 hover:bg-white/15
+                backdrop-blur-sm hover:scale-[1.02] active:scale-[0.98]
+              "
+            >
+              <Download size={14} className="shrink-0 text-pink-400" />
+              Export Roster
             </button>
           )}
           <Link href="/dashboard/student/timetable" className="w-full sm:w-auto">

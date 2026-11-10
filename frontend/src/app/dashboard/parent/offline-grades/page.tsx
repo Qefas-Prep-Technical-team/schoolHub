@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
   FileSpreadsheet,
   Search,
@@ -43,6 +44,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { ParentOfflineGradeExportModal } from './components/ParentOfflineGradeExportModal';
+import { ParentOfflineGradeSpreadsheetData } from './utils/offlineGradeSpreadsheetExporter';
 
 export interface ProcessedOfflineGrade extends Grade {
   isComingSoon: boolean;
@@ -91,6 +94,7 @@ function getCategoryBadge(category: OfflineAssessmentCategory) {
 }
 
 export default function ParentOfflineGradesPage() {
+  const router = useRouter();
   const { selectedChildId, setSelectedChildId } = useParentStore();
   const { data: children = [], isLoading: isChildrenLoading } = useParentChildren();
 
@@ -133,6 +137,7 @@ export default function ParentOfflineGradesPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
 
   // Auto-select active session & term on initial load
   useEffect(() => {
@@ -273,61 +278,54 @@ export default function ParentOfflineGradesPage() {
     };
   }, [filteredGrades, schoolProfile, activeChild]);
 
-  // PDF Export
-  const handleExportPDF = async () => {
-    if (!assertSchoolPayingPlan(schoolProfile)) {
-      return;
-    }
+  // Prepared data for multi-format export dossier
+  const exportDossierData: ParentOfflineGradeSpreadsheetData | null = useMemo(() => {
+    if (!activeChild) return null;
+    const childName = activeChild.name || 'Student';
+    const childCode = activeChild.studentCode || 'N/A';
+    const className = activeChild.currentClass?.name || 'Assigned Class';
+    const schoolName = activeChild.school?.name || (schoolProfile as Record<string, unknown>)?.name as string || 'School Portal';
+    const termSession = `${selectedTerm} Term`;
 
-    try {
-      setIsExporting(true);
-      const childName = activeChild?.name || 'Student';
-      const childCode = activeChild?.studentCode || 'N/A';
-      const className = activeChild?.currentClass?.name || 'Assigned Class';
+    const records = filteredGrades.map((g: ProcessedOfflineGrade) => {
+      const cat = normalizeOfflineCategory(g.category || undefined, (g.assessmentType || g.remarks || '') as string);
+      const catBadge = getCategoryBadge(cat);
+      const maxMarks = Number(g.maxMarks) || 100;
+      const score = g.isReleased && typeof g.score === 'number' ? Number(g.score) : null;
+      const pct = score != null ? Math.round((score / maxMarks) * 100) : null;
+      const gradingSystem = (schoolProfile as Record<string, unknown>)?.gradingSystem || (activeChild as unknown as { school?: { gradingSystem?: unknown[] } })?.school?.gradingSystem;
+      const gradeEval = pct != null ? getGradeEvaluation(pct, Array.isArray(gradingSystem) ? gradingSystem : undefined) : null;
+      const dateStr = g.createdAt ? format(new Date(g.createdAt as string), 'dd/MM/yyyy') : '—';
 
-      const tableData = filteredGrades.map((g: ProcessedOfflineGrade, idx: number) => {
-        const cat = normalizeOfflineCategory(g.category || undefined, (g.assessmentType || g.remarks || '') as string);
-        const catBadge = getCategoryBadge(cat);
-        const maxMarks = Number(g.maxMarks) || 100;
-        const score = g.isReleased && typeof g.score === 'number' ? Number(g.score) : null;
-        const pct = score != null ? Math.round((score / maxMarks) * 100) : null;
-        const gradingSystem = (schoolProfile as Record<string, unknown>)?.gradingSystem || (activeChild as unknown as { school?: { gradingSystem?: unknown[] } })?.school?.gradingSystem;
-        const gradeEval = pct != null ? getGradeEvaluation(pct, Array.isArray(gradingSystem) ? gradingSystem : undefined) : null;
-        const dateStr = g.createdAt ? format(new Date(g.createdAt as string), 'dd/MM/yyyy') : '—';
+      return {
+        subject: String(g.subject || 'Subject'),
+        category: catBadge.label,
+        scoreDisplay: score != null ? `${score} / ${maxMarks}` : 'PENDING',
+        percentage: pct,
+        grade: gradeEval?.grade || '—',
+        standing: gradeEval?.remark || '—',
+        dateStr,
+        remarks: String(g.remarks || '—'),
+      };
+    });
 
-        return [
-          String(idx + 1),
-          String(g.subject || 'Subject'),
-          catBadge.label,
-          score != null ? `${score} / ${maxMarks}` : 'PENDING',
-          pct != null ? `${pct}%` : '—',
-          gradeEval ? `${gradeEval.grade} (${gradeEval.remark})` : '—',
-          dateStr,
-          String(g.remarks || '—')
-        ];
-      });
+    return {
+      studentName: childName,
+      studentCode: childCode,
+      className,
+      schoolName,
+      termSession,
+      averagePercentage: stats.averagePercentage,
+      records,
+    };
+  }, [activeChild, filteredGrades, schoolProfile, selectedTerm, stats.averagePercentage]);
 
-      await generatePDF({
-        title: `Offline Continuous Assessment Report — ${childName}`,
-        filename: `${childName.replace(/\s+/g, '_')}_Offline_Assessments.pdf`,
-        schoolProfile,
-        metaData: [
-          { label: 'Student Name', value: childName },
-          { label: 'Student ID', value: childCode },
-          { label: 'Class Cohort', value: className },
-          { label: 'Term Session', value: `${selectedTerm} Term` },
-          { label: 'Evaluated Marks', value: `${stats.releasedCount} of ${stats.totalCount}` },
-          { label: 'CA Average', value: `${stats.averagePercentage}%` },
-        ],
-        tableHeaders: [
-          ['#', 'Subject Course', 'Assessment Type', 'Score / Max', 'Score %', 'WAEC Grade', 'Date Logged', 'Teacher Remarks']
-        ],
-        tableData
-      });
-    } catch (err) {
-      console.error('[handleExportPDF] PDF generation failed:', err);
-    } finally {
-      setIsExporting(false);
+  // PDF / Dossier Export Trigger - Redirect to student transcript
+  const handleExportPDF = () => {
+    if (activeChildId) {
+      router.push(`/dashboard/parent/child-details/${activeChildId}?action=transcript`);
+    } else {
+      setIsExportModalOpen(true);
     }
   };
 
@@ -449,11 +447,10 @@ export default function ParentOfflineGradesPage() {
           <div className="flex items-center gap-3 shrink-0">
             <Button
               onClick={handleExportPDF}
-              disabled={isExporting || filteredGrades.length === 0}
               className="bg-white hover:bg-slate-50 dark:hover:bg-zinc-100 text-orange-700 dark:text-orange-800 font-black rounded-xl h-11 sm:h-12 px-6 shadow-lg shadow-black/10 text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2 active:scale-95 cursor-pointer disabled:opacity-60"
             >
               <Download className="w-4 h-4" />
-              <span>{isExporting ? 'Generating PDF...' : 'Download Report'}</span>
+              <span>Export Official Transcript</span>
             </Button>
           </div>
         </div>
@@ -782,7 +779,7 @@ export default function ParentOfflineGradesPage() {
                   <th className="px-5 py-3.5">Assessment Category</th>
                   <th className="px-5 py-3.5 text-center">Score / Max</th>
                   <th className="px-5 py-3.5 text-center">Percentage</th>
-                  <th className="px-5 py-3.5 text-center">WAEC Grade</th>
+                  <th className="px-5 py-3.5 text-center">Evaluated Grade</th>
                   <th className="px-5 py-3.5">Date Logged</th>
                   <th className="px-5 py-3.5">Teacher Remarks</th>
                 </tr>
@@ -845,6 +842,15 @@ export default function ParentOfflineGradesPage() {
           </div>
         </div>
       )}
+
+      {/* Reusable Academic Export & Quota Modal */}
+      <ParentOfflineGradeExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        data={exportDossierData}
+        schoolProfile={schoolProfile || activeChild?.school}
+        schoolId={schoolId}
+      />
 
     </div>
   );

@@ -15,10 +15,14 @@ export interface PDFExportOptions {
   metaData?: { label: string; value: string }[];
   tableHeaders: string[][];
   tableData: any[][];
+  columnStyles?: Record<number, any>;
+  didParseCell?: (data: any) => void;
   additionalTables?: {
     title: string;
     headers: string[][];
     data: any[][];
+    columnStyles?: Record<number, any>;
+    didParseCell?: (data: any) => void;
   }[];
   orientation?: 'portrait' | 'landscape';
   signatures?: {
@@ -43,7 +47,7 @@ export const generatePDF = async (options: PDFExportOptions) => {
   const doc = new jsPDF({ orientation: options.orientation || 'portrait', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
-  
+
   // ── Helper to draw page borders ──────────────────────────────────────────
   const drawPageBorders = () => {
     doc.setDrawColor(0, 0, 0);
@@ -230,10 +234,10 @@ export const generatePDF = async (options: PDFExportOptions) => {
     const metaBody = [];
     for (let i = 0; i < options.metaData.length; i += 2) {
       const row = [
-        options.metaData[i].label + ':', 
+        options.metaData[i].label + ':',
         options.metaData[i].value,
-        options.metaData[i+1] ? options.metaData[i+1].label + ':' : '',
-        options.metaData[i+1] ? options.metaData[i+1].value : ''
+        options.metaData[i + 1] ? options.metaData[i + 1].label + ':' : '',
+        options.metaData[i + 1] ? options.metaData[i + 1].value : ''
       ];
       metaBody.push(row);
     }
@@ -242,10 +246,10 @@ export const generatePDF = async (options: PDFExportOptions) => {
       startY: yPos,
       body: metaBody,
       theme: 'grid',
-      styles: { 
-        font: 'times', 
-        fontSize: 9.5, 
-        lineColor: [0, 0, 0], 
+      styles: {
+        font: 'times',
+        fontSize: 9.5,
+        lineColor: [0, 0, 0],
         lineWidth: 0.2,
         textColor: [0, 0, 0],
         cellPadding: 2
@@ -260,28 +264,28 @@ export const generatePDF = async (options: PDFExportOptions) => {
 
   const commonTableStyles: UserOptions = {
     theme: 'grid',
-    headStyles: { 
+    headStyles: {
       fillColor: [20, 40, 80],
       textColor: [255, 255, 255],
-      fontStyle: 'bold', 
-      halign: 'center', 
+      fontStyle: 'bold',
+      halign: 'center',
       cellPadding: 3,
       lineColor: [0, 0, 0],
       lineWidth: 0.2
     },
-    bodyStyles: { 
+    bodyStyles: {
       textColor: [0, 0, 0],
       halign: 'center'
     },
-    alternateRowStyles: { 
-      fillColor: [248, 250, 252] 
+    alternateRowStyles: {
+      fillColor: [248, 250, 252]
     },
-    styles: { 
-      fontSize: 8.5, 
-      cellPadding: 2.5, 
+    styles: {
+      fontSize: 8.5,
+      cellPadding: 2.5,
       lineColor: [0, 0, 0],
-      lineWidth: 0.2, 
-      font: 'times' 
+      lineWidth: 0.2,
+      font: 'times'
     }
   };
 
@@ -290,9 +294,11 @@ export const generatePDF = async (options: PDFExportOptions) => {
     ...commonTableStyles,
     startY: yPos,
     head: options.tableHeaders,
-    body: options.tableData
+    body: options.tableData,
+    columnStyles: options.columnStyles,
+    didParseCell: options.didParseCell,
   });
-  
+
   yPos = (doc as any).lastAutoTable.finalY + 6;
 
   // Additional Term Tables
@@ -310,14 +316,16 @@ export const generatePDF = async (options: PDFExportOptions) => {
       doc.rect(12, yPos, pageWidth - 24, 6, 'F');
       doc.text(table.title.toUpperCase(), pageWidth / 2, yPos + 4.2, { align: 'center' });
       yPos += 6;
-      
+
       autoTable(doc, {
         ...commonTableStyles,
         startY: yPos,
         head: table.headers,
-        body: table.data
+        body: table.data,
+        columnStyles: table.columnStyles,
+        didParseCell: table.didParseCell,
       });
-      
+
       yPos = (doc as any).lastAutoTable.finalY + 6;
     }
   }
@@ -505,6 +513,6 @@ export const generatePDF = async (options: PDFExportOptions) => {
     doc.text(`Qefas Prep Hub © ${new Date().getFullYear()} • Official Academic Document`, 15, pageHeight - 12);
     doc.text(`Page ${i} of ${pageCount}`, pageWidth - 15, pageHeight - 12, { align: 'right' });
   }
-  
+
   doc.save(options.filename);
 };

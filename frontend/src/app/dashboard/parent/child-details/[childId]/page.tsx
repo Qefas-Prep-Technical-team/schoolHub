@@ -29,8 +29,8 @@ import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/Heade
 import { StudentHistoryTimeline } from '@/app/dashboard/admin/students/components/StudentHistoryTimeline'
 import AttendanceCalendar from './components/attendance/AttendanceCalendar'
 import { toast } from 'react-toastify'
-import { 
-    useStudentBehaviourProfile, 
+import {
+    useStudentBehaviourProfile,
     useUpdateStudentBehaviourProfile,
     useStudentAttendance
 } from '@/lib/api/hooks/useStudent'
@@ -76,16 +76,16 @@ function InfoRow({ label, value, icon: Icon, themeColor }: { label: string; valu
     )
 }
 
-function SectionCard({ 
-    title, 
-    children, 
-    className = '', 
+function SectionCard({
+    title,
+    children,
+    className = '',
     headerAction,
     info
-}: { 
-    title: string; 
-    children: React.ReactNode; 
-    className?: string; 
+}: {
+    title: string;
+    children: React.ReactNode;
+    className?: string;
     headerAction?: React.ReactNode;
     info?: string;
 }) {
@@ -133,7 +133,7 @@ function WeekControls({ currentDate, onPrev, onNext, themeColor }: { currentDate
 
     return (
         <div className="flex items-center gap-4 bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-2xl p-1.5 shadow-sm">
-            <button 
+            <button
                 onClick={onPrev}
                 className="size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm active:scale-90"
             >
@@ -143,7 +143,7 @@ function WeekControls({ currentDate, onPrev, onNext, themeColor }: { currentDate
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Academic Week</p>
                 <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{label}</p>
             </div>
-            <button 
+            <button
                 onClick={onNext}
                 className="size-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-slate-800 transition-all shadow-sm active:scale-90"
             >
@@ -153,8 +153,8 @@ function WeekControls({ currentDate, onPrev, onNext, themeColor }: { currentDate
     )
 }
 
-function ScheduleGrid({ type, themeColor, onCellClick, currentDate }: { 
-    type: 'attendance' | 'timetable', 
+function ScheduleGrid({ type, themeColor, onCellClick, currentDate }: {
+    type: 'attendance' | 'timetable',
     themeColor: string,
     onCellClick: (day: string, hour: string) => void,
     currentDate: Date
@@ -196,7 +196,7 @@ function ScheduleGrid({ type, themeColor, onCellClick, currentDate }: {
                     <div className="grid grid-cols-[140px_repeat(12,1fr)] gap-3">
                         {/* Empty corner */}
                         <div className="h-12" />
-                        
+
                         {/* Time Headers */}
                         {HOURS.map(hour => (
                             <div key={hour} className="h-12 flex items-center justify-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
@@ -211,17 +211,17 @@ function ScheduleGrid({ type, themeColor, onCellClick, currentDate }: {
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{day.short}</span>
                                     <span className="text-[14px] font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">{day.date}</span>
                                 </div>
-                                
+
                                 {HOURS.map((hour, hIdx) => {
                                     // Find class for this slot (if timetable)
                                     // ...
                                     const dayName = day.full;
                                     const isPast = dIdx < 3 || (dIdx === 3 && hIdx < 5);
                                     const statusChance = Math.random();
-                                    
+
                                     return (
-                                        <div 
-                                            key={`${day.full}-${hour}`} 
+                                        <div
+                                            key={`${day.full}-${hour}`}
                                             onClick={() => onCellClick(day.full, hour)}
                                             className="h-20 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-primary/30 dark:hover:border-primary/30 transition-all cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-0.5"
                                             style={{ '--primary': themeColor } as any}
@@ -323,18 +323,25 @@ export default function StudentProfilePage() {
     const primaryColor = settings?.themeColor || '#ea580c' // default to orange
 
     const tabParam = searchParams.get('tab')
+    const actionParam = searchParams.get('action')
     const [activeTab, setActiveTab] = useState(tabParam || 'overview')
     const [academicSubTab, setAcademicSubTab] = useState<'exams' | 'papers'>('exams')
-    
+
     useEffect(() => {
         if (tabParam) {
             setActiveTab(tabParam)
         }
     }, [tabParam])
+
+    useEffect(() => {
+        if (actionParam === 'transcript') {
+            setIsTranscriptModalOpen(true)
+        }
+    }, [actionParam])
     const [isTranscriptModalOpen, setIsTranscriptModalOpen] = useState(false)
     const [selectedExamDetails, setSelectedExamDetails] = useState<any>(null)
     const [isExamDetailsOpen, setIsExamDetailsOpen] = useState(false)
-    
+
     const [selectedScheduleCell, setSelectedScheduleCell] = useState<{ day: string; hour: string; type: 'attendance' | 'timetable' } | null>(null)
     const [scheduleDate, setScheduleDate] = useState(new Date())
 
@@ -360,7 +367,7 @@ export default function StudentProfilePage() {
     // Form states for profile edit
     const [conductScore, setConductScore] = useState<number>(100)
     const [strengths, setStrengths] = useState<{ name: string; description: string; icon: string }[]>([])
-    
+
     // Form states for adding a new strength (inside edit profile modal)
     const [newStrengthName, setNewStrengthName] = useState('')
     const [newStrengthDesc, setNewStrengthDesc] = useState('')
@@ -508,7 +515,7 @@ export default function StudentProfilePage() {
 
     // ── Data Transformation ──────────────────────────────────────────────────
     const grades = gradesData?.grades || []
-    
+
     const { examSections, standalonePapers, totalExams, totalPapers } = useMemo(() => {
         const sectionsMap: Record<string, any> = {};
         const standalone: any[] = [];
@@ -518,10 +525,10 @@ export default function StudentProfilePage() {
                 // Group by Exam (Transcript-style)
                 const subjectName = g.subject?.toLowerCase() || '';
                 const examTitle = g.exam.title?.toLowerCase() || '';
-                const isTotalRecord = subjectName.includes('(total)') || 
-                                     subjectName === examTitle || 
-                                     g.assessmentType === 'TOTAL';
-                
+                const isTotalRecord = subjectName.includes('(total)') ||
+                    subjectName === examTitle ||
+                    g.assessmentType === 'TOTAL';
+
                 if (isTotalRecord) return;
 
                 const examId = g.examId || g.exam.title;
@@ -545,25 +552,25 @@ export default function StudentProfilePage() {
             }
         });
 
-        const sortedSections = Object.values(sectionsMap).sort((a: any, b: any) => 
+        const sortedSections = Object.values(sectionsMap).sort((a: any, b: any) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
 
-        const sortedStandalone = standalone.sort((a, b) => 
+        const sortedStandalone = standalone.sort((a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
 
-        return { 
-            examSections: sortedSections, 
+        return {
+            examSections: sortedSections,
             standalonePapers: sortedStandalone,
             totalExams: sortedSections.length,
             totalPapers: sortedStandalone.length
         };
     }, [grades]);
-    
+
     const performanceStats = useMemo(() => {
         if (!grades.length) return { avg: 0, highest: 0, total: 0, subjectData: [], trendData: [] }
-        
+
         const total = grades.length
         const sum = grades.reduce((acc, g) => acc + (g.score / g.maxMarks) * 100, 0)
         const avg = Math.round(sum / total)
@@ -669,7 +676,7 @@ export default function StudentProfilePage() {
                 }} />
                 <div className="absolute inset-0 opacity-10"
                     style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.1) 20px, rgba(255,255,255,0.1) 40px)' }} />
-                
+
                 <button
                     onClick={() => router.back()}
                     className="absolute top-4 left-4 md:top-6 md:left-6 flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white font-black text-[9px] uppercase tracking-widest hover:bg-white/30 transition-all border border-white/10"
@@ -734,7 +741,7 @@ export default function StudentProfilePage() {
                             const colors = ["#6366f1", "#ea580c", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#f59e0b", "#f97316"]
                             const Icon = icons[idx] || BarChart3
                             const iconColor = colors[idx % colors.length]
-                            
+
                             return (
                                 <button
                                     key={tab.id}
@@ -769,24 +776,24 @@ export default function StudentProfilePage() {
                     <div className="lg:col-span-2 space-y-6 md:space-y-8">
                         {/* Summary Metrics */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            <StatBadge 
-                                label="Academic Average" 
-                                value={`${performanceStats.avg}%`} 
-                                icon={Star} 
-                                themeColor={primaryColor} 
-                                trend="+4.2%" 
+                            <StatBadge
+                                label="Academic Average"
+                                value={`${performanceStats.avg}%`}
+                                icon={Star}
+                                themeColor={primaryColor}
+                                trend="+4.2%"
                             />
-                            <StatBadge 
-                                label="Attendance Rate" 
-                                value={`${computedAttendanceRate}%`} 
-                                icon={Activity} 
-                                themeColor="#10b981" 
-                                trend={computedAttendanceRate >= 90 ? "Excellent" : computedAttendanceRate >= 75 ? "Good" : "Needs Attention"} 
+                            <StatBadge
+                                label="Attendance Rate"
+                                value={`${computedAttendanceRate}%`}
+                                icon={Activity}
+                                themeColor="#10b981"
+                                trend={computedAttendanceRate >= 90 ? "Excellent" : computedAttendanceRate >= 75 ? "Good" : "Needs Attention"}
                             />
                         </div>
 
                         {/* Personal Information */}
-                        <SectionCard 
+                        <SectionCard
                             title="Personal Information"
                             info="Official student demographic and identity data recorded on the school registry, including verified email contact, date of birth, gender, and current academic grade level progression."
                         >
@@ -799,7 +806,7 @@ export default function StudentProfilePage() {
                         </SectionCard>
 
                         {/* Institutional Links */}
-                        <SectionCard 
+                        <SectionCard
                             title="Academic Context"
                             info="Institutional placement details identifying the student's enrolled school campus, assigned classroom section, department division, and unique student ID code."
                         >
@@ -816,16 +823,16 @@ export default function StudentProfilePage() {
                     <div className="space-y-6 md:space-y-8">
 
                         {/* Quick Actions */}
-                        <SectionCard 
+                        <SectionCard
                             title="Quick Actions"
                             info="Parental self-service actions allowing you to generate and download official signed academic transcripts and student records."
                         >
-                             <div className="space-y-3">
+                            <div className="space-y-3">
                                 {[
                                     { label: 'Issue Transcript', icon: Award, onClick: () => setIsTranscriptModalOpen(true) },
                                 ].map((act, i) => (
-                                    <button 
-                                        key={i} 
+                                    <button
+                                        key={i}
                                         onClick={act.onClick}
                                         className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] hover:bg-slate-100 dark:hover:bg-white/5 transition-all group border border-transparent hover:border-slate-200 dark:hover:border-white/10"
                                     >
@@ -836,11 +843,11 @@ export default function StudentProfilePage() {
                                         <ChevronRight size={14} className="text-slate-300 group-hover:translate-x-1 transition-transform" />
                                     </button>
                                 ))}
-                             </div>
+                            </div>
                         </SectionCard>
 
                         {/* Guardian Details */}
-                        <SectionCard 
+                        <SectionCard
                             title="Guardian Details"
                             info="Registered emergency contacts and primary guardian affiliations on file for school correspondence, urgent notices, and attendance verification."
                         >
@@ -876,7 +883,7 @@ export default function StudentProfilePage() {
             {/* ── History Tab ─────────────────────────────────────────────── */}
             {activeTab === 'history' && (
                 <main className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20">
-                    <SectionCard 
+                    <SectionCard
                         title="Student Timeline"
                         info="Chronological lifecycle timeline recording major academic transitions, term promotions, award recognitions, and administrative milestones since enrollment."
                     >
@@ -925,7 +932,7 @@ export default function StudentProfilePage() {
                 <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
                     {/* Left Panel: Score and Strengths */}
                     <div className="space-y-6">
-                        <SectionCard 
+                        <SectionCard
                             title="Conduct Standing"
                             info="Real-time behavioural standing score dynamically computed from documented disciplinary occurrences, teacher infractions, and positive recognitions. Scores of 85+ indicate exemplary conduct."
                         >
@@ -1037,7 +1044,7 @@ export default function StudentProfilePage() {
                             </div>
                         </SectionCard>
 
-                        <SectionCard 
+                        <SectionCard
                             title="Core Strengths"
                             info="Core character traits, extracurricular capabilities, and socio-emotional strengths endorsed by classroom educators and mentors."
                         >
@@ -1050,7 +1057,7 @@ export default function StudentProfilePage() {
                                                 return (
                                                     <div key={index} className="flex gap-4 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 items-start">
                                                         <div className="size-10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5"
-                                                             style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
+                                                            style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
                                                             <Icon size={16} />
                                                         </div>
                                                         <div>
@@ -1068,7 +1075,7 @@ export default function StudentProfilePage() {
                                                     Page {activeStrengthsPage} of {totalStrengthsPages}
                                                 </p>
                                                 <div className="flex gap-1.5">
-                                                    <button 
+                                                    <button
                                                         type="button"
                                                         onClick={() => setStrengthsPage(p => Math.max(1, p - 1))}
                                                         disabled={activeStrengthsPage === 1}
@@ -1076,7 +1083,7 @@ export default function StudentProfilePage() {
                                                     >
                                                         Prev
                                                     </button>
-                                                    <button 
+                                                    <button
                                                         type="button"
                                                         onClick={() => setStrengthsPage(p => Math.min(totalStrengthsPages, p + 1))}
                                                         disabled={activeStrengthsPage === totalStrengthsPages}
@@ -1100,7 +1107,7 @@ export default function StudentProfilePage() {
 
                     {/* Right Panel: Timeline */}
                     <div className="lg:col-span-2 space-y-6">
-                        <SectionCard 
+                        <SectionCard
                             title="Conduct Timeline"
                             info="Live log of behavioural incidents, pastoral intervention notices, and teacher reports filed for this student, categorized by severity level and resolution status."
                         >
@@ -1122,8 +1129,8 @@ export default function StudentProfilePage() {
                                                 <div className="absolute left-[11px] top-7 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-800 group-last:hidden" />
                                                 <div className={cn(
                                                     "absolute left-0 top-1.5 size-6 rounded-full border-4 flex items-center justify-center bg-white dark:bg-slate-950",
-                                                    alert.type === 'DANGER' 
-                                                        ? "border-rose-500 text-rose-500" 
+                                                    alert.type === 'DANGER'
+                                                        ? "border-rose-500 text-rose-500"
                                                         : "border-amber-400 text-amber-400"
                                                 )}>
                                                     <div className={cn("size-1.5 rounded-full", alert.type === 'DANGER' ? "bg-rose-500" : "bg-amber-400")} />
@@ -1133,8 +1140,8 @@ export default function StudentProfilePage() {
                                                         <div>
                                                             <span className={cn(
                                                                 "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md",
-                                                                alert.type === 'DANGER' 
-                                                                    ? "bg-rose-500/10 text-rose-500" 
+                                                                alert.type === 'DANGER'
+                                                                    ? "bg-rose-500/10 text-rose-500"
                                                                     : "bg-amber-500/10 text-amber-500"
                                                             )}>
                                                                 {alert.type}
@@ -1161,7 +1168,7 @@ export default function StudentProfilePage() {
                                                 Page {activeAlertsPage} of {totalAlertsPages}
                                             </p>
                                             <div className="flex gap-2">
-                                                <button 
+                                                <button
                                                     type="button"
                                                     onClick={() => setBehaviourPage(p => Math.max(1, p - 1))}
                                                     disabled={activeAlertsPage === 1}
@@ -1169,7 +1176,7 @@ export default function StudentProfilePage() {
                                                 >
                                                     Prev
                                                 </button>
-                                                <button 
+                                                <button
                                                     type="button"
                                                     onClick={() => setBehaviourPage(p => Math.min(totalAlertsPages, p + 1))}
                                                     disabled={activeAlertsPage === totalAlertsPages}
@@ -1200,12 +1207,12 @@ export default function StudentProfilePage() {
             {/* ── Academic Tab ─────────────────────────────────────────────── */}
             {activeTab === 'academic' && (
                 <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20 space-y-6 sm:space-y-8">
-                    
+
                     {/* Charts Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-                        
+
                         {/* Radar Chart: Subject Mastery */}
-                        <SectionCard 
+                        <SectionCard
                             title="Performance by Subject"
                             info="Radial mastery distribution comparing percentage proficiency across all core subjects. Spikes denote subjects of notable academic strength, while inward dips highlight curriculum areas requiring focused study."
                         >
@@ -1236,7 +1243,7 @@ export default function StudentProfilePage() {
                         </SectionCard>
 
                         {/* Area Chart: Performance Trend */}
-                        <SectionCard 
+                        <SectionCard
                             title="Academic Progress"
                             info="Term-by-term assessment progress chart tracking changes in cumulative scores over time across continuous assessment tests and formal examinations."
                         >
@@ -1246,8 +1253,8 @@ export default function StudentProfilePage() {
                                         <AreaChart data={performanceStats.trendData}>
                                             <defs>
                                                 <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor={primaryColor} stopOpacity={0.3}/>
-                                                    <stop offset="95%" stopColor={primaryColor} stopOpacity={0}/>
+                                                    <stop offset="5%" stopColor={primaryColor} stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor={primaryColor} stopOpacity={0} />
                                                 </linearGradient>
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#94a3b811" vertical={false} />
@@ -1268,7 +1275,7 @@ export default function StudentProfilePage() {
                     </div>
 
                     {/* Recent Grades Table */}
-                    <SectionCard 
+                    <SectionCard
                         title="Recent Grades"
                         info="Historical and active session examination results and standalone Continuous Assessment (CA) test papers, detailing individual scores and passing benchmarks."
                         headerAction={
@@ -1277,8 +1284,8 @@ export default function StudentProfilePage() {
                                     onClick={() => setAcademicSubTab('exams')}
                                     className={cn(
                                         "px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
-                                        academicSubTab === 'exams' 
-                                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" 
+                                        academicSubTab === 'exams'
+                                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
                                             : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                                     )}
                                 >
@@ -1288,8 +1295,8 @@ export default function StudentProfilePage() {
                                     onClick={() => setAcademicSubTab('papers')}
                                     className={cn(
                                         "px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
-                                        academicSubTab === 'papers' 
-                                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm" 
+                                        academicSubTab === 'papers'
+                                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
                                             : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                                     )}
                                 >
@@ -1304,8 +1311,8 @@ export default function StudentProfilePage() {
                                     <>
                                         <div className="space-y-8">
                                             {examSections.slice((examsPage - 1) * ITEMS_PER_PAGE, examsPage * ITEMS_PER_PAGE).map((section: any, idx: number) => (
-                                                <div 
-                                                    key={idx} 
+                                                <div
+                                                    key={idx}
                                                     className="space-y-4 cursor-pointer group/exam hover:bg-slate-50 dark:hover:bg-white/[0.02] p-4 -mx-4 rounded-3xl transition-all border border-transparent hover:border-slate-100 dark:hover:border-white/5"
                                                     onClick={() => {
                                                         setSelectedExamDetails(section);
@@ -1347,14 +1354,14 @@ export default function StudentProfilePage() {
                                                     Page {examsPage} of {Math.ceil(totalExams / ITEMS_PER_PAGE)}
                                                 </p>
                                                 <div className="flex gap-2">
-                                                    <button 
+                                                    <button
                                                         onClick={() => setExamsPage(p => Math.max(1, p - 1))}
                                                         disabled={examsPage === 1}
                                                         className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-white/10"
                                                     >
                                                         Prev
                                                     </button>
-                                                    <button 
+                                                    <button
                                                         onClick={() => setExamsPage(p => Math.min(Math.ceil(totalExams / ITEMS_PER_PAGE), p + 1))}
                                                         disabled={examsPage === Math.ceil(totalExams / ITEMS_PER_PAGE)}
                                                         className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-white/10"
@@ -1398,12 +1405,12 @@ export default function StudentProfilePage() {
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-sm font-black text-slate-900 dark:text-white">{grade.score}/{grade.maxMarks}</span>
                                                             <div className="h-1.5 w-16 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden hidden sm:block">
-                                                                <div 
-                                                                    className="h-full rounded-full" 
-                                                                    style={{ 
-                                                                        width: `${(grade.score/grade.maxMarks)*100}%`,
-                                                                        backgroundColor: (grade.score/grade.maxMarks)*100 > 70 ? '#10b981' : (grade.score/grade.maxMarks)*100 > 40 ? primaryColor : '#ef4444'
-                                                                    }} 
+                                                                <div
+                                                                    className="h-full rounded-full"
+                                                                    style={{
+                                                                        width: `${(grade.score / grade.maxMarks) * 100}%`,
+                                                                        backgroundColor: (grade.score / grade.maxMarks) * 100 > 70 ? '#10b981' : (grade.score / grade.maxMarks) * 100 > 40 ? primaryColor : '#ef4444'
+                                                                    }}
                                                                 />
                                                             </div>
                                                         </div>
@@ -1411,11 +1418,11 @@ export default function StudentProfilePage() {
                                                     <td className="py-5 px-4">
                                                         <span className={cn(
                                                             "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border",
-                                                            (grade.score/grade.maxMarks)*100 > 50 
+                                                            (grade.score / grade.maxMarks) * 100 > 50
                                                                 ? "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
                                                                 : "bg-red-50 text-red-600 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
                                                         )}>
-                                                            {(grade.score/grade.maxMarks)*100 > 50 ? 'Pass' : 'Critical'}
+                                                            {(grade.score / grade.maxMarks) * 100 > 50 ? 'Pass' : 'Critical'}
                                                         </span>
                                                     </td>
                                                     <td className="py-5 px-4 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">
@@ -1441,14 +1448,14 @@ export default function StudentProfilePage() {
                                             Page {papersPage} of {Math.ceil(totalPapers / ITEMS_PER_PAGE)}
                                         </p>
                                         <div className="flex gap-2">
-                                            <button 
+                                            <button
                                                 onClick={() => setPapersPage(p => Math.max(1, p - 1))}
                                                 disabled={papersPage === 1}
                                                 className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-white/10"
                                             >
                                                 Prev
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => setPapersPage(p => Math.min(Math.ceil(totalPapers / ITEMS_PER_PAGE), p + 1))}
                                                 disabled={papersPage === Math.ceil(totalPapers / ITEMS_PER_PAGE)}
                                                 className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase tracking-widest disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-white/10"
@@ -1467,19 +1474,19 @@ export default function StudentProfilePage() {
             {/* ── Attendance Tab ─────────────────────────────────────────────── */}
             {activeTab === 'attendance' && (
                 <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20">
-                     <AttendanceCalendar childId={childId} themeColor={primaryColor} />
+                    <AttendanceCalendar childId={childId} themeColor={primaryColor} />
                 </main>
             )}
 
             {/* ── Time Table Tab ────────────────────────────────────────────── */}
             {activeTab === 'timetable' && (
                 <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20">
-                     <SectionCard 
+                    <SectionCard
                         title="Weekly Schedule"
                         info="Official weekly master timetable detailing allocated class hours, assigned academic subjects, and scheduled instructional rooms for each school day."
                         headerAction={
                             <div className="flex flex-wrap items-center gap-3 sm:gap-6">
-                                <WeekControls 
+                                <WeekControls
                                     currentDate={scheduleDate}
                                     onPrev={() => setScheduleDate(d => addWeeks(d, -1))}
                                     onNext={() => setScheduleDate(d => addWeeks(d, 1))}
@@ -1491,13 +1498,13 @@ export default function StudentProfilePage() {
                             </div>
                         }
                     >
-                        <ScheduleGrid 
-                            type="timetable" 
-                            themeColor={primaryColor} 
+                        <ScheduleGrid
+                            type="timetable"
+                            themeColor={primaryColor}
                             onCellClick={(day, hour) => setSelectedScheduleCell({ day, hour, type: 'timetable' })}
                             currentDate={scheduleDate}
                         />
-                     </SectionCard>
+                    </SectionCard>
                 </main>
             )}
 
@@ -1526,7 +1533,7 @@ export default function StudentProfilePage() {
                 <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-4">
-                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
+                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0"
                                 style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
                                 {selectedScheduleCell?.type === 'attendance' ? <UserCheck size={28} /> : <BookOpen size={28} />}
                             </div>
@@ -1586,7 +1593,7 @@ export default function StudentProfilePage() {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5">
                                     <div className="size-10 rounded-xl bg-slate-200 dark:bg-slate-800 overflow-hidden shrink-0">
                                         <img src={`https://api.dicebear.com/7.x/initials/svg?seed=Teacher`} alt="Teacher" />
@@ -1604,7 +1611,7 @@ export default function StudentProfilePage() {
                     </div>
 
                     <div className="mt-8">
-                        <button 
+                        <button
                             onClick={() => setSelectedScheduleCell(null)}
                             className="w-full h-14 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
                         >
@@ -1619,7 +1626,7 @@ export default function StudentProfilePage() {
                 <DialogContent className="max-w-lg rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl overflow-y-auto max-h-[85vh] custom-scrollbar">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-4">
-                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
+                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0"
                                 style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
                                 <Award size={28} />
                             </div>
@@ -1736,14 +1743,14 @@ export default function StudentProfilePage() {
 
                         {/* Save Button */}
                         <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
-                            <button 
+                            <button
                                 type="button"
                                 onClick={() => setIsEditProfileOpen(false)}
                                 className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
                             >
                                 Cancel
                             </button>
-                            <button 
+                            <button
                                 type="submit"
                                 disabled={updateBehaviourProfileMutation.isPending}
                                 className="flex-1 h-12 rounded-xl text-white font-black uppercase tracking-widest text-[9px] shadow-lg hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
@@ -1761,7 +1768,7 @@ export default function StudentProfilePage() {
                 <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-4">
-                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
+                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0"
                                 style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
                                 <ShieldAlert size={28} />
                             </div>
@@ -1837,14 +1844,14 @@ export default function StudentProfilePage() {
 
                         {/* Actions */}
                         <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
-                            <button 
+                            <button
                                 type="button"
                                 onClick={() => setIsLogAlertOpen(false)}
                                 className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
                             >
                                 Cancel
                             </button>
-                            <button 
+                            <button
                                 type="submit"
                                 disabled={createBehaviourAlertMutation.isPending}
                                 className="flex-1 h-12 rounded-xl text-white font-black uppercase tracking-widest text-[9px] shadow-lg hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
@@ -1862,7 +1869,7 @@ export default function StudentProfilePage() {
                 <DialogContent className="max-w-md rounded-[2.5rem] p-8 bg-white dark:bg-slate-900 border-none shadow-3xl">
                     <DialogHeader className="space-y-4">
                         <div className="flex items-center gap-4">
-                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0" 
+                            <div className="size-14 rounded-2xl flex items-center justify-center shrink-0"
                                 style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
                                 <Edit2 size={28} />
                             </div>
@@ -1938,14 +1945,14 @@ export default function StudentProfilePage() {
 
                         {/* Actions */}
                         <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
-                            <button 
+                            <button
                                 type="button"
                                 onClick={() => setIsEditAlertOpen(false)}
                                 className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
                             >
                                 Cancel
                             </button>
-                            <button 
+                            <button
                                 type="submit"
                                 disabled={updateBehaviourAlertMutation.isPending}
                                 className="flex-1 h-12 rounded-xl text-white font-black uppercase tracking-widest text-[9px] shadow-lg hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
@@ -1983,13 +1990,13 @@ export default function StudentProfilePage() {
                         </p>
 
                         <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
-                            <button 
+                            <button
                                 onClick={() => setIsDeleteAlertOpen(false)}
                                 className="flex-1 h-12 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black uppercase tracking-widest text-[9px] transition-colors"
                             >
                                 Cancel
                             </button>
-                            <button 
+                            <button
                                 onClick={handleDeleteAlert}
                                 disabled={deleteBehaviourAlertMutation.isPending}
                                 className="flex-1 h-12 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-widest text-[9px] shadow-lg hover:scale-[1.01] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
@@ -2004,7 +2011,7 @@ export default function StudentProfilePage() {
             {/* ── Teachers Tab ─────────────────────────────────────────────── */}
             {activeTab === 'teachers' && (
                 <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20">
-                    <SectionCard 
+                    <SectionCard
                         title="Class Teachers"
                         info="Contact directory of lead form teachers, class mentors, and subject educators currently assigned to instruct this student's class section."
                     >
@@ -2021,12 +2028,12 @@ export default function StudentProfilePage() {
                                                     <User size={40} className="text-primary" style={{ color: primaryColor }} />
                                                 </div>
                                             )}
-                                            
+
                                             <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-1">{teacher.name}</h3>
                                             <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4" style={{ color: primaryColor }}>
                                                 {ct.isLead ? 'Class Teacher' : 'Subject Teacher'}
                                             </p>
-                                            
+
                                             <div className="w-full space-y-3 mb-6">
                                                 {teacher.subject && (
                                                     <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
@@ -2041,7 +2048,7 @@ export default function StudentProfilePage() {
                                                     </div>
                                                 )}
                                             </div>
-                                            
+
                                             {teacher.email && (
                                                 <a href={`mailto:${teacher.email}`} className="w-full py-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm">
                                                     <Mail size={16} /> Send Email
@@ -2065,7 +2072,7 @@ export default function StudentProfilePage() {
             {/* ── Assignments Tab ──────────────────────────────────────────── */}
             {activeTab === 'assignments' && (
                 <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-6 sm:mt-10 pb-20">
-                    <SectionCard 
+                    <SectionCard
                         title="Student Assignments"
                         info="Continuous assessment assignments, project deliverables, and homework tasks assigned to this student, tracking submission deadlines, grading status, and instructor feedback."
                     >
@@ -2078,7 +2085,7 @@ export default function StudentProfilePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {assignmentsData.assignments.map((assignment: any) => {
                                     const status = (assignment.status || 'PENDING').toUpperCase();
-                                    
+
                                     return (
                                         <div key={assignment.id} onClick={() => router.push(`/dashboard/parent/assignments/details/${assignment.id}`)} className="bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5 rounded-3xl p-6 flex flex-col hover:border-primary/30 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1 cursor-pointer">
                                             <div className="flex items-start justify-between mb-4">
@@ -2088,22 +2095,22 @@ export default function StudentProfilePage() {
                                                 <span className={cn(
                                                     "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
                                                     status === 'GRADED' || status === 'SCORED' ? "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" :
-                                                    status === 'SUBMITTED' ? "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20" :
-                                                    "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
+                                                        status === 'SUBMITTED' ? "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20" :
+                                                            "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
                                                 )}>
                                                     {status}
                                                 </span>
                                             </div>
-                                            
+
                                             <h3 className="text-lg font-black text-slate-900 dark:text-white tracking-tight mb-2 line-clamp-2">{assignment.title}</h3>
-                                            
+
                                             {assignment.subject && (
                                                 <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 mb-4 font-bold">
                                                     <BookOpen size={14} className="text-slate-400" />
                                                     {assignment.subject}
                                                 </div>
                                             )}
-                                            
+
                                             <div className="mt-auto pt-4 border-t border-slate-200 dark:border-white/10 flex items-center justify-between">
                                                 <div className="space-y-1">
                                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Due Date</p>

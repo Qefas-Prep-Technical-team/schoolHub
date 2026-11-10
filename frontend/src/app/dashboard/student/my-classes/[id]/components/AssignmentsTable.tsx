@@ -20,6 +20,7 @@ import {
   PlayCircle,
   Eye,
   AlertCircle,
+  Download,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
@@ -44,6 +45,7 @@ interface AssignmentsTableProps {
   hasDepartment: boolean;
   pageSize?: number;
   gradingSystem?: any[] | null;
+  onOpenExportModal?: () => void;
 }
 
 // ─── Category sub-tab definitions ─────────────────────────────────────────────
@@ -228,6 +230,7 @@ export default function AssignmentsTable({
   hasDepartment,
   pageSize = 9,
   gradingSystem,
+  onOpenExportModal,
 }: AssignmentsTableProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -332,6 +335,20 @@ export default function AssignmentsTable({
                   <List size={15} />
                 </button>
               </div>
+
+              {/* Export Button */}
+              {onOpenExportModal && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onOpenExportModal}
+                  className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs gap-1.5 shrink-0 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <Download size={14} className="text-pink-600 dark:text-pink-400" />
+                  <span>Export</span>
+                </Button>
+              )}
             </div>
           </div>
 

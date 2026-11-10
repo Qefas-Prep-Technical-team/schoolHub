@@ -9,6 +9,7 @@ import {
   isSameMonth,
 } from 'date-fns';
 import { CalendarDay, ExamEvent, CalendarStats } from './types';
+import { getGradeEvaluation, type GradingTier } from '@/utils/gradingSystem';
 
 /**
  * Generate calendar day objects for the given month, including leading/trailing days
@@ -81,14 +82,9 @@ export const calculateCalendarStats = (events: ExamEvent[]): CalendarStats => {
 };
 
 /**
- * Calculate standard letter grade from percentage
+ * Calculate letter grade from percentage using the school's configured grading system
  */
-export const getGradeLetter = (pct: number): string => {
-  if (pct >= 90) return 'A+';
-  if (pct >= 80) return 'A';
-  if (pct >= 75) return 'B+';
-  if (pct >= 70) return 'B';
-  if (pct >= 60) return 'C';
-  if (pct >= 50) return 'D';
-  return 'F';
+export const getGradeLetter = (pct: number, customGradingSystem?: GradingTier[]): string => {
+  const evalResult = getGradeEvaluation(pct, customGradingSystem);
+  return evalResult.grade;
 };

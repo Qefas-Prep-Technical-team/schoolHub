@@ -5,25 +5,31 @@ import { useMyPublishedResults } from "@/lib/api/hooks/useRecords";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { 
-  GraduationCap, 
-  BookOpen, 
-  ChevronRight, 
-  CheckCircle2, 
-  Clock, 
-  Eye, 
-  Calendar, 
-  Search, 
-  LayoutGrid, 
-  List, 
-  Award, 
+import {
+  GraduationCap,
+  BookOpen,
+  ChevronRight,
+  CheckCircle2,
+  Clock,
+  Eye,
+  Calendar,
+  Search,
+  LayoutGrid,
+  List,
+  Award,
   BarChart3,
-  ArrowUpRight
+  ArrowUpRight,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { HeaderTooltip } from "@/app/dashboard/student/components/dashboard/HeaderTooltip";
 import { cn } from "@/lib/utils";
+import { useStudentProfile } from "@/lib/api/hooks/useStudent";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { StudentTermListExportModal } from "./components/StudentTermListExportModal";
+import { TermListSpreadsheetRow } from "./utils/termResultSpreadsheetExporter";
 
 interface PublishedResultGroup {
   sessionId: string;
@@ -53,18 +59,18 @@ function getTermLabel(term: string): string {
 
 function getTermGradient(term: string): string {
   const map: Record<string, string> = {
-    FIRST:  "from-violet-600 to-indigo-600",
+    FIRST: "from-violet-600 to-indigo-600",
     SECOND: "from-pink-500 via-rose-500 to-pink-600",
-    THIRD:  "from-amber-500 to-orange-500",
+    THIRD: "from-amber-500 to-orange-500",
   };
   return map[term] || "from-zinc-600 to-zinc-700";
 }
 
 function getTermAccent(term: string): string {
   const map: Record<string, string> = {
-    FIRST:  "bg-violet-50 border-violet-200 text-violet-700 dark:bg-violet-900/20 dark:border-violet-800 dark:text-violet-300",
+    FIRST: "bg-violet-50 border-violet-200 text-violet-700 dark:bg-violet-900/20 dark:border-violet-800 dark:text-violet-300",
     SECOND: "bg-pink-50 border-pink-200 text-pink-700 dark:bg-pink-900/20 dark:border-pink-800 dark:text-pink-300",
-    THIRD:  "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300",
+    THIRD: "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300",
   };
   return map[term] || "bg-zinc-100 border-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-300";
 }
@@ -177,6 +183,18 @@ export default function StudentResultListPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  const { data: profile } = useStudentProfile();
+  const { user } = useAuthStore();
+  const userRecord = user as Record<string, unknown> | null | undefined;
+  const schoolId =
+    profile?.schoolId ||
+    user?.schools?.[0]?.schoolId ||
+    (typeof userRecord?.schoolId === 'string' ? userRecord.schoolId : '') ||
+    user?.tenantId ||
+    '';
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
 
   // Default to grid on mobile
   useEffect(() => {
@@ -207,6 +225,26 @@ export default function StudentResultListPage() {
 
     return { totalTerms, totalSubjects, fullyReleasedTerms, latestSession };
   }, [results]);
+
+  const termListRecords: TermListSpreadsheetRow[] = useMemo(() => {
+    return results.map((g) => {
+      let statusStr = "Scores Pending Release";
+      if (g.revealedCount === g.subjectCount && g.subjectCount > 0) {
+        statusStr = "All Scores Released";
+      } else if (g.revealedCount > 0) {
+        statusStr = `${g.subjectCount - g.revealedCount} Subjects Hidden`;
+      }
+
+      return {
+        sessionName: g.session?.name || "Academic Session",
+        className: g.class?.name || profile?.classes?.[0]?.class?.name || "Enrolled Class",
+        termLabel: getTermLabel(g.term),
+        totalSubjects: g.subjectCount || 0,
+        revealedSubjects: g.revealedCount || 0,
+        releaseStatus: statusStr,
+      };
+    });
+  }, [results, profile]);
 
   if (isLoading) {
     return (
@@ -247,7 +285,7 @@ export default function StudentResultListPage() {
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
                   Academic Termly Results
                 </h1>
-                <HeaderTooltip 
+                <HeaderTooltip
                   content="Official published report cards and termly grade statements released by your school administration. Browse your enrolled terms to review subject papers, continuous assessments, examination scores, and final letter grades."
                 />
               </div>
@@ -266,7 +304,7 @@ export default function StudentResultListPage() {
           <p className="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm max-w-sm mb-6 leading-relaxed">
             Your school has not yet published any termly report cards for your account. Once teachers and administrators finalize term grades, they will appear right here.
           </p>
-          <Button 
+          <Button
             asChild
             className="rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-semibold text-xs sm:text-sm px-5 h-10 shadow-sm"
           >
@@ -281,7 +319,7 @@ export default function StudentResultListPage() {
 
   return (
     <div className="w-full max-w-[1600px] mx-auto space-y-6 sm:space-y-8 font-sans pb-16 md:pb-6 animate-in fade-in duration-500">
-      
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -293,7 +331,7 @@ export default function StudentResultListPage() {
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
                 Academic Termly Results
               </h1>
-              <HeaderTooltip 
+              <HeaderTooltip
                 content="Official published report cards and termly grade statements released by your school administration. Browse your enrolled terms to review subject papers, continuous assessments, examination scores, and final letter grades."
               />
             </div>
@@ -303,16 +341,26 @@ export default function StudentResultListPage() {
           </div>
         </div>
 
-        <Button
-          asChild
-          variant="outline"
-          className="h-9 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 font-semibold text-xs sm:text-sm self-start sm:self-auto"
-        >
-          <Link href="/dashboard/student/grades">
-            <BarChart3 className="w-4 h-4 mr-2 text-pink-500" />
-            <span>Grades Dashboard</span>
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            onClick={() => setIsExportModalOpen(true)}
+            className="h-9 sm:h-10 px-3.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-semibold text-xs sm:text-sm self-start sm:self-auto gap-1.5 shadow-sm active:scale-95 transition-all"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export Directory</span>
+          </Button>
+
+          <Button
+            asChild
+            variant="outline"
+            className="h-9 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-900 font-semibold text-xs sm:text-sm self-start sm:self-auto"
+          >
+            <Link href="/dashboard/student/grades">
+              <BarChart3 className="w-4 h-4 mr-2 text-pink-500" />
+              <span>Grades Dashboard</span>
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Quick Summary Metrics Grid */}
@@ -363,8 +411,8 @@ export default function StudentResultListPage() {
         {/* Search */}
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
-          <Input 
-            type="text" 
+          <Input
+            type="text"
             placeholder="Search by class, academic session, or term..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -408,8 +456,8 @@ export default function StudentResultListPage() {
         <div className="py-16 text-center rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6">
           <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">No matching termly results found</p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Try adjusting your search criteria or clear the query.</p>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => setSearchQuery("")}
             className="mt-4 text-xs font-semibold text-pink-600 dark:text-pink-400 hover:bg-pink-50 dark:hover:bg-pink-500/10 rounded-xl"
           >
@@ -445,7 +493,7 @@ export default function StudentResultListPage() {
                   };
 
                   return (
-                    <tr 
+                    <tr
                       key={`${group.sessionId}-${group.term}-${idx}`}
                       onClick={handleView}
                       className="hover:bg-pink-50/40 dark:hover:bg-zinc-900/50 cursor-pointer transition-colors group"
@@ -485,6 +533,16 @@ export default function StudentResultListPage() {
           </div>
         </div>
       )}
+
+      <StudentTermListExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        studentName={profile?.name || user?.name || "Student"}
+        studentCode={profile?.studentCode || user?.studentCode || "N/A"}
+        records={termListRecords}
+        schoolProfile={schoolProfile || profile?.school || user?.schools?.[0]}
+        schoolId={schoolId}
+      />
     </div>
   );
 }

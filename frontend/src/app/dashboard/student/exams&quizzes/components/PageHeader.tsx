@@ -1,10 +1,15 @@
 'use client';
 
-import { FileText, ChevronRight, Home } from "lucide-react";
+import { FileText, ChevronRight, Home, Download } from "lucide-react";
 import Link from "next/link";
 import { HeaderTooltip } from "@/app/dashboard/student/components/dashboard/HeaderTooltip";
+import { Button } from "@/components/ui/button";
 
-export default function PageHeader() {
+interface PageHeaderProps {
+  onExportClick?: () => void;
+}
+
+export default function PageHeader({ onExportClick }: PageHeaderProps) {
   return (
     <div className="space-y-3 sm:space-y-4">
       <div className="flex items-center gap-2 text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest">
@@ -15,7 +20,7 @@ export default function PageHeader() {
         <ChevronRight size={10} />
         <span className="text-slate-600 dark:text-zinc-300">Exams &amp; Quizzes</span>
       </div>
-      
+
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5 sm:gap-3">
@@ -33,6 +38,18 @@ export default function PageHeader() {
             Track your progress, view upcoming exams, and inspect question-by-question performance.
           </p>
         </div>
+
+        {onExportClick && (
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={onExportClick}
+              className="h-10 px-4 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-semibold text-xs gap-2 shadow-md shadow-pink-600/20 active:scale-95 transition-all"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export Dossier</span>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

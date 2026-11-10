@@ -14,9 +14,10 @@ import { useUpdateAssignmentStatus, useDeleteAssignment, useUpdateAssignmentSett
 import { toast } from "react-toastify";
 import SettingsModal from "../../../admin/assignments/[id]/components/SettingsModal";
 import SubmissionList from "../../../admin/assignments/[id]/components/SubmissionList";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import VideoPlayer from "@/components/ui/VideoPlayer";
-import { Pencil, Save, X } from "lucide-react";
+import { Pencil, Save, X, UploadCloud, Video as VideoIcon } from "lucide-react";
+import { imageService } from "@/lib/api/services/imageService";
 
 
 export default function AssignmentDetailPage() {
@@ -33,6 +34,10 @@ export default function AssignmentDetailPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEditingInstructions, setIsEditingInstructions] = useState(false);
   const [editForm, setEditForm] = useState({ instructions: "", videoUrl: "", referenceUrl: "", attachmentUrl: "" });
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const videoFileInputRef = useRef<HTMLInputElement>(null);
+  const attachmentFileInputRef = useRef<HTMLInputElement>(null);
   const { mutate: updateSettings, isPending: isUpdatingSettings } = useUpdateAssignmentSettings(effectiveSchoolId);
 
   // If edit=true is passed, open settings modal automatically
@@ -47,7 +52,7 @@ export default function AssignmentDetailPage() {
     queryFn: async () => {
       const response = await apiClient.get(`/assignment/teacher/${assignmentId}`, {
         headers: { 'x-school-id': effectiveSchoolId }
-      }); 
+      });
       return response.data.data;
     },
     enabled: !!assignmentId && !!effectiveSchoolId,
@@ -146,11 +151,11 @@ export default function AssignmentDetailPage() {
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
         <div className="w-[80%] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4 truncate">
-            <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => router.push("/dashboard/teacher/assignments")}
-                className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0"
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/dashboard/teacher/assignments")}
+              className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0"
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
@@ -164,26 +169,25 @@ export default function AssignmentDetailPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {/* Status badge - always shown */}
             <div className="flex items-center gap-2">
-              <div className={`hidden md:flex px-3 py-1 rounded-full text-[10px] font-bold border items-center gap-1.5 shadow-sm ${
-                assignment.status === "PUBLISHED" 
-                  ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20"
-                  : "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20"
-              }`}>
-                {assignment.status === "PUBLISHED" ? <Check size={12} /> : <EyeOff size={12} />} 
+              <div className={`hidden md:flex px-3 py-1 rounded-full text-[10px] font-bold border items-center gap-1.5 shadow-sm ${assignment.status === "PUBLISHED"
+                ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20"
+                : "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20"
+                }`}>
+                {assignment.status === "PUBLISHED" ? <Check size={12} /> : <EyeOff size={12} />}
                 {assignment.status || "PUBLISHED"}
               </div>
             </div>
-            
+
             {/* Edit actions — only for owner */}
             {!isPreviewMode && (
               <>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={isUpdatingStatus}
                   onClick={() => {
                     const newStatus = assignment.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
@@ -192,11 +196,10 @@ export default function AssignmentDetailPage() {
                       onError: (error: any) => toast.error(error?.response?.data?.error || "Failed to update status")
                     });
                   }}
-                  className={`h-8 rounded-lg text-xs px-3 font-semibold flex items-center gap-1.5 ${
-                    assignment.status === "PUBLISHED"
-                      ? "text-amber-600 border-amber-200 hover:bg-amber-50"
-                      : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                  }`}
+                  className={`h-8 rounded-lg text-xs px-3 font-semibold flex items-center gap-1.5 ${assignment.status === "PUBLISHED"
+                    ? "text-amber-600 border-amber-200 hover:bg-amber-50"
+                    : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                    }`}
                 >
                   {isUpdatingStatus ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -205,14 +208,14 @@ export default function AssignmentDetailPage() {
                   ) : (
                     <Eye size={14} />
                   )}
-                  {isUpdatingStatus 
+                  {isUpdatingStatus
                     ? (assignment.status === "PUBLISHED" ? "Unpublishing..." : "Publishing...")
                     : (assignment.status === "PUBLISHED" ? "Unpublish" : "Publish")}
                 </Button>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={isDeleting}
                   onClick={handleDelete}
                   className="h-8 rounded-lg text-red-600 border-red-200 hover:bg-red-50 text-xs px-3 font-semibold flex items-center gap-1.5"
@@ -221,17 +224,17 @@ export default function AssignmentDetailPage() {
                   Delete
                 </Button>
 
-                <Button 
-                    variant="default" 
-                    size="sm" 
-                    onClick={() => setIsSettingsOpen(true)}
-                    className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 font-semibold flex items-center gap-1.5 shadow-sm"
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 font-semibold flex items-center gap-1.5 shadow-sm"
                 >
-                    <SettingsIcon size={14} /> Settings
+                  <SettingsIcon size={14} /> Settings
                 </Button>
               </>
             )}
-            
+
             <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-800 hidden sm:block mx-1"></div>
             <div className="flex flex-col items-end">
               <span className="text-xs font-black text-gray-900 dark:text-white leading-none">
@@ -278,21 +281,21 @@ export default function AssignmentDetailPage() {
           </TabsList>
 
           <TabsContent value="questions" className="mt-0">
-             <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 shadow-sm">
-                <QuestionManager 
-                  assignmentId={assignmentId} 
-                  assignment={assignment}
-                  isReadOnly={!!isPreviewMode}
-                />
-             </div>
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-8 shadow-sm">
+              <QuestionManager
+                assignmentId={assignmentId}
+                assignment={assignment}
+                isReadOnly={!!isPreviewMode}
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="submissions">
-             <SubmissionList 
-               assignment={assignment} 
-               schoolId={effectiveSchoolId}
-               readOnly={!!isPreviewMode}
-             />
+            <SubmissionList
+              assignment={assignment}
+              schoolId={effectiveSchoolId}
+              readOnly={!!isPreviewMode}
+            />
           </TabsContent>
 
           <TabsContent value="instructions">
@@ -300,9 +303,9 @@ export default function AssignmentDetailPage() {
               <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
                 <h3 className="m-0">Instructions & Resources</h3>
                 {!isPreviewMode && !isEditingInstructions && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => {
                       setEditForm({
                         instructions: assignment.instructions || "",
@@ -319,17 +322,17 @@ export default function AssignmentDetailPage() {
                 )}
                 {isEditingInstructions && (
                   <div className="flex gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setIsEditingInstructions(false)}
                       className="h-8 rounded-lg flex items-center gap-1.5"
                       disabled={isUpdatingSettings}
                     >
                       <X size={14} /> Cancel
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       disabled={isUpdatingSettings}
                       onClick={() => {
                         updateSettings({
@@ -361,7 +364,7 @@ export default function AssignmentDetailPage() {
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-sm font-bold">Instructions Text</label>
-                    <textarea 
+                    <textarea
                       value={editForm.instructions}
                       onChange={(e) => setEditForm({ ...editForm, instructions: e.target.value })}
                       className="w-full min-h-[150px] p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none resize-y"
@@ -370,18 +373,63 @@ export default function AssignmentDetailPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-bold">Video URL (e.g. YouTube)</label>
-                      <input 
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-bold">Video URL or Upload</label>
+                        <button
+                          type="button"
+                          onClick={() => videoFileInputRef.current?.click()}
+                          disabled={isUploadingVideo}
+                          className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                        >
+                          {isUploadingVideo ? (
+                            <>
+                              <Loader2 size={13} className="animate-spin" />
+                              <span>Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <UploadCloud size={13} />
+                              <span>Upload Video File</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <input
+                        type="file"
+                        ref={videoFileInputRef}
+                        accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            setIsUploadingVideo(true);
+                            const { publicUrl } = await imageService.proxyUploadToBunny(file, effectiveSchoolId);
+                            setEditForm((prev) => ({ ...prev, videoUrl: publicUrl }));
+                            toast.success("Video uploaded successfully!");
+                          } catch (err: unknown) {
+                            const errorMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to upload video";
+                            toast.error(errorMsg);
+                          } finally {
+                            setIsUploadingVideo(false);
+                            if (e.target) e.target.value = "";
+                          }
+                        }}
+                      />
+                      <input
                         type="url"
                         value={editForm.videoUrl}
                         onChange={(e) => setEditForm({ ...editForm, videoUrl: e.target.value })}
-                        className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none"
-                        placeholder="https://..."
+                        className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
+                        placeholder="Paste YouTube, Vimeo, Drive, or direct video URL..."
                       />
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Supports YouTube links, Google Drive previews, Vimeo, Loom, and uploaded MP4/WebM videos.
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-bold">Reference URL</label>
-                      <input 
+                      <input
                         type="url"
                         value={editForm.referenceUrl}
                         onChange={(e) => setEditForm({ ...editForm, referenceUrl: e.target.value })}
@@ -390,38 +438,110 @@ export default function AssignmentDetailPage() {
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <label className="text-sm font-bold">Attachment File URL (Optional Direct Link)</label>
-                      <input 
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-bold">Attached Coursework File</label>
+                        <div className="flex items-center gap-2">
+                          {editForm.attachmentUrl && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (window.confirm("Remove and delete this attached file?")) {
+                                  try {
+                                    await imageService.deleteByUrl(editForm.attachmentUrl);
+                                    setEditForm((prev) => ({ ...prev, attachmentUrl: "" }));
+                                    toast.success("Attached file removed");
+                                  } catch (err) {
+                                    console.error(err);
+                                    setEditForm((prev) => ({ ...prev, attachmentUrl: "" }));
+                                  }
+                                }
+                              }}
+                              className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer"
+                            >
+                              <Trash2 size={13} />
+                              <span>Remove File</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => attachmentFileInputRef.current?.click()}
+                            disabled={isUploadingAttachment}
+                            className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                          >
+                            {isUploadingAttachment ? (
+                              <>
+                                <Loader2 size={13} className="animate-spin" />
+                                <span>Uploading...</span>
+                              </>
+                            ) : (
+                              <>
+                                <UploadCloud size={13} />
+                                <span>Upload Document/File</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <input
+                        type="file"
+                        ref={attachmentFileInputRef}
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.zip"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            setIsUploadingAttachment(true);
+                            // If there was an old uploaded attachment, delete it
+                            if (editForm.attachmentUrl) {
+                              imageService.deleteByUrl(editForm.attachmentUrl).catch(console.error);
+                            }
+                            const { publicUrl } = await imageService.proxyUploadToBunny(file, effectiveSchoolId);
+                            setEditForm((prev) => ({ ...prev, attachmentUrl: publicUrl }));
+                            toast.success(`Attached "${file.name}" successfully!`);
+                          } catch (err: unknown) {
+                            const errorMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to upload file";
+                            toast.error(errorMsg);
+                          } finally {
+                            setIsUploadingAttachment(false);
+                            if (e.target) e.target.value = "";
+                          }
+                        }}
+                      />
+                      <input
                         type="url"
                         value={editForm.attachmentUrl}
                         onChange={(e) => setEditForm({ ...editForm, attachmentUrl: e.target.value })}
-                        className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none"
-                        placeholder="https://..."
+                        className="w-full p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
+                        placeholder="Upload a file above or paste an external file link..."
                       />
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Upload PDFs, Word docs, spreadsheets, slides, images, or paste an external file URL.
+                      </p>
                     </div>
                   </div>
                 </div>
               ) : (
                 <>
                   <p>{assignment.instructions || "No instructions provided."}</p>
-                  
+
                   {assignment.attachmentUrl && (
                     <div className="mt-8 space-y-4">
                       <div className="flex items-center justify-between">
                         <h4 className="m-0">Attached File Preview</h4>
-                        <a 
-                          href={assignment.attachmentUrl} 
-                          target="_blank" 
-                          rel="noreferrer" 
+                        <a
+                          href={assignment.attachmentUrl}
+                          target="_blank"
+                          rel="noreferrer"
                           className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg text-sm font-bold transition-colors no-underline"
                         >
                           Open in new tab <ExternalLink size={16} />
                         </a>
                       </div>
                       <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 aspect-video w-full relative group">
-                        <iframe 
-                          src={assignment.attachmentUrl} 
-                          className="w-full h-full border-0 absolute inset-0" 
+                        <iframe
+                          src={assignment.attachmentUrl}
+                          className="w-full h-full border-0 absolute inset-0"
                           title="Attachment Preview"
                           loading="lazy"
                         />
@@ -439,10 +559,10 @@ export default function AssignmentDetailPage() {
                   {assignment.referenceUrl && (
                     <div className="mt-8 space-y-4">
                       <h4 className="m-0">External Reference</h4>
-                      <a 
-                        href={assignment.referenceUrl} 
-                        target="_blank" 
-                        rel="noreferrer" 
+                      <a
+                        href={assignment.referenceUrl}
+                        target="_blank"
+                        rel="noreferrer"
                         className="flex items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg text-sm font-bold transition-colors no-underline border border-blue-100 dark:border-blue-800/50"
                       >
                         <ExternalLink size={18} /> {assignment.referenceUrl}
@@ -455,13 +575,13 @@ export default function AssignmentDetailPage() {
           </TabsContent>
         </Tabs>
       </main>
-      
+
       {isSettingsOpen && (
-        <SettingsModal 
-          isOpen={isSettingsOpen} 
-          onClose={() => setIsSettingsOpen(false)} 
-          assignment={assignment} 
-          schoolId={effectiveSchoolId} 
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          assignment={assignment}
+          schoolId={effectiveSchoolId}
         />
       )}
     </div>

@@ -29,6 +29,7 @@ import { useParentStore } from '@/lib/api/hooks/useParentStore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip';
 import { cn } from '@/lib/utils';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 
 // Helper to assign icons to subjects
 function getSubjectIcon(name: string): React.ComponentType<{ className?: string }> {
@@ -210,13 +211,20 @@ export default function SubjectPerformanceList() {
     }
 
     // Convert map to array and compute final averages
+    const customGradingSystem = (student?.school as { gradingSystem?: unknown[] } | undefined)?.gradingSystem;
+
     return Array.from(subjectsMap.values()).map((s) => {
       const average = s.totalMaxMarks > 0
         ? Math.round((s.totalScore / s.totalMaxMarks) * 100)
         : (s.assessmentCount > 0 ? Math.round(s.totalScore / s.assessmentCount) : 0);
-      const grade = s.assessmentCount > 0 ? getGradeLetter(average) : 'N/A';
+      const evalResult = getGradeEvaluation(average, customGradingSystem);
+      const grade = s.assessmentCount > 0 ? evalResult.grade : 'N/A';
       const tier = s.assessmentCount > 0
-        ? getPerformanceTier(average)
+        ? {
+            label: evalResult.remark || getPerformanceTier(average).label,
+            bg: `${evalResult.bg} ${evalResult.color} border border-current/20`,
+            badgeBg: evalResult.color.includes('emerald') ? 'bg-emerald-500' : evalResult.color.includes('blue') ? 'bg-blue-500' : evalResult.color.includes('amber') ? 'bg-amber-500' : 'bg-rose-500',
+          }
         : {
           label: 'Pending Eval',
           bg: 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700',

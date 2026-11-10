@@ -13,30 +13,23 @@ import AssessmentsTable from './components/assessments-table'
 import ComparisonChart from './components/comparison-chart'
 import TopicAnalysis from './components/topic-analysis'
 import TeacherRemarks from './components/teacher-remarks'
-import { 
-  SubjectAnalyticsData, 
-  AssessmentRecord, 
-  TrendPoint, 
-  CategoryBreakdown 
+import {
+  SubjectAnalyticsData,
+  AssessmentRecord,
+  TrendPoint,
+  CategoryBreakdown
 } from './components/types'
 import { useParentStore } from '@/lib/api/hooks/useParentStore'
 import { useParentChildren, useChildDetails } from '@/lib/api/hooks/useParentChildren'
-
-function gradeLabel(percentage: number): string {
-  if (percentage >= 75) return 'A1'
-  if (percentage >= 70) return 'B2'
-  if (percentage >= 65) return 'B3'
-  if (percentage >= 50) return 'C6'
-  if (percentage >= 40) return 'D7'
-  return 'F9'
-}
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool'
+import { getGradeEvaluation } from '@/utils/gradingSystem'
 
 // ==========================================
 // Shimmering Modern Loading Skeleton
 // ==========================================
 function AnalyticsSkeleton() {
   return (
-    <div className="w-full max-w-[99%] mx-auto flex flex-col gap-5 p-3 sm:p-5 lg:p-6 animate-pulse">
+    <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-5 p-3 sm:p-5 lg:p-6 animate-pulse">
       <div className="flex items-center justify-between">
         <div className="h-8 w-56 bg-slate-200 dark:bg-slate-800 rounded-xl" />
         <div className="h-9 w-40 bg-slate-200 dark:bg-slate-800 rounded-xl" />
@@ -87,11 +80,20 @@ function SubjectAnalyticsContent() {
     return children.find((c) => c.id === effectiveChildId) || children[0]
   }, [children, effectiveChildId])
 
-  const { 
-    data: childDetails, 
-    isLoading: isDetailsLoading, 
-    refetch: refetchDetails 
+  const {
+    data: childDetails,
+    isLoading: isDetailsLoading,
+    refetch: refetchDetails
   } = useChildDetails(effectiveChildId || null)
+
+  const schoolId = (currentChildSummary?.school as { id?: string } | undefined)?.id || (currentChildSummary as unknown as { schoolId?: string })?.schoolId || ""
+  const { data: schoolProfile } = useSchoolProfile(schoolId)
+  const customGradingSystem = schoolProfile?.gradingSystem
+
+  function gradeLabel(percentage: number): string {
+    const evalResult = getGradeEvaluation(percentage, customGradingSystem)
+    return evalResult.grade
+  }
 
   const [selectedSubject, setSelectedSubject] = useState<string>(initialSubject)
 
@@ -309,7 +311,7 @@ function SubjectAnalyticsContent() {
       weaknesses,
       teacherNote
     }
-  }, [childDetails, currentChildSummary, matchingGrades, selectedSubject, allSubjects, effectiveChildId])
+  }, [childDetails, currentChildSummary, matchingGrades, selectedSubject, allSubjects, effectiveChildId, customGradingSystem])
 
   const isLoading = isChildrenLoading || isDetailsLoading
 
@@ -352,7 +354,7 @@ function SubjectAnalyticsContent() {
   }
 
   return (
-    <main className="w-full max-w-[99%] mx-auto p-3 sm:p-5 lg:p-6 space-y-5 sm:space-y-6">
+    <main className="w-full max-w-[1600px] mx-auto p-3 sm:p-5 lg:p-6 space-y-5 sm:space-y-6">
       {/* 1. Breadcrumb Navigation & Controls */}
       <BreadcrumbActions
         subjectName={analyticsData.subjectName}

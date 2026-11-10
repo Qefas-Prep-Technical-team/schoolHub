@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStudentTranscriptData } from "./hooks/useStudentTranscriptData";
 import { useTranscriptClearance } from "./hooks/useTranscriptClearance";
@@ -11,10 +11,14 @@ import { TranscriptAcademicPage } from "./components/TranscriptAcademicPage";
 import { TranscriptBehavioralPage } from "./components/TranscriptBehavioralPage";
 import { TranscriptAuditSidebar } from "./components/TranscriptAuditSidebar";
 import { TranscriptClearanceModals } from "./components/TranscriptClearanceModals";
+import { StudentOfficialTranscriptExportModal } from "./components/StudentOfficialTranscriptExportModal";
+import { StudentTranscriptSpreadsheetData } from "./utils/transcriptSpreadsheetExporter";
+import { getTermLabel } from "./types/transcript.types";
 
 export default function StudentTranscriptPage() {
   const printRef = useRef<HTMLDivElement>(null);
   const data = useStudentTranscriptData();
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const clearance = useTranscriptClearance({
     studentId: data.studentId,
@@ -109,6 +113,39 @@ export default function StudentTranscriptPage() {
     (data.studentProfile?.department as { name?: string } | undefined)?.name ||
     data.enrolledClass;
 
+  const currentSessionName =
+    data.selectedSessionId === "ALL"
+      ? "All Sessions (Cumulative)"
+      : data.availableSessions.find((s) => s.id === data.selectedSessionId)?.name || "Academic Session";
+
+  const currentTermLabel =
+    data.selectedTermFilter === "ALL"
+      ? "All Terms (Full Session)"
+      : getTermLabel(data.selectedTermFilter);
+
+  const transcriptSpreadsheetData: StudentTranscriptSpreadsheetData | null = useMemo(() => {
+    return {
+      studentName: String(data.studentProfile?.name || data.user?.name || "Scholar"),
+      studentCode: String(data.studentProfile?.studentCode || "Scholar"),
+      departmentOrClass: departmentOrClass || "Enrolled Class",
+      schoolName: data.schoolName,
+      schoolLocation: data.schoolLocation,
+      stats: data.transcriptStats,
+      filteredResults: data.filteredResults,
+      selectedSessionName: currentSessionName,
+      selectedTermLabel: currentTermLabel,
+      gradingSystem: data.gradingSystem,
+    };
+  }, [data, departmentOrClass, currentSessionName, currentTermLabel]);
+
+  const handleOpenExportModal = () => {
+    if (clearance.requiresPayment && !clearance.isCurrentViewUnlocked) {
+      actions.openPaymentModalForCurrentScope();
+      return;
+    }
+    setIsExportModalOpen(true);
+  };
+
   return (
     <div className="w-full max-w-[1600px] mx-auto space-y-6 font-sans">
       <TranscriptTopBar
@@ -117,7 +154,7 @@ export default function StudentTranscriptPage() {
         isSidebarOpen={data.isSidebarOpen}
         setIsSidebarOpen={data.setIsSidebarOpen}
         handlePrint={actions.handlePrint}
-        handleDownloadPDF={actions.handleDownloadPDF}
+        handleDownloadPDF={handleOpenExportModal}
         isExporting={clearance.isExporting}
         requiresPayment={clearance.requiresPayment}
         isCurrentViewUnlocked={clearance.isCurrentViewUnlocked}
@@ -210,9 +247,9 @@ export default function StudentTranscriptPage() {
             evalTerm={data.evalTerm}
             serverEvaluation={
               data.serverEvaluation as
-                | Record<string, unknown>
-                | null
-                | undefined
+              | Record<string, unknown>
+              | null
+              | undefined
             }
             requiresPayment={clearance.requiresPayment}
             isTermUnlocked={clearance.isTermUnlocked}
@@ -289,6 +326,21 @@ export default function StudentTranscriptPage() {
         onRestoreAccess={actions.handleRestoreAccess}
         results={data.results}
         isGraduated={data.isGraduated}
+      />
+
+      <StudentOfficialTranscriptExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        data={transcriptSpreadsheetData}
+        schoolProfile={data.schoolProfile || {
+          name: data.schoolName,
+          motto: data.schoolMotto,
+          logo: data.schoolLogoUrl,
+          address: data.schoolLocation,
+        }}
+        schoolId={data.schoolId}
+        onExportPdf={actions.handleDownloadPDF}
+        isExportingPdf={clearance.isExporting}
       />
     </div>
   );

@@ -22,7 +22,8 @@ import {
   ShieldCheck,
   Building,
   Layers,
-  Info
+  Info,
+  Download
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useParentStore } from '@/lib/api/hooks/useParentStore';
@@ -33,11 +34,14 @@ import { useExams } from '@/lib/api/hooks/useExams';
 import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { getGradeEvaluation } from '@/utils/gradingSystem';
 
 import Overview from '@/app/dashboard/admin/classes/[id]/components/Overview';
 import ParentClassSubjects, { SubjectItem } from './ParentClassSubjects';
 import ParentClassTimetable from './ParentClassTimetable';
 import SwitchClassModal, { AvailableClass } from './SwitchClassModal';
+import { ParentClassExportModal } from './ParentClassExportModal';
+import { ParentClassDossierData } from '../utils/parentClassSpreadsheetExporter';
 
 interface RawAlert {
   id: string;
@@ -436,6 +440,7 @@ export default function ClassDetails() {
 
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [isSwitchClassModalOpen, setIsSwitchClassModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Sync selectedClassId when available classes change or child switches
   useEffect(() => {
@@ -579,6 +584,47 @@ export default function ClassDetails() {
   const subjectsList = (classData?.subjects || []) as SubjectItem[];
   const subjectsCount = subjectsList.length;
 
+  const attendanceRate = Number(dashboardData?.stats?.attendanceRate ?? 95);
+  const averageGrade = Number(dashboardData?.stats?.averageGrade ?? 75);
+
+  const customGradingSystem = (classData?.school as { gradingSystem?: unknown[] } | undefined)?.gradingSystem ||
+    (dashboardData?.child as unknown as { school?: { gradingSystem?: unknown[] } })?.school?.gradingSystem;
+
+  const evalResult = getGradeEvaluation(averageGrade, customGradingSystem);
+
+  const classDossierExportData: ParentClassDossierData | null = React.useMemo(() => {
+    if (!classData && !dashboardData?.child) return null;
+
+    const subjects = subjectsList.map((s, idx) => {
+      const subjectItem = s as SubjectItem & { department?: { name?: string }; creditUnits?: number | string };
+      return {
+        code: s.code || s.subject?.code || `SUB-${idx + 1}`,
+        name: s.name || s.subject?.name || "Subject Course",
+        teacher: s.teacher?.name || s.subject?.teacher?.name || "Subject Instructor",
+        department: subjectItem.department?.name || classData?.department?.name || "General Curriculum",
+        creditUnits: Number(subjectItem.creditUnits) || 3,
+      };
+    });
+
+    return {
+      className: classData?.name || "Classroom Cohort",
+      section: classData?.section || undefined,
+      session: classData?.session || undefined,
+      term: classData?.term || undefined,
+      classCode: classData?.classCode || undefined,
+      schoolName: schoolName || "School Portal",
+      leadTeacher: leadTeacherName,
+      studentName: childName,
+      studentCode,
+      totalStudents: enrolledCount,
+      attendanceRate,
+      averageGrade,
+      letterGrade: evalResult.grade,
+      standingRemark: evalResult.remark || "Satisfactory Progress",
+      subjects,
+    };
+  }, [classData, dashboardData, subjectsList, schoolName, leadTeacherName, childName, studentCode, enrolledCount, attendanceRate, averageGrade, evalResult]);
+
   const isLoadingOverall = isChildrenLoading || (isDashboardLoading && isChildDetailsLoading) || (!!classId && isClassLoading);
 
   // 1. Loading State
@@ -668,8 +714,17 @@ export default function ClassDetails() {
               )}
             </div>
 
-            {/* Viewing for child badge & Switch Class button */}
+            {/* Viewing for child badge, Export Dossier, & Switch Class button */}
             <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(true)}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-black shadow-sm shadow-orange-500/20 transition-all active:scale-95 cursor-pointer"
+              >
+                <Download size={14} />
+                <span>Export Dossier</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setIsSwitchClassModalOpen(true)}
@@ -1015,6 +1070,17 @@ export default function ClassDetails() {
         }}
         childName={childName}
       />
+
+      {/* Classroom Academic Export Modal */}
+      {classDossierExportData && (
+        <ParentClassExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          data={classDossierExportData}
+          schoolProfile={classData?.school || dashboardData?.child?.school}
+          schoolId={classData?.schoolId || classData?.school?.id || (dashboardData?.child as unknown as { schoolId?: string })?.schoolId}
+        />
+      )}
     </div>
   );
 }

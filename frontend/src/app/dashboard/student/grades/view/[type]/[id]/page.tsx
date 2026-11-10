@@ -39,8 +39,7 @@ import { useStudentProfile } from '@/lib/api/hooks/useStudent';
 import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { getGradeEvaluation } from '@/utils/gradingSystem';
-import { generatePDF } from '@/utils/pdfGenerator';
-import { assertSchoolPayingPlan } from '@/utils/subscriptionPlanCheck';
+import { ResultDossierExportModal, ResultDossierExportData } from './components/ResultDossierExportModal';
 
 const PDFDownloadLink = dynamic(
   () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
@@ -77,7 +76,7 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
   const [activeTab, setActiveTab] = useState<'subjects' | 'insights'>('subjects');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [isDossierExportModalOpen, setIsDossierExportModalOpen] = useState(false);
 
   const { user } = useAuthStore();
   const { data: profile } = useStudentProfile();
@@ -324,83 +323,47 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
   const displayImage = result.student?.profileImage || result.student?.user?.profileImage || result.student?.avatar || result.student?.user?.avatar;
   const studentInitial = studentName.charAt(0).toUpperCase();
 
-  const handleExportOfficialPDF = async () => {
-    if (!result || isLocked) return;
-    const schoolToVerify = profile?.school || result.school || user?.schools?.[0];
-    if (!assertSchoolPayingPlan(schoolToVerify)) {
-      return;
-    }
+  const dossierExportData: ResultDossierExportData | null = useMemo(() => {
+    if (!result || isLocked) return null;
+    const studentNameDisplay = result.student?.name || result.student?.user?.name || profile?.name || user?.name || 'Student';
+    const studentIdDisplay = result.student?.studentCode || result.student?.user?.studentCode || profile?.studentCode || 'N/A';
+    const categoryLabel = type === 'exam' ? 'Formal Examination' : type === 'subject-paper' ? 'Subject Paper Exam' : 'Continuous Assessment';
+    const rawSubjects = (result.subjects || []) as SubjectResultRecord[];
 
-    try {
-      setIsExportingPDF(true);
+    const subjects = rawSubjects.map((sub, idx) => {
+      const score = sub.score || 0;
+      const total = sub.totalMarks || 100;
+      const pct = total > 0 ? Math.round((score / total) * 100) : 0;
+      const gradeDetail = getSubjectGradeDetails(score, total);
+      const name = sub.subjectName || sub.subjectPaper?.subject?.name || sub.subject?.name || `Component ${idx + 1}`;
 
-      const tableHeaders = [
-        ['#', 'Subject Paper / Component', 'Score Obtained', 'Max Obtainable', 'Percentage', 'Grade', 'Remark']
-      ];
+      return {
+        name,
+        score,
+        total,
+        percentage: pct,
+        grade: sub.grade && sub.grade !== '-' ? sub.grade : gradeDetail.grade,
+        remark: sub.remark && sub.remark !== '-' ? sub.remark : gradeDetail.statusText
+      };
+    });
 
-      const rawSubjects = (result.subjects || []) as SubjectResultRecord[];
-      const tableData = rawSubjects.map((sub, idx) => {
-        const score = sub.score || 0;
-        const total = sub.totalMarks || 100;
-        const pct = total > 0 ? Math.round((score / total) * 100) : 0;
-        const gradeDetail = getSubjectGradeDetails(score, total);
-        const name = sub.subjectName || sub.subjectPaper?.subject?.name || sub.subject?.name || `Component ${idx + 1}`;
-
-        return [
-          (idx + 1).toString(),
-          name,
-          score.toString(),
-          total.toString(),
-          `${pct}%`,
-          sub.grade && sub.grade !== '-' ? sub.grade : gradeDetail.grade,
-          sub.remark && sub.remark !== '-' ? sub.remark : gradeDetail.statusText
-        ];
-      });
-
-      const dateStr = result.submittedAt ? format(new Date(result.submittedAt), 'PPpp') : format(new Date(), 'PPpp');
-      const studentNameDisplay = result.student?.name || result.student?.user?.name || profile?.name || user?.name || 'Student';
-      const studentIdDisplay = result.student?.studentCode || result.student?.user?.studentCode || profile?.studentCode || 'N/A';
-      const categoryLabel = type === 'exam' ? 'Formal Examination' : type === 'subject-paper' ? 'Subject Paper Exam' : 'Continuous Assessment';
-
-      const metaData = [
-        { label: 'Student Name', value: studentNameDisplay },
-        { label: 'Student ID', value: studentIdDisplay },
-        { label: 'Class / Grade', value: profile?.classes?.[0]?.class?.name || 'Enrolled Class' },
-        { label: 'Assessment Date', value: dateStr },
-        { label: 'Assessment Title', value: result.title || 'Official Assessment' },
-        { label: 'Category', value: categoryLabel },
-        { label: 'Total Score', value: `${result.totalScore} / ${result.totalMarks || 100}` },
-        { label: 'Percentage', value: scorePercentage !== null ? `${scorePercentage}%` : 'N/A' },
-        { label: 'Grade Awarded', value: overallGrade },
-        { label: 'Performance Status', value: (scorePercentage ?? 0) >= 60 ? 'Commendable' : (scorePercentage ?? 0) >= 50 ? 'Satisfactory' : 'Needs Intervention' },
-      ];
-
-      const additionalTables = result.performanceInsight ? [
-        {
-          title: 'Institutional Performance Feedback & Academic Remarks',
-          headers: [['Evaluation Component', 'Remark / Diagnostic Finding']],
-          data: [
-            ['Academic Performance Insights', result.performanceInsight]
-          ]
-        }
-      ] : undefined;
-
-      await generatePDF({
-        title: `${result.title || 'Assessment'} - Result Dossier`,
-        filename: `${studentNameDisplay.replace(/\s+/g, '_')}_${(result.title || 'Assessment').replace(/\s+/g, '_')}_Dossier.pdf`,
-        schoolProfile: schoolToVerify,
-        metaData,
-        tableHeaders,
-        tableData,
-        additionalTables,
-        orientation: 'portrait'
-      });
-    } catch (err) {
-      console.error('Error generating assessment PDF:', err);
-    } finally {
-      setIsExportingPDF(false);
-    }
-  };
+    return {
+      title: result.title || 'Official Assessment',
+      category: categoryLabel,
+      student: {
+        name: studentNameDisplay,
+        studentCode: studentIdDisplay,
+        class: profile?.classes?.[0]?.class?.name || 'Enrolled Class'
+      },
+      totalScore: result.totalScore,
+      totalMarks: result.totalMarks || 100,
+      percentage: scorePercentage,
+      overallGrade,
+      submittedAt: result.submittedAt,
+      performanceInsight: result.performanceInsight,
+      subjects
+    };
+  }, [result, isLocked, profile, user, type, scorePercentage, overallGrade, customGradingSystem]);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 p-3 sm:p-6 md:p-8 font-lexend text-slate-800 dark:text-slate-200">
@@ -440,8 +403,8 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
             </Button>
 
             <Button
-              onClick={handleExportOfficialPDF}
-              disabled={isExportingPDF || isLocked}
+              onClick={() => setIsDossierExportModalOpen(true)}
+              disabled={isLocked}
               className={cn(
                 "flex-1 sm:flex-none h-10 sm:h-9 px-3.5 sm:px-4 text-xs font-semibold rounded-xl border-0 shadow-sm transition-all flex items-center justify-center gap-1.5",
                 isLocked
@@ -449,14 +412,12 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
                   : "bg-pink-600 hover:bg-pink-700 text-white shadow-pink-600/20 active:scale-95"
               )}
             >
-              {isExportingPDF ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isLocked ? (
+              {isLocked ? (
                 <Lock className="h-4 w-4 text-amber-500" />
               ) : (
                 <Download className="h-4 w-4" />
               )}
-              <span>{isExportingPDF ? 'Exporting...' : isLocked ? 'PDF Locked' : 'Export Official PDF'}</span>
+              <span>{isLocked ? 'Export Locked' : 'Export Dossier'}</span>
             </Button>
           </div>
         </div>
@@ -1105,6 +1066,14 @@ export default function ViewResultDetailsPage({ params }: { params: Promise<{ ty
           </div>
         </div>
       </div>
+
+      <ResultDossierExportModal
+        isOpen={isDossierExportModalOpen}
+        onClose={() => setIsDossierExportModalOpen(false)}
+        data={dossierExportData}
+        schoolProfile={schoolProfile}
+        schoolId={schoolId}
+      />
     </div>
   );
 }

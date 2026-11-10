@@ -16,15 +16,7 @@ import { useParentStore } from '@/lib/api/hooks/useParentStore'
 import { useParentChildren, useChildDetails } from '@/lib/api/hooks/useParentChildren'
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
 import { useSchoolProfile } from '@/lib/api/hooks/useSchool'
-
-function gradeLabel(percentage: number): string {
-  if (percentage >= 75) return 'A1'
-  if (percentage >= 70) return 'B2'
-  if (percentage >= 65) return 'B3'
-  if (percentage >= 50) return 'C6'
-  if (percentage >= 40) return 'D7'
-  return 'F9'
-}
+import { getGradeEvaluation } from '@/utils/gradingSystem'
 
 function standingLabel(percentage: number): string {
   if (percentage >= 75) return 'Distinction'
@@ -40,7 +32,7 @@ function standingLabel(percentage: number): string {
 // ==========================================
 function ReportCardSkeleton() {
   return (
-    <div className="w-full max-w-[98%] mx-auto flex flex-col gap-5 p-2 sm:p-4 lg:p-5 animate-pulse">
+    <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-5 p-2 sm:p-4 lg:p-5 animate-pulse">
       {/* Top Nav Breadcrumbs Skeleton */}
       <div className="flex items-center justify-between">
         <div className="h-6 w-56 bg-slate-200 dark:bg-slate-800 rounded-lg" />
@@ -165,15 +157,15 @@ function TermReportContent() {
     return children.find((c) => c.id === effectiveChildId) || children[0]
   }, [children, effectiveChildId])
 
-  const { 
-    data: childDetails, 
-    isLoading: isDetailsLoading, 
-    refetch: refetchDetails 
+  const {
+    data: childDetails,
+    isLoading: isDetailsLoading,
+    refetch: refetchDetails
   } = useChildDetails(effectiveChildId || null)
 
-  const { 
-    data: dashboardData, 
-    isLoading: isDashboardLoading 
+  const {
+    data: dashboardData,
+    isLoading: isDashboardLoading
   } = useParentDashboard(effectiveChildId || null)
 
   const schoolId = currentChildSummary?.school?.id || (childDetails?.school as { id?: string } | undefined)?.id || ''
@@ -201,17 +193,17 @@ function TermReportContent() {
     const rawGrades = filteredGrades.length > 0 ? filteredGrades : (childDetails?.grades || [])
 
     // Group grades by subject to compute combined C.A. + Exam marks
-    const subjectMap: { 
-      [name: string]: { 
-        caScore: number; 
-        caMax: number; 
-        examScore: number; 
-        examMax: number; 
-        totalScore: number; 
-        totalMax: number; 
-        teacher?: string; 
+    const subjectMap: {
+      [name: string]: {
+        caScore: number;
+        caMax: number;
+        examScore: number;
+        examMax: number;
+        totalScore: number;
+        totalMax: number;
+        teacher?: string;
         remarks?: string;
-      } 
+      }
     } = {}
 
     for (const g of rawGrades) {
@@ -250,10 +242,13 @@ function TermReportContent() {
     }
 
     // Convert map to subject list
+    const customGradingSystem = schoolProfile?.gradingSystem || (childDetails?.school as { gradingSystem?: unknown[] } | undefined)?.gradingSystem
+
     const subjects: ReportSubjectGrade[] = Object.keys(subjectMap).map((name, i) => {
       const item = subjectMap[name]
       const percentage = item.totalMax > 0 ? Math.round((item.totalScore / item.totalMax) * 100) : 0
-      const grade = gradeLabel(percentage)
+      const evalResult = getGradeEvaluation(percentage, customGradingSystem)
+      const grade = evalResult.grade
 
       // Fallback distribution if only exam or only CA was recorded
       let caS = item.caScore
@@ -284,7 +279,7 @@ function TermReportContent() {
         totalMax: 100,
         percentage,
         grade,
-        remark: item.remarks || (percentage >= 75 ? 'Exceptional academic competence demonstrated' : percentage >= 50 ? 'Satisfactory conceptual grasp' : 'Extra revision recommended'),
+        remark: item.remarks || evalResult.remark || (percentage >= 75 ? 'Exceptional academic competence demonstrated' : percentage >= 50 ? 'Satisfactory conceptual grasp' : 'Extra revision recommended'),
         teacher: item.teacher
       }
     })
@@ -292,8 +287,9 @@ function TermReportContent() {
     // Compute cumulative aggregates
     const overallTotal = subjects.reduce((sum, s) => sum + s.percentage, 0)
     const averageScore = subjects.length > 0 ? Math.round(overallTotal / subjects.length) : 0
-    const overallGrade = gradeLabel(averageScore)
-    const standing = standingLabel(averageScore)
+    const overallEval = getGradeEvaluation(averageScore, customGradingSystem)
+    const overallGrade = overallEval.grade
+    const standing = overallEval.remark || standingLabel(averageScore)
 
     const attendanceRate = dashboardData?.stats?.attendanceRate ?? 95
 
@@ -398,7 +394,7 @@ function TermReportContent() {
   }
 
   return (
-    <main className="w-full max-w-[98%] mx-auto p-2 sm:p-4 lg:p-5 space-y-5 sm:space-y-6">
+    <main className="w-full max-w-[1600px] mx-auto p-2 sm:p-4 lg:p-5 space-y-5 sm:space-y-6">
       {/* 1. Breadcrumbs, Child Switcher, Term Selector & Action Buttons */}
       <BreadcrumbActions
         data={reportData}

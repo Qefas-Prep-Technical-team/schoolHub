@@ -83,16 +83,30 @@ export function parseVideoUrl(url: string | null | undefined): ParsedVideoInfo {
     };
   }
 
-  // 6. Direct Video Files (.mp4, .webm, .ogg, .mov, .m4v) or cloud storage video paths
-  const isDirectFile = /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(cleanUrl) || 
-                       /\/uploads\/.*(video|\.mp4|\.webm)/i.test(cleanUrl) ||
-                       /cloudinary\.com\/.*\/video\//i.test(cleanUrl);
+  // 6. Direct Video Files (.mp4, .webm, .ogg, .mov, .m4v, .m3u8), Supabase/Bunny/S3/Cloudinary storage video paths
+  const isDirectFile = /\.(mp4|webm|ogg|mov|m4v|m3u8)(\?.*)?$/i.test(cleanUrl) ||
+    /\/uploads\/.*(video|\.mp4|\.webm|\.mov)/i.test(cleanUrl) ||
+    /cloudinary\.com\/.*\/video\//i.test(cleanUrl) ||
+    /supabase\.co\/storage\/v1\/object\/public\/.*(video|\.mp4|\.webm|\.mov)/i.test(cleanUrl) ||
+    /b-cdn\.net\/.*(video|\.mp4|\.webm|\.mov)/i.test(cleanUrl) ||
+    /^blob:/i.test(cleanUrl) ||
+    /^data:video\//i.test(cleanUrl);
   if (isDirectFile) {
     return {
       type: 'direct',
       embedUrl: null,
       directUrl: cleanUrl,
-      providerName: 'Video File',
+      providerName: 'Uploaded Video',
+    };
+  }
+
+  // 7. Video URL fallback if looks like an uploaded file URL or generic video stream
+  if (/\b(video|media|stream|storage)\b/i.test(cleanUrl) && !/(\.pdf|\.docx?|\.png|\.jpe?g|\.gif)(\?.*)?$/i.test(cleanUrl)) {
+    return {
+      type: 'direct',
+      embedUrl: null,
+      directUrl: cleanUrl,
+      providerName: 'Video Stream',
     };
   }
 

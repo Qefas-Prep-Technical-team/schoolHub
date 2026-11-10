@@ -5,19 +5,21 @@ import { useState, useEffect } from 'react'
 import { useParentDashboard, UpcomingExam } from '@/lib/api/hooks/useParentDashboard'
 import { useChildExams } from '@/lib/api/hooks/useChildExams'
 import { useParentStore } from '@/lib/api/hooks/useParentStore'
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool'
 import { Skeleton } from '@/components/ui/skeleton'
 import { format } from 'date-fns'
 import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip'
 import { Grade } from '@/lib/api/services/parentService'
-import { 
-  LayoutGrid, 
-  List, 
-  Search, 
-  X, 
-  ClipboardCheck, 
-  SearchX, 
-  ArrowRight, 
-  Lock, 
+import { getGradeEvaluation, getGradeColorAndBg } from '@/utils/gradingSystem'
+import {
+  LayoutGrid,
+  List,
+  Search,
+  X,
+  ClipboardCheck,
+  SearchX,
+  ArrowRight,
+  Lock,
   Lightbulb,
   RotateCw,
   RotateCcw,
@@ -62,6 +64,9 @@ export default function ExamList() {
   const { selectedChildId } = useParentStore()
   const { data: dashboardData, isLoading: isDashboardLoading, refetch: refetchDashboard } = useParentDashboard(selectedChildId)
   const { data: childDetails, isLoading: isDetailsLoading, refetch: refetchDetails } = useChildExams(selectedChildId)
+  const schoolId = (dashboardData?.child?.school?.id as string | undefined) || ""
+  const { data: schoolProfile } = useSchoolProfile(schoolId)
+  const customGradingSystem = schoolProfile?.gradingSystem
 
   const isLoading = isDashboardLoading || isDetailsLoading
 
@@ -96,77 +101,77 @@ export default function ExamList() {
 
   const standaloneAssessments: Exam[] = []
 
-  ;(childDetails?.grades || []).forEach((grade: Grade) => {
-    const mainExamId = grade.examId || grade.exam?.id
-    const mainExamTitle = grade.exam?.title?.trim()
+    ; (childDetails?.grades || []).forEach((grade: Grade) => {
+      const mainExamId = grade.examId || grade.exam?.id
+      const mainExamTitle = grade.exam?.title?.trim()
 
-    if (mainExamId && mainExamTitle) {
-      if (!examGroups.has(mainExamId)) {
-        examGroups.set(mainExamId, {
-          examId: mainExamId,
-          title: mainExamTitle,
-          subjects: new Set(),
-          teachers: new Set(),
-          latestDate: new Date(grade.createdAt),
-          totalScore: 0,
-          totalMaxMarks: 0,
+      if (mainExamId && mainExamTitle) {
+        if (!examGroups.has(mainExamId)) {
+          examGroups.set(mainExamId, {
+            examId: mainExamId,
+            title: mainExamTitle,
+            subjects: new Set(),
+            teachers: new Set(),
+            latestDate: new Date(grade.createdAt),
+            totalScore: 0,
+            totalMaxMarks: 0,
+            assessmentType: grade.assessmentType || grade.category || 'EXAM',
+            papersCount: 0,
+          })
+        }
+
+        const grp = examGroups.get(mainExamId)!
+        const sub = grade.subject || grade.subjectPaper?.subject?.name
+        if (sub) grp.subjects.add(sub)
+        const teacher = grade.subjectPaper?.teacher?.name
+        if (teacher && teacher !== 'School Teacher') grp.teachers.add(teacher)
+
+        const gradeDate = new Date(grade.createdAt)
+        if (gradeDate > grp.latestDate) grp.latestDate = gradeDate
+
+        grp.totalScore += Number(grade.score || 0)
+        grp.totalMaxMarks += Number(grade.maxMarks || 100)
+        grp.papersCount += 1
+      } else {
+        // Standalone assessment without explicit examId: display with proper examination/assessment title (not raw paper title)
+        const sub = grade.subject || grade.subjectPaper?.subject?.name || 'General'
+        const rawTitle = grade.subjectPaper?.title || ''
+        const cleanTitle = (rawTitle && !rawTitle.toLowerCase().match(/^paper\s*\d+$/i))
+          ? rawTitle
+          : `${sub} ${grade.assessmentType || 'Examination'}`
+
+        const pct = grade.maxMarks > 0 ? Math.round((grade.score / grade.maxMarks) * 100) : 0
+        standaloneAssessments.push({
+          id: grade.id,
+          examId: grade.id,
+          title: cleanTitle,
+          subject: sub,
+          teacher: grade.subjectPaper?.teacher?.name || 'Subject Teacher',
+          date: format(new Date(grade.createdAt), 'MMM dd'),
+          score: grade.score,
+          totalScore: grade.maxMarks,
+          grade: gradeLabel(pct),
+          percentage: pct,
+          classAverage: 75,
+          status: 'completed',
+          accentColor: 'bg-green-500',
+          icon: 'grade',
+          iconBgColor: 'bg-emerald-50 dark:bg-emerald-950/30',
+          iconColor: 'text-emerald-600 dark:text-emerald-400',
           assessmentType: grade.assessmentType || grade.category || 'EXAM',
-          papersCount: 0,
+          papersCount: 1,
         })
       }
-
-      const grp = examGroups.get(mainExamId)!
-      const sub = grade.subject || grade.subjectPaper?.subject?.name
-      if (sub) grp.subjects.add(sub)
-      const teacher = grade.subjectPaper?.teacher?.name
-      if (teacher && teacher !== 'School Teacher') grp.teachers.add(teacher)
-
-      const gradeDate = new Date(grade.createdAt)
-      if (gradeDate > grp.latestDate) grp.latestDate = gradeDate
-
-      grp.totalScore += Number(grade.score || 0)
-      grp.totalMaxMarks += Number(grade.maxMarks || 100)
-      grp.papersCount += 1
-    } else {
-      // Standalone assessment without explicit examId: display with proper examination/assessment title (not raw paper title)
-      const sub = grade.subject || grade.subjectPaper?.subject?.name || 'General'
-      const rawTitle = grade.subjectPaper?.title || ''
-      const cleanTitle = (rawTitle && !rawTitle.toLowerCase().match(/^paper\s*\d+$/i))
-        ? rawTitle
-        : `${sub} ${grade.assessmentType || 'Examination'}`
-
-      const pct = grade.maxMarks > 0 ? Math.round((grade.score / grade.maxMarks) * 100) : 0
-      standaloneAssessments.push({
-        id: grade.id,
-        examId: grade.id,
-        title: cleanTitle,
-        subject: sub,
-        teacher: grade.subjectPaper?.teacher?.name || 'Subject Teacher',
-        date: format(new Date(grade.createdAt), 'MMM dd'),
-        score: grade.score,
-        totalScore: grade.maxMarks,
-        grade: gradeLabel(pct),
-        percentage: pct,
-        classAverage: 75,
-        status: 'completed',
-        accentColor: 'bg-green-500',
-        icon: 'grade',
-        iconBgColor: 'bg-emerald-50 dark:bg-emerald-950/30',
-        iconColor: 'text-emerald-600 dark:text-emerald-400',
-        assessmentType: grade.assessmentType || grade.category || 'EXAM',
-        papersCount: 1,
-      })
-    }
-  })
+    })
 
   // Convert grouped main exams
   const completedMainExams: Exam[] = Array.from(examGroups.values()).map((grp) => {
     const avgPct = grp.totalMaxMarks > 0 ? Math.round((grp.totalScore / grp.totalMaxMarks) * 100) : 0
     const subjectList = Array.from(grp.subjects)
-    const subjectDisplay = subjectList.length === 1 
-      ? subjectList[0] 
-      : subjectList.length > 1 
-        ? `${subjectList.length} Subjects (${subjectList.slice(0, 2).join(', ')}${subjectList.length > 2 ? '…' : ''})` 
+    const subjectDisplay = subjectList.length === 1
+      ? subjectList[0]
+      : subjectList.length > 1
+        ? `${subjectList.length} Subjects (${subjectList.slice(0, 2).join(', ')}${subjectList.length > 2 ? '…' : ''})`
         : 'Curriculum Subjects'
 
     const teacherList = Array.from(grp.teachers)
@@ -239,7 +244,7 @@ export default function ExamList() {
     const matchesSearch = titleMatch || subjectMatch
     const matchesSubject = selectedSubject === 'all' || exam.subject.toLowerCase().includes(selectedSubject.toLowerCase())
     const matchesStatus = selectedStatus === 'all' || exam.status === selectedStatus
-    
+
     let matchesTab = true
     if (activeTab !== 'ALL') {
       const type = exam.assessmentType.toUpperCase()
@@ -254,12 +259,8 @@ export default function ExamList() {
   const paginatedExams = filteredExams.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   function gradeLabel(avg: number) {
-    if (avg >= 90) return 'A+'
-    if (avg >= 80) return 'A'
-    if (avg >= 70) return 'B'
-    if (avg >= 60) return 'C'
-    if (avg >= 50) return 'D'
-    return 'F'
+    const evalResult = getGradeEvaluation(avg, customGradingSystem)
+    return evalResult.grade
   }
 
   const getStatusStyles = (status: Exam['status']) => {
@@ -313,11 +314,10 @@ export default function ExamList() {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                      activeTab === tab
+                    className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${activeTab === tab
                         ? 'bg-white dark:bg-slate-700 text-orange-600 dark:text-orange-400 shadow-xs'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
+                      }`}
                   >
                     {label}
                   </button>
@@ -330,11 +330,10 @@ export default function ExamList() {
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
-                className={`p-1 rounded-lg transition-colors ${
-                  viewMode === 'grid'
+                className={`p-1 rounded-lg transition-colors ${viewMode === 'grid'
                     ? 'bg-white dark:bg-slate-700 text-orange-600 shadow-xs'
                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
+                  }`}
                 title="Grid view"
               >
                 <LayoutGrid size={15} />
@@ -342,11 +341,10 @@ export default function ExamList() {
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className={`p-1 rounded-lg transition-colors ${
-                  viewMode === 'list'
+                className={`p-1 rounded-lg transition-colors ${viewMode === 'list'
                     ? 'bg-white dark:bg-slate-700 text-orange-600 shadow-xs'
                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                }`}
+                  }`}
                 title="List view"
               >
                 <List size={15} />
@@ -413,8 +411,8 @@ export default function ExamList() {
                   selectedStatus === 'completed'
                     ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 focus:ring-2 focus:ring-emerald-500/20"
                     : selectedStatus === 'pending'
-                    ? "bg-amber-50/70 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 focus:ring-2 focus:ring-amber-500/20"
-                    : "bg-slate-50 dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                      ? "bg-amber-50/70 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 focus:ring-2 focus:ring-amber-500/20"
+                      : "bg-slate-50 dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                 )}
               >
                 <option value="all" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-white font-medium">All Status</option>
@@ -490,7 +488,7 @@ export default function ExamList() {
             const itemNumber = (currentPage - 1) * itemsPerPage + index + 1
             const statusStyles = getStatusStyles(exam.status)
             return (
-              <div 
+              <div
                 key={exam.id}
                 className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 flex flex-col justify-between shadow-xs hover:shadow-md hover:border-orange-500/30 transition-all duration-200 group"
               >
@@ -549,7 +547,7 @@ export default function ExamList() {
                   </div>
 
                   {exam.status === 'completed' ? (
-                    <Link 
+                    <Link
                       href={`/dashboard/parent/exams&results/details?id=${exam.examId || exam.id}`}
                       className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-orange-600 hover:border-orange-300 hover:bg-orange-50 dark:hover:bg-slate-800 transition-all flex items-center gap-1 shadow-xs"
                     >
@@ -593,7 +591,7 @@ export default function ExamList() {
                       #{itemNumber}
                     </span>
                   </div>
-                  
+
                   {/* Details */}
                   <div className="col-span-4 flex items-center gap-3 lg:block">
                     <div className="lg:hidden flex items-center justify-center min-w-[26px] h-7 px-1.5 rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 text-[11px] font-black shrink-0">

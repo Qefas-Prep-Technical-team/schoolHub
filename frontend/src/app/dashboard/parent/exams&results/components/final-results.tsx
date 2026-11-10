@@ -7,24 +7,17 @@ import Pagination from "@/components/ui/Pagination";
 import { cn } from "@/lib/utils";
 import { useChildResults, useParentChildren } from "@/lib/api/hooks/useParentChildren";
 import { useParentStore } from "@/lib/api/hooks/useParentStore";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { HeaderTooltip } from "@/app/dashboard/parent/components/dashboard/HeaderTooltip";
-
-function getWAECGradeAndRemark(score: number): { grade: string; remark: string } {
-  if (score >= 75) return { grade: "A1", remark: "EXCELLENT" };
-  if (score >= 70) return { grade: "B2", remark: "VERY GOOD" };
-  if (score >= 65) return { grade: "B3", remark: "GOOD" };
-  if (score >= 60) return { grade: "C4", remark: "CREDIT" };
-  if (score >= 55) return { grade: "C5", remark: "CREDIT" };
-  if (score >= 50) return { grade: "C6", remark: "CREDIT" };
-  if (score >= 45) return { grade: "D7", remark: "PASS" };
-  if (score >= 40) return { grade: "E8", remark: "PASS" };
-  return { grade: "F9", remark: "FAIL" };
-}
+import { getGradeEvaluation, getGradeColorAndBg } from "@/utils/gradingSystem";
 
 export default function FinalResults() {
   const { selectedChildId } = useParentStore();
   const { data: children } = useParentChildren();
   const selectedChild = children?.find((c: any) => c.id === selectedChildId);
+  const schoolId = (selectedChild?.school as { id?: string } | undefined)?.id || (selectedChild as unknown as { schoolId?: string })?.schoolId || "";
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const customGradingSystem = schoolProfile?.gradingSystem;
 
   const { data: finalResultsRes, isLoading } = useChildResults(selectedChildId);
 
@@ -185,12 +178,10 @@ export default function FinalResults() {
 
                 if (isRevealed) {
                   totalScore = (result.assignmentScore || 0) + (result.quizScore || 0) + (result.caScore || 0) + (result.examScore || 0);
-                  const waec = getWAECGradeAndRemark(Number(totalScore));
-                  grade = waec.grade;
-                  if (Number(totalScore) >= 75) color = "text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400";
-                  else if (Number(totalScore) >= 65) color = "text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400";
-                  else if (Number(totalScore) >= 50) color = "text-purple-600 bg-purple-50 dark:bg-purple-900/30 dark:text-purple-400";
-                  else color = "text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400";
+                  const evalResult = getGradeEvaluation(Number(totalScore), customGradingSystem);
+                  grade = evalResult.grade;
+                  const colors = getGradeColorAndBg(grade);
+                  color = `${colors.color} ${colors.bg}`;
                 }
 
                 return (

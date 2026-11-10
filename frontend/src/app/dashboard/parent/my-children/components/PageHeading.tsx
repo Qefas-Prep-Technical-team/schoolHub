@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import PendingRequestsDialog from './PendingRequestsDialog';
-import { Users, Bell, ChevronRight, LayoutGrid, List } from 'lucide-react';
+import { Users, Bell, ChevronRight, LayoutGrid, List, Download } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip';
 
 interface PageHeadingProps {
   viewMode?: 'grid' | 'list';
   onViewModeChange?: (mode: 'grid' | 'list') => void;
+  onExportClick?: () => void;
 }
 
-export default function PageHeading({ viewMode, onViewModeChange }: PageHeadingProps) {
+export default function PageHeading({ viewMode, onViewModeChange, onExportClick }: PageHeadingProps) {
   const [showPending, setShowPending] = useState(false)
 
   return (
@@ -38,35 +39,44 @@ export default function PageHeading({ viewMode, onViewModeChange }: PageHeadingP
           Monitor academic intelligence and modify protocol parameters for all registered student nodes in your network.
         </p>
       </div>
-      
+
       <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
         {viewMode && onViewModeChange && (
           <div className="flex shrink-0 items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl h-11 border border-slate-200/60 dark:border-slate-800">
-            <button 
+            <button
               type="button"
               onClick={() => onViewModeChange('grid')}
               aria-label="Grid view"
-              className={`p-2 rounded-lg transition-all duration-200 flex items-center justify-center ${
-                viewMode === 'grid' 
-                  ? 'bg-white dark:bg-slate-900 text-orange-600 shadow-sm' 
+              className={`p-2 rounded-lg transition-all duration-200 flex items-center justify-center ${viewMode === 'grid'
+                  ? 'bg-white dark:bg-slate-900 text-orange-600 shadow-sm'
                   : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-              }`}
+                }`}
             >
               <LayoutGrid size={18} strokeWidth={2.5} />
             </button>
-            <button 
+            <button
               type="button"
               onClick={() => onViewModeChange('list')}
               aria-label="List view"
-              className={`p-2 rounded-lg transition-all duration-200 flex items-center justify-center ${
-                viewMode === 'list' 
-                  ? 'bg-white dark:bg-slate-900 text-orange-600 shadow-sm' 
+              className={`p-2 rounded-lg transition-all duration-200 flex items-center justify-center ${viewMode === 'list'
+                  ? 'bg-white dark:bg-slate-900 text-orange-600 shadow-sm'
                   : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-              }`}
+                }`}
             >
               <List size={18} strokeWidth={2.5} />
             </button>
           </div>
+        )}
+
+        {onExportClick && (
+          <Button
+            onClick={onExportClick}
+            className="h-11 px-4 sm:px-5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs sm:text-sm transition-all shadow-sm flex items-center gap-2 active:scale-95 cursor-pointer"
+          >
+            <Download size={16} />
+            <span className="hidden sm:inline">Export Directory</span>
+            <span className="sm:hidden">Export</span>
+          </Button>
         )}
 
         <Button
@@ -80,9 +90,9 @@ export default function PageHeading({ viewMode, onViewModeChange }: PageHeadingP
         </Button>
       </div>
 
-      <PendingRequestsDialog 
-        isOpen={showPending} 
-        onOpenChange={setShowPending} 
+      <PendingRequestsDialog
+        isOpen={showPending}
+        onOpenChange={setShowPending}
       />
     </div>
   )

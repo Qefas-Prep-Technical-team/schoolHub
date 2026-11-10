@@ -164,9 +164,10 @@ function NoChildrenLinkedState() {
 interface NoAttendanceStateProps {
   childName: string;
   onRefresh: () => void;
+  isRefreshing?: boolean;
 }
 
-function NoAttendanceState({ childName, onRefresh }: NoAttendanceStateProps) {
+function NoAttendanceState({ childName, onRefresh, isRefreshing = false }: NoAttendanceStateProps) {
   return (
     <div className="p-10 sm:p-14 text-center bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200/80 dark:border-slate-800 shadow-sm max-w-2xl mx-auto space-y-4">
       <div className="size-16 rounded-2xl bg-orange-50 dark:bg-orange-500/10 text-orange-500 flex items-center justify-center mx-auto shadow-xs">
@@ -186,11 +187,12 @@ function NoAttendanceState({ childName, onRefresh }: NoAttendanceStateProps) {
         <Button
           type="button"
           onClick={onRefresh}
+          disabled={isRefreshing}
           variant="outline"
-          className="h-10 px-5 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:border-orange-500 hover:text-orange-600 transition-colors shadow-xs"
+          className="h-10 px-5 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center gap-2 hover:border-orange-500 hover:text-orange-600 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-xs"
         >
-          <RotateCw size={14} />
-          <span>Refresh Records</span>
+          <RotateCw size={14} className={isRefreshing ? "animate-spin text-orange-600" : ""} />
+          <span>{isRefreshing ? "Refreshing..." : "Refresh Records"}</span>
         </Button>
       </div>
     </div>
@@ -205,6 +207,8 @@ export default function ParentAttendancePage() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [inspectRecord, setInspectRecord] = useState<ModalAttendanceRecord | null>(null);
   const [inspectSubjects, setInspectSubjects] = useState<ClassSubjectItem[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(() => new Date());
 
   const { selectedChildId, setSelectedChildId } = useParentStore();
   const { data: children = [], isLoading: isChildrenLoading, refetch: refetchChildren } = useParentChildren();
@@ -251,14 +255,24 @@ export default function ParentAttendancePage() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [richAttendance, child]);
 
-  const handleManualRefresh = () => {
-    refetchChildren();
-    if (activeChildId) {
-      refetchDashboard();
-      refetchChild();
-      refetchAttendance();
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const promises: Promise<unknown>[] = [refetchChildren()];
+      if (activeChildId) {
+        promises.push(refetchDashboard());
+        promises.push(refetchChild());
+        promises.push(refetchAttendance());
+      }
+      await Promise.all(promises);
+      setLastRefreshedAt(new Date());
+      toast.success("Attendance records synchronized with latest school entries.");
+    } catch (err) {
+      console.error("Attendance manual refresh error:", err);
+      toast.error("Failed to synchronize attendance records.");
+    } finally {
+      setIsRefreshing(false);
     }
-    toast.info("Refreshed attendance records.");
   };
 
   const isLoadingOverall = isChildrenLoading || (!!activeChildId && (loadingDash || loadingChild || loadingAttendance));
@@ -404,8 +418,9 @@ export default function ParentAttendancePage() {
       {/* Student Profile Hero */}
       <StudentProfile
         student={studentData}
-        lastUpdated={`Today, ${format(new Date(), 'h:mm a')}`}
+        lastUpdated={`Today, ${format(lastRefreshedAt, 'h:mm:ss a')}`}
         onRefresh={handleManualRefresh}
+        isRefreshing={isRefreshing}
       />
 
       {/* Attendance Alert Banner */}
@@ -419,6 +434,7 @@ export default function ParentAttendancePage() {
         <NoAttendanceState
           childName={studentData.name}
           onRefresh={handleManualRefresh}
+          isRefreshing={isRefreshing}
         />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">

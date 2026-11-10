@@ -10,13 +10,13 @@ import { useParentChildren } from '@/lib/api/hooks/useParentChildren'
 import { useParentStore } from '@/lib/api/hooks/useParentStore'
 import { useChildDetailsDrawer } from './ChildDetailsDrawer/components/useChildDetailsDrawer'
 import EditChildModal from './EditChildModal'
-import { 
-  MoreVertical, 
-  ExternalLink, 
-  Edit3, 
-  Layout, 
-  Hash, 
-  CheckCircle2, 
+import {
+  MoreVertical,
+  ExternalLink,
+  Edit3,
+  Layout,
+  Hash,
+  CheckCircle2,
   ChevronRight,
   TrendingUp,
   Award,
@@ -31,6 +31,7 @@ import {
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu"
 import { cn } from '@/lib/utils'
+import { getGradeEvaluation } from '@/utils/gradingSystem'
 
 interface Child {
   id: string
@@ -87,8 +88,8 @@ function ChildListRow({ child, index }: { child: Child; index: number }) {
   }
 
   const placeholderUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(child.name)}&backgroundColor=ea580c&fontFamily=Arial&fontSize=40&fontWeight=900`
-  const displayImage = (!imgError && child.imageUrl && child.imageUrl !== "null" && child.imageUrl !== "") 
-    ? child.imageUrl 
+  const displayImage = (!imgError && child.imageUrl && child.imageUrl !== "null" && child.imageUrl !== "")
+    ? child.imageUrl
     : placeholderUrl
 
   const attendanceNum = Number(child.attendance) || 0
@@ -96,7 +97,7 @@ function ChildListRow({ child, index }: { child: Child; index: number }) {
 
   return (
     <>
-      <tr 
+      <tr
         onClick={handleViewDashboard}
         className="border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer group"
       >
@@ -141,8 +142,8 @@ function ChildListRow({ child, index }: { child: Child; index: number }) {
           <span className={cn(
             "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border",
             attendanceNum >= 90 ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" :
-            attendanceNum >= 75 ? "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20" :
-            "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20"
+              attendanceNum >= 75 ? "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20" :
+                "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20"
           )}>
             {child.attendance}%
           </span>
@@ -154,8 +155,8 @@ function ChildListRow({ child, index }: { child: Child; index: number }) {
             <span className={cn(
               "size-7 rounded-full flex items-center justify-center text-xs font-black shadow-sm",
               avgNum >= 70 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" :
-              avgNum >= 50 ? "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300" :
-              "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
+                avgNum >= 50 ? "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300" :
+                  "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
             )}>
               {child.gradeValue}
             </span>
@@ -169,8 +170,8 @@ function ChildListRow({ child, index }: { child: Child; index: number }) {
         <td className="px-4 sm:px-6 py-4 text-center">
           <span className={cn(
             "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border",
-            child.status === 'active' 
-              ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" 
+            child.status === 'active'
+              ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
               : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
           )}>
             <span className={cn("size-1.5 rounded-full", child.status === 'active' ? "bg-emerald-500" : "bg-slate-400")} />
@@ -189,7 +190,7 @@ function ChildListRow({ child, index }: { child: Child; index: number }) {
             >
               Dashboard
             </Button>
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="size-8 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
@@ -197,19 +198,19 @@ function ChildListRow({ child, index }: { child: Child; index: number }) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52 p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-lg">
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={handleViewDashboard}
                   className="flex items-center gap-2 p-2 rounded-lg text-xs font-medium cursor-pointer text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors"
                 >
                   <Layout size={14} /> Open Dashboard
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={handleViewChildDetails}
                   className="flex items-center gap-2 p-2 rounded-lg text-xs font-medium cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   <ExternalLink size={14} className="text-slate-500" /> View Details
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => setIsEditModalOpen(true)}
                   className="flex items-center gap-2 p-2 rounded-lg text-xs font-medium cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
@@ -221,7 +222,7 @@ function ChildListRow({ child, index }: { child: Child; index: number }) {
         </td>
       </tr>
 
-      <EditChildModal 
+      <EditChildModal
         isOpen={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
         child={{
@@ -247,36 +248,33 @@ export default function ChildrenGrid({ viewMode = 'grid' }: ChildrenGridProps) {
     )
   }
 
-  const getGradeLabel = (avg: number) => {
-    if (avg >= 70) return 'A'
-    if (avg >= 60) return 'B'
-    if (avg >= 50) return 'C'
-    if (avg >= 45) return 'D'
-    if (avg >= 40) return 'E'
-    return 'F'
-  }
-
   // Map backend children to frontend Child interface safely
   const mappedChildren: Child[] = (Array.isArray(children) ? children : [])
     .filter(Boolean)
-    .map((c) => ({
-      id: c?.id || '',
-      name: c?.name || "Student",
-      age: 0,
-      grade: getGradeLabel(c?.stats?.averageGrade || 0),
-      class: c?.currentClass ? `${c.currentClass.name} ${c.currentClass.section || ''}` : 'No Class Assigned',
-      studentId: c?.studentCode || '',
-      imageUrl: c?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(c?.name || 'Student')}&background=ea580c&color=fff`,
-      attendance: c?.stats?.attendanceRate || 0,
-      gradeValue: getGradeLabel(c?.stats?.averageGrade || 0),
-      gradePercentage: `${c?.stats?.averageGrade || 0}%`,
-      status: (c?.linkStatus === 'ACCEPTED' || c?.linkStatus === 'active') ? 'active' : 'inactive',
-      badge: {
-        text: (c?.stats?.averageGrade || 0) >= 70 ? 'Top Performer' : 'Needs Improvement',
-        color: (c?.stats?.averageGrade || 0) >= 70 ? 'green' : (c?.stats?.averageGrade || 0) >= 50 ? 'blue' : 'purple',
-        icon: (c?.stats?.averageGrade || 0) >= 70 ? 'stars' : 'trending_down',
-      },
-    }))
+    .map((c) => {
+      const avg = Number(c?.stats?.averageGrade || 0)
+      const customGradingSystem = (c as unknown as { school?: { gradingSystem?: unknown[] } })?.school?.gradingSystem
+      const evalResult = getGradeEvaluation(avg, customGradingSystem)
+
+      return {
+        id: c?.id || '',
+        name: c?.name || "Student",
+        age: 0,
+        grade: evalResult.grade,
+        class: c?.currentClass ? `${c.currentClass.name} ${c.currentClass.section || ''}` : 'No Class Assigned',
+        studentId: c?.studentCode || '',
+        imageUrl: c?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(c?.name || 'Student')}&background=ea580c&color=fff`,
+        attendance: c?.stats?.attendanceRate || 0,
+        gradeValue: evalResult.grade,
+        gradePercentage: `${avg}%`,
+        status: (c?.linkStatus === 'ACCEPTED' || c?.linkStatus === 'active') ? 'active' : 'inactive',
+        badge: {
+          text: evalResult.remark || (avg >= 70 ? 'Top Performer' : 'Needs Improvement'),
+          color: avg >= 70 ? 'green' : avg >= 50 ? 'blue' : 'purple',
+          icon: avg >= 70 ? 'stars' : 'trending_down',
+        },
+      }
+    })
 
   if (isError) {
     return (

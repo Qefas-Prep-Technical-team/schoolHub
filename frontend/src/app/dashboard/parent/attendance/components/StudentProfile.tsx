@@ -16,9 +16,10 @@ interface StudentProfileProps {
   };
   lastUpdated: string;
   onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
-export default function StudentProfile({ student, lastUpdated, onRefresh }: StudentProfileProps) {
+export default function StudentProfile({ student, lastUpdated, onRefresh, isRefreshing = false }: StudentProfileProps) {
   const [imgError, setImgError] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -114,10 +115,11 @@ export default function StudentProfile({ student, lastUpdated, onRefresh }: Stud
             <button
               type="button"
               onClick={onRefresh}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-orange-600 hover:border-orange-500/40 transition-all shadow-xs"
+              disabled={isRefreshing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-orange-600 hover:border-orange-500/40 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-xs"
             >
-              <RotateCw size={12} />
-              <span>Refresh</span>
+              <RotateCw size={12} className={isRefreshing ? "animate-spin text-orange-600" : ""} />
+              <span>{isRefreshing ? "Refreshing..." : "Refresh"}</span>
             </button>
           )}
         </div>

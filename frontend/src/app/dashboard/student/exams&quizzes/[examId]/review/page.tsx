@@ -3,12 +3,12 @@
 import React, { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useExam, useExamReview } from "@/lib/api/hooks/useExams";
-import { 
-  Loader2, 
+import {
+  Loader2,
   ChevronLeft,
   ChevronRight,
-  CheckCircle2, 
-  XCircle, 
+  CheckCircle2,
+  XCircle,
   AlertCircle,
   HelpCircle,
   LayoutGrid,
@@ -21,18 +21,19 @@ import NextImage from "next/image";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import LaTeXRenderer from "@/components/ui/LaTeXRenderer";
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetHeader, 
-  SheetTitle, 
-  SheetTrigger 
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger
 } from "@/components/ui/sheet";
 import { format } from "date-fns";
 import { useStudentProfile } from "@/lib/api/hooks/useStudent";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
-import { generatePDF } from "@/utils/pdfGenerator";
-import { assertSchoolPayingPlan } from "@/utils/subscriptionPlanCheck";
+import { StudentExamReviewExportModal } from "./components/StudentExamReviewExportModal";
+import { ExamReviewSpreadsheetData } from "../../utils/assessmentSpreadsheetExporter";
 
 interface ReviewQuestion {
   questionId: string;
@@ -65,7 +66,7 @@ interface ReviewSubject {
 export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const { data: exam, isLoading: isLoadingExam } = useExam(examId);
   const { data: review, isLoading: isLoadingReview } = useExamReview(examId);
 
@@ -73,20 +74,28 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [filterMode, setFilterMode] = useState<"all" | "correct" | "incorrect">("all");
   const [isGridOpen, setIsGridOpen] = useState(false);
-  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const { user } = useAuthStore();
   const { data: profile } = useStudentProfile();
+  const userRecord = user as Record<string, unknown> | null | undefined;
+  const schoolId =
+    profile?.schoolId ||
+    user?.schools?.[0]?.schoolId ||
+    (typeof userRecord?.schoolId === "string" ? userRecord.schoolId : "") ||
+    user?.tenantId ||
+    "";
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
 
   const subjects: ReviewSubject[] = useMemo(() => {
     const allSubjects = (review?.subjects || []) as ReviewSubject[];
     const targetSubjectId = searchParams.get("subjectId");
     if (targetSubjectId) {
-      const filtered = allSubjects.filter((s) => 
-        s.id === targetSubjectId || 
-        s.subjectPaperId === targetSubjectId || 
-        s.subjectPaper?.id === targetSubjectId || 
-        s.subjectId === targetSubjectId || 
+      const filtered = allSubjects.filter((s) =>
+        s.id === targetSubjectId ||
+        s.subjectPaperId === targetSubjectId ||
+        s.subjectPaper?.id === targetSubjectId ||
+        s.subjectId === targetSubjectId ||
         s.subject?.id === targetSubjectId
       );
       if (filtered.length > 0) return filtered;
@@ -168,9 +177,9 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
         <p className="mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">
           Detailed question reviews are either not enabled for this exam or the official score report has not yet been released.
         </p>
-        <Button 
-          variant="outline" 
-          onClick={() => router.back()} 
+        <Button
+          variant="outline"
+          onClick={() => router.back()}
           className="mt-6 rounded-xl font-bold border-slate-200 dark:border-slate-800"
         >
           <ChevronLeft className="h-4 w-4 mr-1.5" /> Go Back
@@ -183,7 +192,7 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
   const currentQuestion = questions[activeQuestionIndex];
   const totalQuestions = questions.length;
   const isCurrentCorrect = currentQuestion?.studentAnswer === currentQuestion?.correctAnswer;
-  
+
   // Calculate accuracy
   const correctCount = questions.filter((q) => q.studentAnswer === q.correctAnswer).length;
   const incorrectCount = totalQuestions - correctCount;
@@ -191,97 +200,64 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
     ? Math.round((currentSubject.score / currentSubject.totalMarks) * 100)
     : 0;
 
-  const handleExportReviewPDF = async () => {
-    if (!review) return;
-    const schoolToVerify = profile?.school || (review as any).school || user?.schools?.[0];
-    if (!assertSchoolPayingPlan(schoolToVerify)) {
-      return;
-    }
+  const examReviewExportData: ExamReviewSpreadsheetData | null = useMemo(() => {
+    if (!currentSubject) return null;
+    const studentNameDisplay = profile?.name || user?.name || "Student";
+    const studentIdDisplay = profile?.studentCode || user?.studentCode || "N/A";
+    const subjectNameDisplay = currentSubject.subjectName || "General";
+    const examTitleDisplay = exam?.title || "Examination";
+    const currentQuestions = currentSubject.questions || [];
 
-    try {
-      setIsExportingPDF(true);
+    const questions = currentQuestions.map((q, idx) => {
+      const studentAns = q.studentAnswer || "(No answer)";
+      const correctAns = q.correctAnswer || "(N/A)";
+      const isCorrect = q.studentAnswer === q.correctAnswer;
+      const awarded =
+        q.scoreAwarded !== undefined
+          ? q.scoreAwarded
+          : isCorrect
+            ? q.maxMarks || 1
+            : 0;
+      const cleanQuestion =
+        q.question?.replace(/<[^>]+>/g, "").trim() || `Question ${idx + 1}`;
 
-      const tableHeaders = [
-        ['Q#', 'Question Text', 'Student Answer', 'Official Key', 'Points', 'Evaluation']
-      ];
+      return {
+        questionNumber: idx + 1,
+        questionText: cleanQuestion,
+        studentAnswer: studentAns,
+        correctAnswer: correctAns,
+        scoreAwarded: awarded,
+        maxMarks: q.maxMarks || 1,
+        evaluation: isCorrect ? "CORRECT" : "INCORRECT",
+      };
+    });
 
-      const currentQuestions = currentSubject?.questions || [];
-      const tableData = currentQuestions.map((q, idx) => {
-        const studentAns = q.studentAnswer || '(No answer)';
-        const correctAns = q.correctAnswer || '(N/A)';
-        const isCorrect = q.studentAnswer === q.correctAnswer;
-        const awarded = q.scoreAwarded !== undefined ? q.scoreAwarded : (isCorrect ? (q.maxMarks || 1) : 0);
-        const max = q.maxMarks || 1;
-        const cleanQuestion = q.question?.replace(/<[^>]+>/g, '').trim() || `Question ${idx + 1}`;
-
-        return [
-          `Q${idx + 1}`,
-          cleanQuestion.length > 80 ? cleanQuestion.slice(0, 80) + '...' : cleanQuestion,
-          studentAns,
-          correctAns,
-          `${awarded} / ${max}`,
-          isCorrect ? 'CORRECT' : 'INCORRECT'
-        ];
-      });
-
-      const studentNameDisplay = profile?.name || user?.name || 'Student';
-      const studentIdDisplay = profile?.studentCode || user?.studentCode || 'N/A';
-      const subjectNameDisplay = currentSubject?.subjectName || 'General';
-      const examTitleDisplay = exam?.title || 'Examination';
-
-      const metaData = [
-        { label: 'Student Name', value: studentNameDisplay },
-        { label: 'Student ID', value: studentIdDisplay },
-        { label: 'Class / Grade', value: profile?.classes?.[0]?.class?.name || 'Enrolled Class' },
-        { label: 'Examination', value: examTitleDisplay },
-        { label: 'Subject Paper', value: subjectNameDisplay },
-        { label: 'Subject Score', value: `${currentSubject?.score || 0} / ${currentSubject?.totalMarks || 0}` },
-        { label: 'Accuracy Rate', value: `${scorePercent}%` },
-        { label: 'Correct Questions', value: `${correctCount} of ${totalQuestions}` },
-        { label: 'Review Date', value: format(new Date(), 'PPpp') }
-      ];
-
-      const additionalTables = subjects.length > 1 ? [
-        {
-          title: 'Overall Examination Subjects Summary',
-          headers: [['Subject Paper', 'Score Obtained', 'Total Marks', 'Accuracy']],
-          data: subjects.map(s => {
-            const pct = s.totalMarks > 0 ? Math.round((s.score / s.totalMarks) * 100) : 0;
-            return [s.subjectName, s.score.toString(), s.totalMarks.toString(), `${pct}%`];
-          })
-        }
-      ] : undefined;
-
-      await generatePDF({
-        title: `${examTitleDisplay} - Solution Key & Performance Review`,
-        filename: `${studentNameDisplay.replace(/\s+/g, '_')}_${subjectNameDisplay.replace(/\s+/g, '_')}_Review.pdf`,
-        schoolProfile: schoolToVerify,
-        metaData,
-        tableHeaders,
-        tableData,
-        additionalTables,
-        orientation: 'portrait'
-      });
-    } catch (err) {
-      console.error('Error generating review PDF:', err);
-    } finally {
-      setIsExportingPDF(false);
-    }
-  };
+    return {
+      studentName: studentNameDisplay,
+      studentCode: studentIdDisplay,
+      className: profile?.classes?.[0]?.class?.name || "Enrolled Class",
+      examTitle: examTitleDisplay,
+      subjectName: subjectNameDisplay,
+      scoreObtained: currentSubject.score || 0,
+      totalMarks: currentSubject.totalMarks || 0,
+      accuracy: scorePercent,
+      questions,
+    };
+  }, [currentSubject, profile, user, exam, scorePercent]);
 
   return (
     <div className={isTab ? "pb-20 animate-in fade-in duration-500" : "min-h-screen bg-slate-50/50 dark:bg-[#0B0F1A] pb-24 animate-in fade-in duration-500"}>
       <div className={isTab ? "w-full" : "w-full max-w-7xl mx-auto px-3.5 py-4 sm:px-6 sm:py-6 lg:p-8"}>
-        
+
         {/* Top Header */}
         <div className="flex flex-col gap-4 mb-6 sm:mb-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {!isTab && (
               <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => router.back()} 
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => router.back()}
                   className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all shrink-0 active:scale-95"
                   aria-label="Back to results"
                 >
@@ -334,18 +310,14 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
 
               {/* Export Solution Key PDF Button */}
               <Button
-                onClick={handleExportReviewPDF}
-                disabled={isExportingPDF || !review}
+                onClick={() => setIsExportModalOpen(true)}
+                disabled={!review}
                 variant="outline"
                 className="h-10 sm:h-11 px-3.5 sm:px-4 text-xs font-bold rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-pink-600 dark:hover:text-pink-400 active:scale-95 transition-all shadow-xs flex items-center gap-1.5"
-                title="Export Exam Review as PDF"
+                title="Export Exam Review & Solution Key"
               >
-                {isExportingPDF ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-600" />
-                ) : (
-                  <Download className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
-                )}
-                <span>{isExportingPDF ? 'Exporting...' : 'Export Solution Key'}</span>
+                <Download className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
+                <span>Export Solution Key</span>
               </Button>
             </div>
           </div>
@@ -510,11 +482,11 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
 
         {/* Main Review Section: Desktop Sidebar + Content */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-          
+
           {/* Desktop Left Sidebar (Sticky on lg screens) */}
           <div className="hidden lg:block lg:col-span-4 xl:col-span-3 sticky top-6 space-y-6">
             <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
-              
+
               {/* Mastery Progress Gauge */}
               <div className="text-center">
                 <p className="text-[11px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest mb-3">
@@ -522,22 +494,22 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
                 </p>
                 <div className="relative h-32 w-32 mx-auto">
                   <svg className="h-full w-full" viewBox="0 0 100 100">
-                    <circle 
-                      className="text-slate-100 dark:text-slate-800 stroke-current" 
-                      strokeWidth="10" 
-                      fill="transparent" 
-                      r="40" 
-                      cx="50" 
-                      cy="50" 
+                    <circle
+                      className="text-slate-100 dark:text-slate-800 stroke-current"
+                      strokeWidth="10"
+                      fill="transparent"
+                      r="40"
+                      cx="50"
+                      cy="50"
                     />
-                    <circle 
-                      className="text-pink-500 stroke-current" 
-                      strokeWidth="10" 
-                      strokeLinecap="round" 
-                      fill="transparent" 
-                      r="40" 
-                      cx="50" 
-                      cy="50" 
+                    <circle
+                      className="text-pink-500 stroke-current"
+                      strokeWidth="10"
+                      strokeLinecap="round"
+                      fill="transparent"
+                      r="40"
+                      cx="50"
+                      cy="50"
                       style={{
                         strokeDasharray: "251.2",
                         strokeDashoffset: 251.2 - (251.2 * scorePercent) / 100,
@@ -645,10 +617,10 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
           <div className="lg:col-span-8 xl:col-span-9 space-y-4 sm:space-y-6">
             {currentQuestion ? (
               <div className="space-y-4">
-                
+
                 {/* Question Card */}
                 <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 overflow-hidden shadow-xs">
-                  
+
                   {/* Card Header Banner */}
                   <div className="px-4 py-3 sm:px-6 sm:py-4 bg-slate-50/80 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2.5">
                     <div className="flex items-center gap-2.5">
@@ -688,20 +660,20 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
 
                   {/* Card Body */}
                   <div className="p-4 sm:p-6 md:p-8 space-y-6">
-                    
+
                     {/* Figures / Question Images */}
                     {currentQuestion.images && currentQuestion.images.length > 0 && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         {currentQuestion.images.map((url, i) => (
-                          <div 
-                            key={i} 
+                          <div
+                            key={i}
                             className="relative aspect-video rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 shadow-xs"
                           >
-                            <NextImage 
-                              src={url} 
-                              alt={`Question Figure ${i + 1}`} 
+                            <NextImage
+                              src={url}
+                              alt={`Question Figure ${i + 1}`}
                               fill
-                              className="object-contain sm:object-cover" 
+                              className="object-contain sm:object-cover"
                             />
                           </div>
                         ))}
@@ -710,7 +682,7 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
 
                     {/* Question Stem (Formatted with LaTeX Renderer) */}
                     <div className="overflow-x-auto custom-scrollbar">
-                      <LaTeXRenderer 
+                      <LaTeXRenderer
                         content={currentQuestion.question}
                         className="text-base sm:text-lg font-medium leading-relaxed text-slate-900 dark:text-slate-100 break-words"
                       />
@@ -727,11 +699,11 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
                           return Object.entries(options).map(([key, optionText]) => {
                             if (!optionText) return null;
                             const label = key.replace("option", "");
-                            const isStudentPick = 
-                              currentQuestion.studentAnswer === label || 
+                            const isStudentPick =
+                              currentQuestion.studentAnswer === label ||
                               (currentQuestion.type === "TRUE_FALSE" && currentQuestion.studentAnswer?.toLowerCase() === optionText.toLowerCase());
-                            const isCorrectOpt = 
-                              currentQuestion.correctAnswer === label || 
+                            const isCorrectOpt =
+                              currentQuestion.correctAnswer === label ||
                               (currentQuestion.type === "TRUE_FALSE" && currentQuestion.correctAnswer?.toLowerCase() === optionText.toLowerCase());
 
                             return (
@@ -748,10 +720,10 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
                               >
                                 <div className={cn(
                                   "h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-xl flex items-center justify-center font-black text-xs transition-colors",
-                                  isCorrectOpt 
-                                    ? "bg-emerald-500 text-white shadow-xs" 
-                                    : isStudentPick 
-                                      ? "bg-rose-500 text-white shadow-xs" 
+                                  isCorrectOpt
+                                    ? "bg-emerald-500 text-white shadow-xs"
+                                    : isStudentPick
+                                      ? "bg-rose-500 text-white shadow-xs"
                                       : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600"
                                 )}>
                                   {label}
@@ -759,14 +731,14 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
 
                                 <div className="flex-1 min-w-0 pt-0.5">
                                   <div className="overflow-x-auto">
-                                    <LaTeXRenderer 
+                                    <LaTeXRenderer
                                       content={optionText}
                                       className={cn(
                                         "text-sm font-medium leading-relaxed break-words",
-                                        isCorrectOpt 
-                                          ? "text-emerald-900 dark:text-emerald-200 font-semibold" 
-                                          : isStudentPick 
-                                            ? "text-rose-900 dark:text-rose-200 font-semibold" 
+                                        isCorrectOpt
+                                          ? "text-emerald-900 dark:text-emerald-200 font-semibold"
+                                          : isStudentPick
+                                            ? "text-rose-900 dark:text-rose-200 font-semibold"
                                             : "text-slate-700 dark:text-slate-300"
                                       )}
                                     />
@@ -893,6 +865,14 @@ export function ExamReviewContent({ examId, isTab }: { examId: string; isTab?: b
         </div>
 
       </div>
+
+      <StudentExamReviewExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        data={examReviewExportData}
+        schoolProfile={schoolProfile || profile?.school || user?.schools?.[0]}
+        schoolId={schoolId}
+      />
     </div>
   );
 }

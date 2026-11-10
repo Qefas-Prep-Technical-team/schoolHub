@@ -49,6 +49,7 @@ import { generatePDF } from '@/utils/pdfGenerator';
 import { assertSchoolPayingPlan } from '@/utils/subscriptionPlanCheck';
 import { groupByDate } from './utils/dateSectioning';
 import { useClasses } from '@/lib/api/hooks/useClasses';
+import { StudentTranscriptExportModal } from './components/StudentTranscriptExportModal';
 
 const PDFDownloadLink = dynamic(
   () => import('@react-pdf/renderer').then((mod) => mod.PDFDownloadLink),
@@ -188,6 +189,7 @@ export default function StudentGradesPage() {
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
   const [isExportingTranscript, setIsExportingTranscript] = useState(false);
+  const [isTranscriptExportModalOpen, setIsTranscriptExportModalOpen] = useState(false);
   const itemsPerPage = 10;
 
   // Detect small screens and prefer grid view by default on mobile
@@ -692,18 +694,14 @@ export default function StudentGradesPage() {
 
                   {/* Export Transcript Action Button */}
                   <Button
-                    onClick={handleExportTranscript}
-                    disabled={isExportingTranscript || !transcriptData}
+                    onClick={() => setIsTranscriptExportModalOpen(true)}
+                    disabled={!transcriptData}
                     variant="outline"
                     className="col-span-2 sm:col-span-1 h-9 px-3 sm:px-3.5 text-xs font-bold rounded-xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-200 hover:text-pink-600 dark:hover:text-pink-400 hover:border-pink-500/40 shadow-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 shrink-0"
-                    title="Export Official Transcript as PDF"
+                    title="Export Official Transcript as PDF, Excel, or CSV"
                   >
-                    {isExportingTranscript ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-600" />
-                    ) : (
-                      <Download className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
-                    )}
-                    <span>{isExportingTranscript ? 'Preparing...' : 'Export Transcript'}</span>
+                    <Download className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
+                    <span>Export Transcript</span>
                   </Button>
                 </div>
               </>
@@ -800,8 +798,8 @@ export default function StudentGradesPage() {
                       onClick={() => setViewMode('grid')}
                       type="button"
                       className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'grid'
-                          ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
-                          : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
+                        ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
                         }`}
                       title="Grid View"
                       aria-label="Grid View"
@@ -812,8 +810,8 @@ export default function StudentGradesPage() {
                       onClick={() => setViewMode('table')}
                       type="button"
                       className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'table'
-                          ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
-                          : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
+                        ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
                         }`}
                       title="Table View"
                       aria-label="Table View"
@@ -1059,8 +1057,8 @@ export default function StudentGradesPage() {
                         onClick={() => setViewMode('grid')}
                         type="button"
                         className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'grid'
-                            ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
+                          ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
                           }`}
                         title="Grid View"
                         aria-label="Grid View"
@@ -1071,8 +1069,8 @@ export default function StudentGradesPage() {
                         onClick={() => setViewMode('table')}
                         type="button"
                         className={`p-1.5 sm:p-2 rounded-lg text-xs font-semibold transition-all ${viewMode === 'table'
-                            ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
-                            : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
+                          ? 'bg-white dark:bg-zinc-800 text-pink-600 dark:text-pink-400 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white'
                           }`}
                         title="List View"
                         aria-label="List View"
@@ -1525,6 +1523,15 @@ export default function StudentGradesPage() {
           </div>
         </div>
       )}
+
+      {/* Official Academic Transcript Export Modal */}
+      <StudentTranscriptExportModal
+        isOpen={isTranscriptExportModalOpen}
+        onClose={() => setIsTranscriptExportModalOpen(false)}
+        transcriptData={transcriptData}
+        schoolProfile={transcriptData?.school || profile?.school || schoolProfile}
+        schoolId={schoolId}
+      />
 
     </div>
   );

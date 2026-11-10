@@ -12,6 +12,9 @@ import { ClassList } from './components/ClassList';
 import { AcademicSummary } from './components/AcademicSummary';
 import { ClassItem } from './components/ClassTable';
 import { StudentClassSelectionModal } from '../components/StudentClassSelectionModal';
+import { StudentClassExportModal } from './components/StudentClassExportModal';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 
 interface SubjectEntry {
   subject?: {
@@ -59,7 +62,9 @@ export default function StudentClassesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   
+  const { user } = useAuthStore();
   const { data: enrollmentsData, isLoading } = useClasses();
   const { data: attemptsData } = useStudentExamAttempts();
   const { data: standaloneGradesData } = useGrades();
@@ -67,9 +72,20 @@ export default function StudentClassesPage() {
   const { data: studentProfile } = useStudentProfile();
   const { username } = useUserStore();
 
-  const schoolId = studentProfile?.schoolId;
-  const schoolName = studentProfile?.school?.name || "your school";
-  const studentName = studentProfile?.name || username || "Scholar";
+  const userRecord = user as Record<string, unknown> | null | undefined;
+  const effectiveSchoolId =
+    studentProfile?.schoolId ||
+    (studentProfile as any)?.school?.id ||
+    user?.schools?.[0]?.schoolId ||
+    (typeof userRecord?.schoolId === 'string' ? userRecord.schoolId : '') ||
+    user?.tenantId ||
+    '';
+  const { data: schoolProfile } = useSchoolProfile(effectiveSchoolId);
+
+  const schoolId = effectiveSchoolId;
+  const schoolName = studentProfile?.school?.name || schoolProfile?.name || "your school";
+  const studentName = studentProfile?.name || user?.name || username || "Scholar";
+  const className = (studentProfile as any)?.class?.name || (studentProfile as any)?.className || "Enrolled Stream";
 
   // Detect small screens and prefer grid view
   useEffect(() => {
@@ -210,6 +226,7 @@ export default function StudentClassesPage() {
           totalMarks={totalMarks} 
           classPosition={classPosition} 
           onOpenJoinModal={() => setIsJoinModalOpen(true)}
+          onOpenExportModal={() => setIsExportModalOpen(true)}
         />
         
         {/* Real-time Class Stats Grid */}
@@ -228,6 +245,7 @@ export default function StudentClassesPage() {
           viewMode={viewMode}
           setViewMode={setViewMode}
           onOpenJoinModal={() => setIsJoinModalOpen(true)}
+          onOpenExportModal={() => setIsExportModalOpen(true)}
         />
         
         {/* Grid / Table Class View */}
@@ -246,6 +264,17 @@ export default function StudentClassesPage() {
           schoolId={schoolId}
           schoolName={schoolName}
           studentName={studentName}
+        />
+
+        {/* Student Enrolled Class Roster Export Modal */}
+        <StudentClassExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          classes={filteredClasses}
+          schoolProfile={schoolProfile}
+          schoolId={effectiveSchoolId}
+          studentName={studentName}
+          className={className}
         />
 
       </div>

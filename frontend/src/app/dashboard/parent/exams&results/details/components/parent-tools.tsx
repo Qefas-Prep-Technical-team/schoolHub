@@ -2,82 +2,19 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { Download, FileText, BarChart3, Loader2 } from 'lucide-react'
+import { Download, FileText, BarChart3 } from 'lucide-react'
 import { ExamDetailData } from './types'
-import { generatePDF } from '@/utils/pdfGenerator'
-import { assertSchoolPayingPlan } from '@/utils/subscriptionPlanCheck'
+import { ParentExamDetailExportModal } from './export/ParentExamDetailExportModal'
 
 interface ParentToolsProps {
   data: ExamDetailData
 }
 
 export default function ParentTools({ data }: ParentToolsProps) {
-  const [isExporting, setIsExporting] = useState(false)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
 
-  const handleExportPDF = async () => {
-    if (!assertSchoolPayingPlan(data.schoolProfile)) {
-      return
-    }
-
-    try {
-      setIsExporting(true)
-
-      const tableHeaders = [
-        ['#', 'Subject / Paper', 'Teacher / Faculty', 'Score', 'Max Marks', 'Percentage', 'Remarks']
-      ]
-
-      const tableData = data.subjects.length > 0 
-        ? data.subjects.map((s, idx) => [
-            (idx + 1).toString(),
-            s.name,
-            s.teacher || '—',
-            s.score.toString(),
-            s.totalMarks.toString(),
-            `${s.percentage}%`,
-            s.remarks || '—'
-          ])
-        : [
-            ['1', data.title, 'Subject Faculty', data.score.toString(), data.totalScore.toString(), `${data.percentage}%`, 'Completed Assessment']
-          ]
-
-      const additionalTables = (data.questions && data.questions.length > 0) ? [
-        {
-          title: 'Question Breakdown & Evaluation',
-          headers: [['Q#', 'Question / Topic', 'Points', 'Awarded', 'Status']],
-          data: data.questions.map(q => [
-            q.number.toString(),
-            q.title,
-            q.points,
-            q.scoreAwarded.toString(),
-            q.isCorrect === true ? 'CORRECT' : q.isCorrect === false ? 'INCORRECT' : 'REVIEWED'
-          ])
-        }
-      ] : undefined
-
-      await generatePDF({
-        title: `${data.title} - Examination Dossier`,
-        filename: `${data.studentName.replace(/\s+/g, '_')}_${data.title.replace(/\s+/g, '_')}_Exam_Slip.pdf`,
-        schoolProfile: data.schoolProfile,
-        metaData: [
-          { label: 'Student Name', value: data.studentName },
-          { label: 'Student ID', value: data.studentCode },
-          { label: 'Class / Grade', value: data.currentClass || 'N/A' },
-          { label: 'Assessment Date', value: data.date },
-          { label: 'Assessment Title', value: data.title },
-          { label: 'Category', value: data.category },
-          { label: 'Total Score', value: `${data.score} / ${data.totalScore}` },
-          { label: 'Percentage', value: `${data.percentage}%` },
-          { label: 'Grade Awarded', value: data.grade },
-          { label: 'Proficiency Standing', value: data.proficiency || 'N/A' },
-        ],
-        tableHeaders,
-        tableData,
-        additionalTables,
-        orientation: 'portrait',
-      })
-    } finally {
-      setIsExporting(false)
-    }
+  const handleExportPDF = () => {
+    setIsExportModalOpen(true)
   }
 
   return (
@@ -90,11 +27,10 @@ export default function ParentTools({ data }: ParentToolsProps) {
         <button
           type="button"
           onClick={handleExportPDF}
-          disabled={isExporting}
-          className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+          className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer active:scale-95"
         >
-          {isExporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
-          <span>Export Official PDF</span>
+          <Download size={15} />
+          <span>Export Examination Review</span>
         </button>
 
         <Link
@@ -113,6 +49,13 @@ export default function ParentTools({ data }: ParentToolsProps) {
           <span>Attendance & Record</span>
         </Link>
       </div>
+
+      {/* Multi-format Examination Review Export Modal */}
+      <ParentExamDetailExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        data={data}
+      />
     </div>
   )
 }

@@ -15,16 +15,9 @@ import TeacherNote from './components/teacher-note'
 import { ExamDetailData, ExamSubjectDetail, ExamQuestionDetail } from './components/types'
 import { useParentStore } from '@/lib/api/hooks/useParentStore'
 import { useParentChildren, useChildDetails } from '@/lib/api/hooks/useParentChildren'
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool'
 import { useExamResult, useExamReview } from '@/lib/api/hooks/useExams'
-
-function gradeLabel(percentage: number): string {
-  if (percentage >= 75) return 'A1'
-  if (percentage >= 70) return 'B2'
-  if (percentage >= 65) return 'B3'
-  if (percentage >= 50) return 'C6'
-  if (percentage >= 40) return 'D7'
-  return 'F9'
-}
+import { getGradeEvaluation } from '@/utils/gradingSystem'
 
 function proficiencyLabel(percentage: number): string {
   if (percentage >= 75) return 'Distinction'
@@ -40,7 +33,7 @@ function proficiencyLabel(percentage: number): string {
 // ==========================================
 function ExamDetailsSkeleton() {
   return (
-    <div className="w-full max-w-[99%] mx-auto flex flex-col gap-5 p-3 sm:p-5 lg:p-6 animate-pulse">
+    <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-5 p-3 sm:p-5 lg:p-6 animate-pulse">
       <div className="flex items-center justify-between">
         <div className="h-8 w-44 bg-slate-200 dark:bg-slate-800 rounded-xl" />
         <div className="h-9 w-36 bg-slate-200 dark:bg-slate-800 rounded-xl" />
@@ -95,29 +88,32 @@ function ExamDetailsContent() {
   }, [children, effectiveChildId])
 
   // Queries
-  const { 
-    data: childDetails, 
-    isLoading: isDetailsLoading, 
-    refetch: refetchChildDetails 
+  const {
+    data: childDetails,
+    isLoading: isDetailsLoading,
+    refetch: refetchChildDetails
   } = useChildDetails(effectiveChildId || null)
 
-  const { 
-    data: examResult, 
-    isLoading: isResultLoading 
+  const schoolId = (currentChildSummary?.school as { id?: string } | undefined)?.id || (currentChildSummary as unknown as { schoolId?: string })?.schoolId || ""
+  const { data: schoolProfile } = useSchoolProfile(schoolId)
+
+  const {
+    data: examResult,
+    isLoading: isResultLoading
   } = useExamResult(examId, effectiveChildId || undefined)
 
-  const { 
-    data: examReview, 
-    isLoading: isReviewLoading 
+  const {
+    data: examReview,
+    isLoading: isReviewLoading
   } = useExamReview(examId, effectiveChildId || undefined)
 
   // Find all matching grades for this exam or grade ID
   const matchingGrades = useMemo(() => {
     const grades = childDetails?.grades || []
     if (!examId) return grades
-    return grades.filter((g: any) => 
-      g.examId === examId || 
-      g.id === examId || 
+    return grades.filter((g: any) =>
+      g.examId === examId ||
+      g.id === examId ||
       g.exam?.id === examId ||
       g.subjectPaperId === examId
     )
@@ -163,8 +159,10 @@ function ExamDetailsContent() {
     }
 
     const percentage = totalScore > 0 ? Math.round((score / totalScore) * 100) : 0
-    const grade = examResult?.grade || gradeLabel(percentage)
-    const proficiency = examResult?.proficiency || proficiencyLabel(percentage)
+    const customGradingSystem = (schoolProfile?.gradingSystem as unknown[]) || (childDetails?.school as { gradingSystem?: unknown[] } | undefined)?.gradingSystem || (currentChildSummary?.school as { gradingSystem?: unknown[] } | undefined)?.gradingSystem
+    const evalResult = getGradeEvaluation(percentage, customGradingSystem as any)
+    const grade = examResult?.grade || evalResult.grade
+    const proficiency = examResult?.proficiency || evalResult.remark || proficiencyLabel(percentage)
 
     // 3. Subjects list
     let subjects: ExamSubjectDetail[] = []
@@ -345,7 +343,7 @@ function ExamDetailsContent() {
 
   return (
     <main className="flex-1 flex flex-col overflow-x-hidden relative">
-      <div className="flex-1 w-full max-w-[99%] mx-auto p-3 sm:p-5 lg:p-6 space-y-5 sm:space-y-6">
+      <div className="flex-1 w-full max-w-[1600px] mx-auto p-3 sm:p-5 lg:p-6 space-y-5 sm:space-y-6">
         {/* 1. Header with back button, breadcrumb, title, and child switcher */}
         <PageHeader
           data={detailData}

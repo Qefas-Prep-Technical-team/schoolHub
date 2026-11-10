@@ -9,6 +9,7 @@ import { calculateCalendarStats, getGradeLetter } from './components/calendarUti
 import { useParentStore } from '@/lib/api/hooks/useParentStore';
 import { useParentChildren, useChildDetails } from '@/lib/api/hooks/useParentChildren';
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard';
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { format } from 'date-fns';
 import {
   Calendar as CalendarIcon,
@@ -53,6 +54,10 @@ export default function CalendarPage() {
     isLoading: isDetailsLoading,
     refetch: refetchDetails,
   } = useChildDetails(effectiveChildId || null);
+
+  const schoolId = (activeChild?.school as { id?: string } | undefined)?.id || (activeChild as unknown as { schoolId?: string })?.schoolId || "";
+  const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const customGradingSystem = schoolProfile?.gradingSystem;
 
   const isInitialLoading = isChildrenLoading || isDashboardLoading || isDetailsLoading;
 
@@ -100,14 +105,14 @@ export default function CalendarPage() {
           score: g.score,
           maxScore: g.maxMarks,
           percentage: pct,
-          grade: pct !== undefined ? getGradeLetter(pct) : undefined,
+          grade: pct !== undefined ? getGradeLetter(pct, customGradingSystem) : undefined,
           teacher: g.subjectPaper?.teacher?.name,
         });
       }
     }
 
     return list;
-  }, [dashboardData?.upcomingExams, childDetails?.grades]);
+  }, [dashboardData?.upcomingExams, childDetails?.grades, customGradingSystem]);
 
   // 4. Compute real stats
   const stats = useMemo(() => calculateCalendarStats(allEvents), [allEvents]);
@@ -136,7 +141,7 @@ export default function CalendarPage() {
 
   return (
     <main className="w-full min-h-screen bg-slate-50/50 dark:bg-slate-950 pb-12 transition-colors">
-      <div className="w-full max-w-[98%] mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-5 sm:space-y-6">
+      <div className="w-full max-w-[1600px] mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-5 sm:space-y-6">
         {/* Navigation Breadcrumb & Back */}
         <div className="flex items-center gap-2">
           <Link

@@ -4,14 +4,18 @@ import { useMemo } from "react"
 import Link from "next/link"
 import { useParentDashboard, UpcomingExam } from "@/lib/api/hooks/useParentDashboard"
 import { useParentStore } from "@/lib/api/hooks/useParentStore"
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool"
 import { Skeleton } from "@/components/ui/skeleton"
 import { format } from "date-fns"
 import { HeaderTooltip } from "@/app/dashboard/parent/components/dashboard/HeaderTooltip"
+import { getEffectiveGradingSystem, getGradeColorAndBg } from "@/utils/gradingSystem"
 import { CalendarDays, CalendarX, ArrowRight, BarChart3, HelpCircle } from "lucide-react"
 
 export default function SidebarRight() {
   const { selectedChildId } = useParentStore()
   const { data: dashboardData, isLoading } = useParentDashboard(selectedChildId)
+  const schoolId = (dashboardData?.child?.school?.id as string | undefined) || ""
+  const { data: schoolProfile } = useSchoolProfile(schoolId)
 
   const upcomingExams = useMemo(() => {
     return (dashboardData?.upcomingExams || []).map((exam: UpcomingExam) => {
@@ -27,6 +31,19 @@ export default function SidebarRight() {
     })
   }, [dashboardData])
 
+  const gradingScales = useMemo(() => {
+    const tiers = getEffectiveGradingSystem(schoolProfile?.gradingSystem)
+    return tiers.map((tier) => {
+      const colors = getGradeColorAndBg(tier.grade)
+      return {
+        grade: tier.grade,
+        range: `${tier.min} - ${tier.max}%`,
+        label: tier.remark || 'Pass',
+        color: `${colors.color} ${colors.bg}`,
+      }
+    })
+  }, [schoolProfile?.gradingSystem])
+
   if (isLoading) {
     return (
       <div className="w-full flex flex-col gap-3.5 sm:gap-4">
@@ -35,15 +52,6 @@ export default function SidebarRight() {
       </div>
     )
   }
-
-  const gradingScales = [
-    { grade: 'A+', range: '90 - 100%', label: 'Distinction', color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500/20' },
-    { grade: 'A', range: '80 - 89%', label: 'Excellent', color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500/20' },
-    { grade: 'B', range: '70 - 79%', label: 'Very Good', color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border-blue-500/20' },
-    { grade: 'C', range: '60 - 69%', label: 'Credit', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-500/20' },
-    { grade: 'D', range: '50 - 59%', label: 'Pass', color: 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 border-orange-500/20' },
-    { grade: 'F', range: '< 50%', label: 'Needs Help', color: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border-rose-500/20' },
-  ]
 
   return (
     <div className="w-full flex flex-col gap-3.5 sm:gap-4">

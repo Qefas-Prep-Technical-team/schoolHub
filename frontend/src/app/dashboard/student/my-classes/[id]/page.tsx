@@ -20,6 +20,7 @@ import ClassStats from './components/ClassStats';
 import ClassTabs from './components/ClassTabs';
 import AssignmentsTable from './components/AssignmentsTable';
 import LoadingState from './components/LoadingState';
+import { ClassAssessmentExportModal } from './components/ClassAssessmentExportModal';
 import MaterialsPage from './components/materials/page';
 import AttendancePage from './components/attendance/page';
 import DiscussionsPage from './components/discussions/page';
@@ -32,6 +33,7 @@ interface ClassDetailsPageProps {
 export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
   const { id } = use(params);
   const [activeTab, setActiveTab] = useState<'assessments' | 'materials' | 'timetable' | 'attendance' | 'discussions'>('assessments');
+  const [isAssessmentExportModalOpen, setIsAssessmentExportModalOpen] = useState(false);
 
   const { user } = useAuthStore();
   const { data: classData, isLoading, isError } = useSingleClass(id);
@@ -454,6 +456,7 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
               assignments={classItem!.assessments}
               hasDepartment={hasDepartment}
               gradingSystem={customGradingSystem}
+              onOpenExportModal={() => setIsAssessmentExportModalOpen(true)}
             />
           )}
           {activeTab === 'materials' && <MaterialsPage />}
@@ -462,6 +465,19 @@ export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
           {activeTab === 'discussions' && <DiscussionsPage />}
         </ClassTabs>
       </div>
+
+      {/* Class Assessments Marksheet Export Modal */}
+      <ClassAssessmentExportModal
+        isOpen={isAssessmentExportModalOpen}
+        onClose={() => setIsAssessmentExportModalOpen(false)}
+        assessments={classItem!.assessments}
+        className={classItem!.title}
+        schoolProfile={schoolProfile}
+        schoolId={schoolId}
+        studentName={studentProfile?.name || user?.name || "Scholar"}
+        overallGrade={classItem!.stats.grade}
+        overallAverage={classItem!.stats.averagePercentage}
+      />
     </div>
   );
 }

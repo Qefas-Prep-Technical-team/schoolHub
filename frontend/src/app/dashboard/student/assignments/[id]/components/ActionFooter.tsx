@@ -12,23 +12,23 @@ interface Props {
   submitLabel?: string;
 }
 
-export default function ActionFooter({ 
+export default function ActionFooter({
   assignment,
-  onSubmit, 
-  onViewHistory, 
-  submitLabel = 'Submit Assignment' 
+  onSubmit,
+  onViewHistory,
+  submitLabel = 'Submit Assignment'
 }: Props) {
-  const isGraded = 
-    assignment?.status === 'GRADED' || 
-    assignment?.status === 'graded' || 
-    assignment?.submissions?.[0]?.status === 'GRADED' || 
+  const isGraded =
+    assignment?.status === 'GRADED' ||
+    assignment?.status === 'graded' ||
+    assignment?.submissions?.[0]?.status === 'GRADED' ||
     assignment?.submissions?.[0]?.status === 'graded';
 
-  const isSubmitted = 
-    assignment?.status === 'SUBMITTED' || 
-    assignment?.status === 'submitted' || 
-    assignment?.submissions?.[0]?.status === 'SUBMITTED' || 
-    assignment?.submissions?.[0]?.status === 'submitted' || 
+  const isSubmitted =
+    assignment?.status === 'SUBMITTED' ||
+    assignment?.status === 'submitted' ||
+    assignment?.submissions?.[0]?.status === 'SUBMITTED' ||
+    assignment?.submissions?.[0]?.status === 'submitted' ||
     isGraded;
 
   const calculateReleaseTime = () => {
@@ -52,11 +52,11 @@ export default function ActionFooter({
     const releaseDateStr = assignment?.scoreReleaseDate || assignment?.dueDate;
     if (!isSubmitted || isGraded || !releaseDateStr) return;
     setReleaseTimeRemaining(calculateReleaseTime());
-    
+
     const interval = setInterval(() => {
       const remaining = calculateReleaseTime();
       setReleaseTimeRemaining(remaining);
-      
+
       if (remaining && remaining.days === 0 && remaining.hours === 0 && remaining.minutes === 0 && remaining.seconds === 0) {
         clearInterval(interval);
         window.location.reload();
@@ -79,7 +79,7 @@ export default function ActionFooter({
 
   return (
     <footer className="sticky bottom-0 z-20 mt-8 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md transition-all shadow-md">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 md:px-6">
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 md:px-8">
         <div>
           {onViewHistory && (
             <button
@@ -92,7 +92,7 @@ export default function ActionFooter({
             </button>
           )}
         </div>
-        
+
         <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
           {isSubmitted ? (
             <div className="flex items-center gap-2 sm:gap-3 bg-blue-50 dark:bg-blue-950/30 px-3.5 py-2 rounded-xl border border-blue-200/80 dark:border-blue-800/50 text-xs sm:text-sm">

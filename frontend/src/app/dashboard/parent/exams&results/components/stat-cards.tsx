@@ -3,8 +3,10 @@
 import Link from "next/link"
 import { useParentDashboard } from "@/lib/api/hooks/useParentDashboard"
 import { useParentStore } from "@/lib/api/hooks/useParentStore"
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool"
 import { Skeleton } from "@/components/ui/skeleton"
 import { HeaderTooltip } from "@/app/dashboard/parent/components/dashboard/HeaderTooltip"
+import { getGradeEvaluation } from "@/utils/gradingSystem"
 import { 
   TrendingUp, 
   CalendarCheck, 
@@ -30,6 +32,10 @@ interface StatCardItem {
 export default function StatCards() {
   const { selectedChildId } = useParentStore()
   const { data, isLoading } = useParentDashboard(selectedChildId)
+  const child = data?.child
+  const schoolId = (child?.school?.id as string | undefined) || ""
+  const { data: schoolProfile } = useSchoolProfile(schoolId)
+  const customGradingSystem = schoolProfile?.gradingSystem
   
   if (isLoading) {
     return (
@@ -49,23 +55,15 @@ export default function StatCards() {
   }
 
   const stats = data?.stats
-  const child = data?.child
   const avg = Math.round(stats?.averageGrade ?? 0)
-
-  const gradeLabel = (score: number) => {
-    if (score >= 90) return 'A+'
-    if (score >= 80) return 'A'
-    if (score >= 70) return 'B'
-    if (score >= 60) return 'C'
-    if (score >= 50) return 'D'
-    return 'F'
-  }
+  const evalResult = getGradeEvaluation(avg, customGradingSystem)
+  const evaluatedGrade = evalResult.grade
 
   const statCards: StatCardItem[] = [
     {
       title: 'Term Average',
       value: `${avg}%`,
-      subValue: `Grade ${gradeLabel(avg)}`,
+      subValue: `Grade ${evaluatedGrade}`,
       description: 'Weighted Performance',
       tooltip: `Cumulative average score across all graded continuous assessments, homework assignments, and examinations for ${child?.name || 'this student'}. Compare this percentage against the 75% benchmark to verify if academic standing meets promotion thresholds.`,
       icon: TrendingUp,

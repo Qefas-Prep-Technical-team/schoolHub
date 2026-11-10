@@ -1,27 +1,34 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import StatCards from './components/stat-cards'
 import ExamList from './components/exam-list'
 import SidebarRight from './components/sidebar-right'
+import { ParentExamsExportModal } from './components/ParentExamsExportModal'
+import { ParentExamsExportData, ParentExamExportItem } from './utils/parentExamsSpreadsheetExporter'
 import { HeaderTooltip } from '@/app/dashboard/parent/components/dashboard/HeaderTooltip'
 import { useParentStore } from '@/lib/api/hooks/useParentStore'
 import { useParentChildren } from '@/lib/api/hooks/useParentChildren'
 import { useParentDashboard } from '@/lib/api/hooks/useParentDashboard'
-import { ChildSummary } from '@/lib/api/services/parentService'
+import { useChildExams } from '@/lib/api/hooks/useChildExams'
+import { useSchoolProfile } from '@/lib/api/hooks/useSchool'
+import { getGradeEvaluation } from '@/utils/gradingSystem'
+import { ChildSummary, Grade } from '@/lib/api/services/parentService'
+import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
-import { 
-  Users, 
-  FileText, 
-  GraduationCap, 
-  BarChart3, 
-  Calendar, 
-  ArrowRight, 
-  Copy, 
-  Check, 
-  Award
+import {
+  Users,
+  FileText,
+  GraduationCap,
+  BarChart3,
+  Calendar,
+  ArrowRight,
+  Copy,
+  Check,
+  Award,
+  Download
 } from 'lucide-react'
 import { toast } from 'react-toastify'
 
@@ -30,7 +37,7 @@ import { toast } from 'react-toastify'
 // ==========================================
 function ExamsResultsPageSkeleton() {
   return (
-    <div className="w-full max-w-[99%] mx-auto flex flex-col gap-3.5 sm:gap-5 pb-8 animate-in fade-in duration-300">
+    <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-3.5 sm:gap-5 pb-8 animate-in fade-in duration-300">
       {/* Child Switcher Skeleton */}
       <div className="flex items-center gap-3">
         <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
@@ -97,10 +104,10 @@ function ExamsResultsPageSkeleton() {
 // ==========================================
 function NoChildrenLinkedState() {
   return (
-    <div className="w-full max-w-[99%] mx-auto py-4 sm:py-6 animate-in fade-in duration-300">
+    <div className="w-full max-w-[1600px] mx-auto py-4 sm:py-6 animate-in fade-in duration-300">
       <div className="rounded-[24px] bg-gradient-to-br from-orange-50 via-white to-amber-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-orange-950/20 border border-orange-100 dark:border-slate-800 p-5 sm:p-9 shadow-xs relative overflow-hidden">
         <div className="absolute top-0 right-0 -mr-12 -mt-12 size-64 rounded-full bg-orange-400/10 blur-3xl pointer-events-none" />
-        
+
         <div className="max-w-3xl space-y-5 sm:space-y-6 relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 text-xs font-bold uppercase tracking-wider">
             <Award size={14} />
@@ -171,6 +178,12 @@ export default function ExamsResultsPage() {
   const activeChildId = selectedChildId || (children.length > 0 ? children[0]?.id : undefined)
   const activeChild = children.find((c) => c.id === activeChildId)
   const { data: dashboardData } = useParentDashboard(activeChildId)
+  const { data: childDetails } = useChildExams(activeChildId || null)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+
+  const schoolId = (activeChild?.school as { id?: string } | undefined)?.id || (activeChild as unknown as { schoolId?: string })?.schoolId || (dashboardData?.child?.school as { id?: string } | undefined)?.id || ""
+  const { data: schoolProfile } = useSchoolProfile(schoolId)
+  const customGradingSystem = schoolProfile?.gradingSystem
 
   if (isChildrenLoading) {
     return <ExamsResultsPageSkeleton />
@@ -184,7 +197,54 @@ export default function ExamsResultsPage() {
   const studentCode = activeChild?.studentCode || 'N/A'
   const className = activeChild?.currentClass?.name || dashboardData?.child?.currentClass?.name || 'Classroom Cohort'
   const section = activeChild?.currentClass?.section || dashboardData?.child?.currentClass?.section
-  const schoolName = activeChild?.school?.name || (activeChild as unknown as { schoolName?: string })?.schoolName
+  const schoolName = activeChild?.school?.name || (activeChild as unknown as { schoolName?: string })?.schoolName || schoolProfile?.name
+
+  const avg = Math.round(dashboardData?.stats?.averageGrade ?? 0)
+  const evalResult = getGradeEvaluation(avg, customGradingSystem)
+  const evaluatedGrade = evalResult.grade
+
+  // Construct export dossier data
+  const exportData: ParentExamsExportData = {
+    student: {
+      name: studentName,
+      studentCode,
+      className,
+      section,
+      parentName: 'Parent / Guardian',
+    },
+    school: {
+      name: schoolName || 'Connected School',
+      logo: schoolProfile?.logo,
+      address: schoolProfile?.address,
+      phone: schoolProfile?.phone,
+      email: schoolProfile?.email,
+    },
+    summary: {
+      termAverage: avg,
+      letterGrade: evaluatedGrade,
+      attendanceRate: Math.round(dashboardData?.stats?.attendanceRate ?? 0),
+      totalExams: (childDetails?.grades?.length || 0) + (dashboardData?.upcomingExams?.length || 0),
+      completedExams: childDetails?.grades?.length || 0,
+    },
+    exams: (childDetails?.grades || []).map((g: Grade) => {
+      const pct = g.maxMarks > 0 ? Math.round((g.score / g.maxMarks) * 100) : 0
+      const gEval = getGradeEvaluation(pct, customGradingSystem)
+      return {
+        id: g.id,
+        examId: g.examId || g.exam?.id,
+        title: g.exam?.title || g.subjectPaper?.title || `${g.subject || 'Assessment'} ${g.assessmentType || 'Paper'}`.trim(),
+        subject: g.subject || g.subjectPaper?.subject?.name || 'Curriculum Subject',
+        teacher: g.teacher?.name || g.subjectPaper?.teacher?.name || 'Subject Teacher',
+        date: format(new Date(g.createdAt), 'MMM dd, yyyy'),
+        score: g.score,
+        totalScore: g.maxMarks,
+        percentage: pct,
+        grade: gEval.grade,
+        status: 'completed' as const,
+        assessmentType: g.assessmentType || g.category || 'EXAM',
+      }
+    }),
+  }
 
   const fallbackAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(studentName)}&backgroundColor=ea580c&fontFamily=Arial&fontSize=40&fontWeight=900`
   const studentImage = activeChild?.profileImage
@@ -201,8 +261,8 @@ export default function ExamsResultsPage() {
   }
 
   return (
-    <div className="w-full max-w-[99%] mx-auto flex flex-col gap-3.5 sm:gap-5 pb-8 animate-in fade-in duration-200">
-      
+    <div className="w-full max-w-[1600px] mx-auto flex flex-col gap-3.5 sm:gap-5 pb-8 animate-in fade-in duration-200">
+
       {/* Clean Unified Header */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
@@ -277,6 +337,14 @@ export default function ExamsResultsPage() {
 
         {/* Quick Actions Toolbar */}
         <div className="flex items-center gap-2 w-full lg:w-auto shrink-0 justify-end flex-wrap sm:flex-nowrap">
+          <button
+            type="button"
+            onClick={() => setIsExportModalOpen(true)}
+            className="flex-1 sm:flex-none h-9 sm:h-10 px-3.5 rounded-xl border border-orange-200 dark:border-orange-800/60 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-300 font-bold text-xs hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+          >
+            <Download size={14} className="text-orange-600 dark:text-orange-400" />
+            <span>Export Dossier</span>
+          </button>
           <Link href="/dashboard/parent/exams&results/analytics" className="flex-1 sm:flex-none">
             <button className="w-full h-9 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs hover:border-orange-500 hover:text-orange-600 transition-colors flex items-center justify-center gap-1.5 shadow-xs">
               <BarChart3 size={14} />
@@ -310,6 +378,16 @@ export default function ExamsResultsPage() {
           <SidebarRight />
         </div>
       </div>
+
+      {/* Unified Academic Dossier Export Modal */}
+      {isExportModalOpen && (
+        <ParentExamsExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          data={exportData}
+          schoolProfile={schoolProfile}
+        />
+      )}
     </div>
   )
 }
