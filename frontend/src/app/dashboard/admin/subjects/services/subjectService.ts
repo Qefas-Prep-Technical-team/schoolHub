@@ -96,4 +96,11 @@ export const subjectService = {
   deleteSchemeEntry: async (id: string): Promise<void> => {
     await apiClient.delete(`/academic/scheme/${id}`)
   },
+
+  attachDepartments: async (subjectId: string, departmentIds: string[]): Promise<Subject> => {
+    const response = await apiClient.post(`/academic/subjects/${subjectId}/departments`, {
+      departmentIds,
+    })
+    return response.data.data
+  },
 }

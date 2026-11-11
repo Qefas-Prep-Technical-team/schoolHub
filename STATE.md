@@ -7851,3 +7851,85 @@ pm --prefix backend run build (prisma generate && tsc && tsc-alias) with 0 error
   - Ensured strict fallback to the default 9-tier matrix whenever custom grade boundaries are unset.
 - [x] **Verification**:
   - Executed npx tsc --noEmit in frontend with 0 errors.
+
+### Wednesday, November 11, 2026 - Class Level Suggestions & Session-Term Cascading Selection
+- [x] **Standardized Class Level Suggestions with Isolated Deduplication**:
+  - Created [levelConstants.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/levelConstants.ts) providing unified SUGGESTED_LEVELS (Primary 1-6, JSS 1-3, SSS 1-3, UTME, GCE, NECO).
+  - Implemented getFilteredLevelSuggestions(configuredLevels) ensuring case-insensitive deduplication against the school's configured levels.
+  - Updated [ClassModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/components/ClassModal.tsx) and [ManageClassModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/ManageClassModal.tsx) to group dropdown options into 'School Levels' and 'Suggested Levels'.
+  - Added auto-save behavior: selecting any suggestion or new level automatically persists it to the school's profile so it becomes a native school level on future interactions.
+  - Added quick-add suggestion chips to [EditGovernanceAcademicSection.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/school-profile/edit/components/EditGovernanceAcademicSection.tsx) that disappear as levels are added.
+- [x] **Cascading Session-to-Term Selection**:
+  - In [ClassModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/components/ClassModal.tsx) and [ManageClassModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/[id]/components/ManageClassModal.tsx), disabled the Term select until an Academic Session has been selected.
+  - Filtered the available Term options to only display the term periods configured for the selected session (with fallback to the three standard terms if none are configured).
+  - Automatically resets the selected term whenever the academic session is cleared or changed.
+- [x] **Verification**:
+  - Executed npx tsc --noEmit in frontend and backend with 0 errors.
+### Wednesday, November 11, 2026 - Nigerian Standard Curriculum & Department Suggestions with Scheme of Work
+- [x] **Created Core Nigerian Curriculum Standards (curriculumConstants.ts)**:
+  - Implemented [curriculumConstants.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/curriculumConstants.ts) providing:
+    - Standard Nigerian secondary & basic education academic departments (Sciences & Mathematics, Arts & Humanities, Commercial & Business Studies, Vocational & Technical Education, Basic Education).
+    - Core Nigerian curriculum subjects (Mathematics, English Language, Biology, Chemistry, Physics, Economics, Financial Accounting, Government, Literature in English, Civic Education, Agricultural Science, Computer Studies/ICT).
+    - Structured 10-week NERDC Term 1 Schemes of Work with topics and specific learning objectives for each subject.
+    - Deduplicating filter helpers (getFilteredSubjectSuggestions and getFilteredDepartmentSuggestions) preventing any match from displaying twice.
+- [x] **Integrated Curriculum & Department Suggestions into ClassModal (ClassModal.tsx)**:
+  - Partitioned Curriculum Subjects into 'School Subjects' and 'Nigerian Standard Curriculum Suggestions'.
+  - Partitioned Academic Departments into 'School Departments' and 'Suggested Nigerian Departments'.
+  - One-click auto-save: clicking any suggested subject or department instantly persists it to the school via API, attaches the 10-week scheme of work to the database, auto-selects it for the class, and removes it from suggestions.
+- [x] **Verification**:
+  - Typechecks in frontend and backend passed with 0 errors (npx tsc --noEmit).
+### Wednesday, November 11, 2026 - Searchable Dropdowns, Early Years (KG1/KG2) Levels & nigerian_curriculum_suggestions Skill
+- [x] **Early Years Levels Support**:
+  - Added 'KG 1', 'KG 2', 'Nursery 1', 'Nursery 2' to the suggested academic levels in [levelConstants.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/levelConstants.ts).
+- [x] **Searchable Select Dropdowns**:
+  - Added real-time search inputs inside the Class Level dropdown and Academic Term dropdown in [ClassModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/components/ClassModal.tsx).
+  - Configured keyboard event isolation (e.stopPropagation()) so typing does not trigger native select shortcut navigation or close the popover.
+- [x] **Created nigerian_curriculum_suggestions Skill**:
+  - Created skill documentation at [.agents/skills/nigerian_curriculum_suggestions/SKILL.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/.agents/skills/nigerian_curriculum_suggestions/SKILL.md) covering:
+    - Multi-tenant school isolation standards.
+    - Standard Nigerian level, subject, and department specifications.
+    - 10-week NERDC scheme of work auto-seeding.
+    - Dropdown search and cascading session-to-term UX standards.
+- [x] **Verification**:
+  - Full frontend typecheck executed cleanly with 0 errors (
+px tsc --noEmit).- [x] **Bidirectional Auto-Setup & Linking Between Suggested Departments and Subjects**:
+  - Added ttachSubjects to [departmentService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/departments/services/departmentService.ts) (POST /academic/departments/subjects/attach) and ttachDepartments to [subjectService.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/subjects/services/subjectService.ts) (POST /academic/subjects/:id/departments).
+  - Updated handleAddSuggestedDepartment in [ClassModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/components/ClassModal.tsx) so clicking a suggested Nigerian department automatically:
+    1. Creates the department in the school database.
+    2. Resolves or creates all of its recommended Nigerian core subjects (along with their 10-week Term 1 Schemes of Work).
+    3. Links those subjects directly to the department in DepartmentSubject.
+    4. Auto-selects both the department and all its linked subjects for the class.
+  - Updated handleAddSuggestedSubject in [ClassModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/components/ClassModal.tsx) so clicking a suggested subject automatically links it to any existing school department that recommends that subject.
+  - Documented the bidirectional linking pattern in [.agents/skills/nigerian_curriculum_suggestions/SKILL.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/.agents/skills/nigerian_curriculum_suggestions/SKILL.md).- [x] **Multi-Tenant Database Uniqueness & Collision Protection**:
+  - Hardened [department.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/department.service.ts) (createDepartmentService) and [subject.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/subject.service.ts) (createSubjectService) to guarantee zero database constraint collisions when multiple schools set up the same suggested departments or subjects.
+  - Because Department.code is @unique globally in schema.prisma, ClassModal.tsx and createDepartmentService deterministically scope department codes using the school's UUID prefix (${sug.code}-), with a backend fallback check before insertion.
+  - Because Subject has @@unique([schoolId, code]) in schema.prisma, subjects use clean standard codes (MTH, ENG, PHY) per school, with automatic suffixing if a previously archived subject with the same code exists in that school.- [x] **Scoped Department Uniqueness to Per-School (@@unique([schoolId, code]))**:
+  - Updated model Department in [schema.prisma](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/prisma/schema.prisma) from a global @unique on code to @@unique([schoolId, code]) matching model Subject.
+  - Multiple schools can now independently have the exact same clean department codes (SCI-MATH, ARTS-HUM, COMM-BUS, VOC-TECH, BASIC-EDU) without any cross-school collisions.
+  - Updated [department.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/department.service.ts) and [ClassModal.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/classes/components/ClassModal.tsx) to use clean standard codes per school.
+  - Updated [.agents/skills/nigerian_curriculum_suggestions/SKILL.md](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/.agents/skills/nigerian_curriculum_suggestions/SKILL.md) to mandate @@unique([schoolId, code]) and permanent suggestion hiding once added to a school.- [x] **Hardened Tenant-Scoped Department Lookups (esolveDepartmentForUser & canManageDepartment)**:
+  - Updated [academic.permissions.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/academic.permissions.ts), [department.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/department.service.ts), and [department.controller.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/academic/department.controller.ts) so that any route passing a department code (like SCI-MATH) instead of a UUID always resolves to the department belonging to the current user's linked school, never another school's department with the same code.
+- [x] **Loading Indicators & Explicit Toast Feedback on Curriculum Suggestions**:
+  - Updated rontend/src/app/dashboard/admin/classes/components/ClassModal.tsx with ddingSubjectCode, ddingDepartmentCode, and savingLevel states to show a spinning <Loader2 /> indicator and status text while a suggested Subject, Department, or Level is being saved to the school's setup.
+  - Updated toast messages to explicitly state: "Added <Name> to your school's subjects!", "Added <Name> to your school's departments!", and "Added <Level> to your school's levels!".
+  - Enabled immediate persistence of suggested Class Levels when selected in the dropdown so they instantly move from "Suggested Levels" into "School Levels".
+- [x] **5-Step School Academic & Class Setup Wizard Popup on Classes Page**:
+  - Created modular 5-step wizard components under rontend/src/app/dashboard/admin/classes/components/setup-wizard/:
+    - SchoolAcademicSetupWizardModal.tsx: Main 5-step modal with auto-display gating (localStorage keys per schoolId so it only auto-opens if the admin has not saved it before and has not clicked "Don't Show Again").
+    - StepSchoolProfile.tsx (Step 1): Core school profile configuration (Logo upload, Official School Name, Motto, Principal, Category, Email, Phone, Website, Campus Address, and 1-click WAEC/NERDC 9-Grade Curve).
+    - StepAcademicLevels.tsx (Step 2): Active school levels, custom level creation, and 1-click / bulk Nigerian level suggestions (KG 1–2, Nursery 1–2, Primary 1–6, JSS 1–3, SSS 1–3, UTME, GCE, NECO).
+    - StepCurriculumSubjects.tsx (Step 3): Active school subjects, custom subject creation, and Nigerian NERDC curriculum subject suggestions with 10-week Term 1 Schemes of Work and automatic department linking.
+    - StepAcademicDepartments.tsx (Step 4): Active school departments, custom department creation, and Nigerian department suggestions that auto-create and link recommended subjects.
+    - StepClassAndOnboardingGuide.tsx (Step 5): Quick class creation form plus actionable guidance cards directing admins to link students & teachers in the Linking Hub (/dashboard/admin/linking), assign teachers to subjects under teacher details on the Teachers page (/dashboard/admin/teachers), and ask the AI Assistant in Support (/dashboard/admin/support) or on the Landing Page (/) if anything is unclear.
+  - Integrated into rontend/src/app/dashboard/admin/classes/page.tsx with a "School Setup Guide" header button so admins can also reopen it manually anytime.
+- [x] **Moved 5-Step School Setup Wizard Popup to Admin Dashboard (/dashboard/admin)**:
+  - Removed the popup from /dashboard/admin/classes (rontend/src/app/dashboard/admin/classes/page.tsx) and integrated SchoolAcademicSetupWizardModal directly into rontend/src/app/dashboard/admin/page.tsx (http://localhost:3000/dashboard/admin).
+- [x] **Database-Backed Cross-Browser & Role-Gated Tracking for School Setup Wizard**:
+  - Updated rontend/src/app/dashboard/admin/page.tsx and SchoolAcademicSetupWizardModal.tsx to persist setup completion and "Don't Show Again" directly to PostgreSQL (School.profileCompleted = true) via schoolService.updateProfile(schoolId, { profileCompleted: true }) (alongside localStorage as an instant cache).
+  - Restricted the popup and header trigger strictly to authorized setup roles (canManageSchoolSetup = canAdminRoleAccessFeature(adminRole, 'schoolProfile') -> SCHOOL_OWNER, PRINCIPAL, ADMIN, SUPER_ADMIN), so restricted sub-roles (ACCOUNTANT, REGISTRAR, SUPPORT) never see the popup at all.
+  - Updated rontend/src/app/dashboard/admin/school-profile/edit/page.tsx to also set profileCompleted: true when the school profile is saved.
+- [x] **Added Loading States to Setup Wizard Action Buttons**:
+  - Updated SchoolAcademicSetupWizardModal.tsx with isCompletingWizard, isAdvancingStep, and isDismissingWizard states so the "Finish & Save Setup", "Save & Next Step", and "Don't Show Again" buttons display a spinning <Loader2 /> indicator (Saving Setup... / Saving...) and disable duplicate clicks while persisting to the database.
+- [x] **Mobile-First Responsiveness Enhancements for 5-Step School Setup Wizard**:
+  - Updated SchoolAcademicSetupWizardModal.tsx with w-[95vw] sm:max-w-[860px], max-h-[92dvh], a horizontally scrollable 5-step header bar on mobile (lex overflow-x-auto sm:grid sm:grid-cols-5), and full-width touch-friendly navigation buttons in the mobile footer.
+  - Updated StepSchoolProfile.tsx, StepAcademicLevels.tsx, StepCurriculumSubjects.tsx, StepAcademicDepartments.tsx, and StepClassAndOnboardingGuide.tsx so all header banners, search filters, subject/department grids, and action buttons stack and expand cleanly on narrow mobile viewports.

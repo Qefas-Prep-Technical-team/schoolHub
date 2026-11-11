@@ -114,6 +114,7 @@ export default function EditSchoolProfilePage() {
         data: {
           ...schoolData,
           gradingSystem: sanitizedGrading,
+          profileCompleted: true,
         },
       });
       toast.success('Institutional profile updated successfully');

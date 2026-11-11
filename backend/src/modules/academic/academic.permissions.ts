@@ -123,49 +123,52 @@ export const canManageDepartment = async ({
   userType: UserRole;
   departmentId: string;
 }) => {
-  const department = await prisma.department.findFirst({
+  const candidates = await prisma.department.findMany({
     where: {
       OR: [
         { id: departmentId },
         { code: departmentId },
       ],
+      isArchived: false,
     },
   });
 
-  if (!department || department.isArchived) return false;
+  if (!candidates.length) return false;
 
-  if (userType === UserRole.ADMIN) {
-    if (
-      department.scope !== AcademicOwnershipScope.SCHOOL ||
-      !department.schoolId
-    ) {
-      return false;
+  for (const department of candidates) {
+    if (userType === UserRole.ADMIN) {
+      if (
+        department.scope === AcademicOwnershipScope.SCHOOL &&
+        department.schoolId
+      ) {
+        const allowed = await hasActiveSchoolLink({
+          userId,
+          userType: LinkEntityType.ADMIN,
+          schoolId: department.schoolId,
+        });
+        if (allowed) return true;
+      }
     }
 
-    return hasActiveSchoolLink({
-      userId,
-      userType: LinkEntityType.ADMIN,
-      schoolId: department.schoolId,
-    });
-  }
+    if (userType === UserRole.TEACHER) {
+      if (
+        department.scope === AcademicOwnershipScope.PERSONAL &&
+        department.teacherId === userId
+      ) {
+        return true;
+      }
 
-  if (userType === UserRole.TEACHER) {
-    if (
-      department.scope === AcademicOwnershipScope.PERSONAL &&
-      department.teacherId === userId
-    ) {
-      return true;
-    }
-
-    if (
-      department.scope === AcademicOwnershipScope.SCHOOL &&
-      department.schoolId
-    ) {
-      return hasActiveSchoolLink({
-        userId,
-        userType: LinkEntityType.TEACHER,
-        schoolId: department.schoolId,
-      });
+      if (
+        department.scope === AcademicOwnershipScope.SCHOOL &&
+        department.schoolId
+      ) {
+        const allowed = await hasActiveSchoolLink({
+          userId,
+          userType: LinkEntityType.TEACHER,
+          schoolId: department.schoolId,
+        });
+        if (allowed) return true;
+      }
     }
   }
 

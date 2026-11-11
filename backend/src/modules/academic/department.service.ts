@@ -55,10 +55,19 @@ export const createDepartmentService = async ({
       throw new Error("A school department with this code already exists");
     }
 
+    // Handle archived department with the same [schoolId, code] constraint
+    let finalCode = code;
+    const archivedCollision = await prisma.department.findFirst({
+      where: { schoolId, code: finalCode },
+    });
+    if (archivedCollision) {
+      finalCode = `${code}-${Date.now().toString(36).slice(-3).toUpperCase()}`;
+    }
+
     return prisma.department.create({
       data: {
         name,
-        code,
+        code: finalCode,
         description: description || null,
         schoolId,
         teacherId: null,
@@ -121,10 +130,19 @@ export const createDepartmentService = async ({
       throw new Error("A school department with this code already exists");
     }
 
+    // Handle archived department with the same [schoolId, code] constraint
+    let finalCode = code;
+    const archivedCollision = await prisma.department.findFirst({
+      where: { schoolId, code: finalCode },
+    });
+    if (archivedCollision) {
+      finalCode = `${code}-${Date.now().toString(36).slice(-3).toUpperCase()}`;
+    }
+
     return prisma.department.create({
       data: {
         name,
-        code,
+        code: finalCode,
         description: description || null,
         schoolId,
         teacherId: null,
@@ -303,15 +321,88 @@ export const getDepartmentsService = async ({
   });
 };
 
-export const getSingleDepartmentService = async (departmentId: string) => {
-  const department = await prisma.department.findFirst({
+const resolveDepartmentForUser = async ({
+  departmentId,
+  userId,
+  userType,
+  schoolId,
+}: {
+  departmentId: string;
+  userId?: string;
+  userType?: UserRole;
+  schoolId?: string;
+}) => {
+  // 1. Direct UUID match first
+  const byId = await prisma.department.findFirst({
     where: {
-      OR: [
-        { id: departmentId },
-        { code: departmentId },
-      ],
+      id: departmentId,
       isArchived: false,
     },
+  });
+  if (byId) return byId;
+
+  // 2. If schoolId is explicitly provided, look up by (schoolId, code)
+  if (schoolId) {
+    const bySchoolCode = await prisma.department.findFirst({
+      where: {
+        schoolId,
+        code: departmentId,
+        isArchived: false,
+      },
+    });
+    if (bySchoolCode) return bySchoolCode;
+  }
+
+  // 3. Otherwise, find all matching code candidates and pick the one linked to the current user
+  const candidates = await prisma.department.findMany({
+    where: {
+      code: departmentId,
+      isArchived: false,
+    },
+  });
+
+  if (userId && userType && candidates.length > 0) {
+    for (const dept of candidates) {
+      if (dept.scope === AcademicOwnershipScope.PERSONAL && dept.teacherId === userId) {
+        return dept;
+      }
+      if (dept.scope === AcademicOwnershipScope.SCHOOL && dept.schoolId) {
+        const entityType =
+          userType === UserRole.ADMIN
+            ? LinkEntityType.ADMIN
+            : userType === UserRole.TEACHER
+              ? LinkEntityType.TEACHER
+              : LinkEntityType.STUDENT;
+        const allowed = await hasActiveSchoolLink({
+          userId,
+          userType: entityType,
+          schoolId: dept.schoolId,
+        });
+        if (allowed) return dept;
+      }
+    }
+  }
+
+  return candidates[0] || null;
+};
+
+export const getSingleDepartmentService = async (
+  departmentId: string,
+  context?: { userId?: string; userType?: UserRole; schoolId?: string }
+) => {
+  const resolved = await resolveDepartmentForUser({
+    departmentId,
+    userId: context?.userId,
+    userType: context?.userType,
+    schoolId: context?.schoolId,
+  });
+
+  if (!resolved) {
+    throw new Error("Department not found");
+  }
+
+  const department = await prisma.department.findUnique({
+    where: { id: resolved.id },
     include: {
       subjects: { include: { subject: true } },
       quizzes: true,
@@ -339,20 +430,23 @@ export const updateDepartmentService = async ({
   name,
   code,
   description,
+  currentUserId,
+  currentUserType,
+  schoolId,
 }: {
   departmentId: string;
   name?: string;
   code?: string;
   description?: string;
+  currentUserId?: string;
+  currentUserType?: UserRole;
+  schoolId?: string;
 }) => {
-  const existing = await prisma.department.findFirst({
-    where: {
-      OR: [
-        { id: departmentId },
-        { code: departmentId },
-      ],
-      isArchived: false,
-    },
+  const existing = await resolveDepartmentForUser({
+    departmentId,
+    userId: currentUserId,
+    userType: currentUserType,
+    schoolId,
   });
 
   if (!existing) {
@@ -386,15 +480,15 @@ export const updateDepartmentService = async ({
   });
 };
 
-export const archiveDepartmentService = async (departmentId: string) => {
-  const existing = await prisma.department.findFirst({
-    where: {
-      OR: [
-        { id: departmentId },
-        { code: departmentId },
-      ],
-      isArchived: false,
-    },
+export const archiveDepartmentService = async (
+  departmentId: string,
+  context?: { userId?: string; userType?: UserRole; schoolId?: string }
+) => {
+  const existing = await resolveDepartmentForUser({
+    departmentId,
+    userId: context?.userId,
+    userType: context?.userType,
+    schoolId: context?.schoolId,
   });
 
   if (!existing) {
@@ -411,19 +505,20 @@ export const attachSubjectsToDepartmentService = async ({
   departmentId,
   subjectIds,
   currentUserId,
+  currentUserType,
+  schoolId,
 }: {
   departmentId: string;
   subjectIds: string[];
   currentUserId: string;
+  currentUserType?: UserRole;
+  schoolId?: string;
 }) => {
-  const department = await prisma.department.findFirst({
-    where: {
-      OR: [
-        { id: departmentId },
-        { code: departmentId },
-      ],
-      isArchived: false,
-    },
+  const department = await resolveDepartmentForUser({
+    departmentId,
+    userId: currentUserId,
+    userType: currentUserType,
+    schoolId,
   });
 
   if (!department) {
@@ -484,18 +579,21 @@ export const attachSubjectsToDepartmentService = async ({
 export const removeSubjectFromDepartmentService = async ({
   departmentId,
   subjectId,
+  currentUserId,
+  currentUserType,
+  schoolId,
 }: {
   departmentId: string;
   subjectId: string;
+  currentUserId?: string;
+  currentUserType?: UserRole;
+  schoolId?: string;
 }) => {
-  const department = await prisma.department.findFirst({
-    where: {
-      OR: [
-        { id: departmentId },
-        { code: departmentId },
-      ],
-      isArchived: false,
-    },
+  const department = await resolveDepartmentForUser({
+    departmentId,
+    userId: currentUserId,
+    userType: currentUserType,
+    schoolId,
   });
 
   if (!department) {

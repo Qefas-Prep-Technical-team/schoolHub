@@ -69,5 +69,14 @@ export const departmentService = {
     const response = await apiClient.patch(`/academic/departments/${code}/archive`);
     const dept = response.data.data;
     return dept ? { ...dept, departmentId: dept.id, id: dept.code } : dept;
+  },
+
+  attachSubjects: async (departmentId: string, subjectIds: string[]): Promise<Department> => {
+    const response = await apiClient.post('/academic/departments/subjects/attach', {
+      departmentId,
+      subjectIds,
+    });
+    const dept = response.data.data;
+    return dept ? { ...dept, departmentId: dept.id, id: dept.code } : dept;
   }
 };

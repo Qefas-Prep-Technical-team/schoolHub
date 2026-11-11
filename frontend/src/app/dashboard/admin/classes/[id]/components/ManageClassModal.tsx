@@ -6,8 +6,9 @@ import { useUpdateClass, useAllTeachers } from '@/lib/api/hooks/useClasses';
 import { classService } from '../../services/classService';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { apiClient } from '@/lib/api/client';
-import { useSchoolProfile, useSchoolDepartments } from '@/lib/api/hooks/useSchool';
+import { useSchoolProfile, useSchoolDepartments, useUpdateSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { useSessions } from '@/lib/api/hooks/useSessions';
+import { getFilteredLevelSuggestions } from '@/utils/levelConstants';
 
 interface ManageClassModalProps {
   isOpen: boolean;
@@ -15,10 +16,10 @@ interface ManageClassModalProps {
   classData: any;
 }
 
-const ManageClassModal: React.FC<ManageClassModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  classData 
+const ManageClassModal: React.FC<ManageClassModalProps> = ({
+  isOpen,
+  onClose,
+  classData
 }) => {
   const [name, setName] = useState(classData?.name || '');
   const [section, setSection] = useState(classData?.section || '');
@@ -36,13 +37,35 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
 
   const { user } = useAuthStore();
   const updateClassMutation = useUpdateClass(classData?.id);
+  const updateSchoolProfileMutation = useUpdateSchoolProfile();
   const schoolId = user?.schools?.[0]?.schoolId || user?.tenantId || '';
   const { data: schoolProfile } = useSchoolProfile(schoolId);
   const { data: sessionsResponse } = useSessions(schoolId);
   const { data: departmentsResponse } = useSchoolDepartments(schoolId);
-  const availableLevels = schoolProfile?.levels || [];
+  const availableLevels: string[] = schoolProfile?.levels || [];
+  const levelSuggestions = getFilteredLevelSuggestions(availableLevels);
   const schoolSessions = Array.isArray(sessionsResponse) ? sessionsResponse : (sessionsResponse?.data || []);
   const schoolDepartments = Array.isArray(departmentsResponse) ? departmentsResponse : (departmentsResponse?.data || []);
+
+  const selectedSessionObj = schoolSessions.find(
+    (s: any) => s.id === session || s.name === session
+  );
+
+  const availableTermsForSelectedSession: string[] = React.useMemo(() => {
+    if (!selectedSessionObj) return [];
+    if (selectedSessionObj.termPeriods && selectedSessionObj.termPeriods.length > 0) {
+      const termMap: Record<string, string> = {
+        FIRST: "First Term",
+        SECOND: "Second Term",
+        THIRD: "Third Term",
+      };
+      return selectedSessionObj.termPeriods.map((tp: any) => {
+        const raw = String(tp.term);
+        return termMap[raw] || (raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase() + (raw.toLowerCase().includes("term") ? "" : " Term"));
+      });
+    }
+    return ["First Term", "Second Term", "Third Term"];
+  }, [selectedSessionObj]);
 
   // Initialize from classData
   useEffect(() => {
@@ -70,12 +93,12 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
   useEffect(() => {
     const fetchSchoolData = async () => {
       if (!isOpen || !user?.email) return;
-      
+
       setLoadingInitial(true);
       try {
         const statusRes = await apiClient.get(`/admin/admin-status/${user.email}`);
         const schoolId = statusRes.data.data.schoolAdmins?.[0]?.schoolId;
-        
+
         if (schoolId) {
           const [teachersData, studentsData] = await Promise.all([
             classService.getSchoolTeachers(schoolId),
@@ -96,6 +119,23 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Auto-save selected level to school profile if it's new
+    if (level && schoolId) {
+      const trimmed = level.trim();
+      const exists = availableLevels.some((l) => l.trim().toLowerCase() === trimmed.toLowerCase());
+      if (!exists) {
+        try {
+          await updateSchoolProfileMutation.mutateAsync({
+            schoolId,
+            data: { levels: [...availableLevels, trimmed] },
+          });
+        } catch (err) {
+          console.warn("Failed to auto-save level to school profile:", err);
+        }
+      }
+    }
+
     await updateClassMutation.mutateAsync({
       name,
       section,
@@ -111,8 +151,8 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
 
   const toggleTeacher = (teacherId: string) => {
     if (!teacherId) return;
-    setSelectedTeacherIds(prev => 
-      prev.includes(teacherId) 
+    setSelectedTeacherIds(prev =>
+      prev.includes(teacherId)
         ? prev.filter(id => id !== teacherId)
         : [...prev, teacherId]
     );
@@ -120,8 +160,8 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
 
   const toggleStudent = (studentId: string) => {
     if (!studentId) return;
-    setSelectedStudentIds(prev => 
-      prev.includes(studentId) 
+    setSelectedStudentIds(prev =>
+      prev.includes(studentId)
         ? prev.filter(id => id !== studentId)
         : [...prev, studentId]
     );
@@ -129,12 +169,12 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
 
   if (!isOpen) return null;
 
-  const filteredTeachers = (teachers || []).filter((t: any) => 
+  const filteredTeachers = (teachers || []).filter((t: any) =>
     t?.name?.toLowerCase().includes(teacherSearchTerm.toLowerCase()) ||
     t?.teacherCode?.toLowerCase().includes(teacherSearchTerm.toLowerCase())
   );
 
-  const filteredStudents = (students || []).filter((s: any) => 
+  const filteredStudents = (students || []).filter((s: any) =>
     s?.name?.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
     (s?.studentCode && s.studentCode.toLowerCase().includes(studentSearchTerm.toLowerCase())) ||
     (s?.email && s.email.toLowerCase().includes(studentSearchTerm.toLowerCase()))
@@ -160,7 +200,7 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
               <X size={20} />
             </button>
           </div>
-          
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -178,7 +218,7 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Class Level
@@ -189,9 +229,30 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 >
                   <option value="">No Level Assigned</option>
-                  {availableLevels.map((lvl: string, idx: number) => (
-                    <option key={idx} value={lvl}>{lvl}</option>
-                  ))}
+
+                  {availableLevels.length > 0 && (
+                    <optgroup label="School Levels">
+                      {availableLevels.map((lvl: string, idx: number) => (
+                        <option key={`school-${idx}`} value={lvl}>{lvl}</option>
+                      ))}
+                    </optgroup>
+                  )}
+
+                  {level &&
+                    !availableLevels.some((l) => l.toLowerCase() === level.toLowerCase()) &&
+                    !levelSuggestions.some((l) => l.toLowerCase() === level.toLowerCase()) && (
+                      <optgroup label="Current Selection">
+                        <option value={level}>{level}</option>
+                      </optgroup>
+                    )}
+
+                  {levelSuggestions.length > 0 && (
+                    <optgroup label="Suggested Levels">
+                      {levelSuggestions.map((lvl: string, idx: number) => (
+                        <option key={`sug-${idx}`} value={lvl}>{lvl}</option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
               </div>
             </div>
@@ -212,32 +273,37 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  Term
-                </label>
-                <select
-                  value={term}
-                  onChange={(e) => setTerm(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                >
-                  <option value="">Select Term</option>
-                  <option value="First Term">First Term</option>
-                  <option value="Second Term">Second Term</option>
-                  <option value="Third Term">Third Term</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Session (Academic Year)
                 </label>
                 <select
                   value={session}
-                  onChange={(e) => setSession(e.target.value)}
+                  onChange={(e) => {
+                    setSession(e.target.value);
+                    setTerm(''); // Reset term when session changes
+                  }}
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 >
                   <option value="">Select Session</option>
                   {schoolSessions.map((s: any) => (
                     <option key={s.id} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Term
+                </label>
+                <select
+                  value={term}
+                  onChange={(e) => setTerm(e.target.value)}
+                  disabled={!session}
+                  className={`w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${!session ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800' : ''
+                    }`}
+                >
+                  <option value="">{session ? 'Select Term' : 'Select a session first'}</option>
+                  {availableTermsForSelectedSession.map((termName: string, idx: number) => (
+                    <option key={idx} value={termName}>{termName}</option>
                   ))}
                 </select>
               </div>
@@ -253,18 +319,17 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
                     schoolDepartments.map((dept: any) => {
                       const isSelected = selectedDepartmentIds.includes(dept.id);
                       return (
-                        <div 
+                        <div
                           key={dept.id}
                           onClick={() => {
-                            setSelectedDepartmentIds(prev => 
+                            setSelectedDepartmentIds(prev =>
                               isSelected ? prev.filter(id => id !== dept.id) : [...prev, dept.id]
                             );
                           }}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer transition-all ${
-                            isSelected 
-                              ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400' 
-                              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-emerald-300'
-                          }`}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer transition-all ${isSelected
+                            ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400'
+                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-emerald-300'
+                            }`}
                         >
                           <div className={`w-3 h-3 rounded flex items-center justify-center border ${isSelected ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 dark:border-gray-600'}`}>
                             {isSelected && <Check size={10} className="text-white" strokeWidth={3} />}
@@ -277,7 +342,7 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
                 </div>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Teachers Column */}
               <div className="space-y-4">
@@ -285,7 +350,7 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
                   <Users size={18} className="text-primary" />
                   Assigned Teachers ({selectedTeacherIds.length})
                 </label>
-                
+
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                   <input
@@ -306,14 +371,13 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
                     <div className="py-4 text-center text-gray-500 text-sm italic">No matches</div>
                   ) : (
                     filteredTeachers.map((teacher: any) => (
-                      <div 
+                      <div
                         key={teacher.id}
                         onClick={() => toggleTeacher(teacher.id)}
-                        className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${
-                          selectedTeacherIds.includes(teacher.id)
-                            ? 'bg-primary/10 border-primary/20'
-                            : 'hover:bg-gray-50 dark:hover:bg-white/5 border-transparent'
-                        }`}
+                        className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${selectedTeacherIds.includes(teacher.id)
+                          ? 'bg-primary/10 border-primary/20'
+                          : 'hover:bg-gray-50 dark:hover:bg-white/5 border-transparent'
+                          }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs uppercase">
@@ -343,7 +407,7 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
                   <Users size={18} className="text-blue-500" />
                   Assign Students ({selectedStudentIds.length})
                 </label>
-                
+
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                   <input
@@ -364,14 +428,13 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
                     <div className="py-4 text-center text-gray-500 text-sm italic">No matches</div>
                   ) : (
                     filteredStudents.map((student: any) => (
-                      <div 
+                      <div
                         key={student.id}
                         onClick={() => toggleStudent(student.id)}
-                        className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${
-                          selectedStudentIds.includes(student.id)
-                            ? 'bg-blue-500/10 border-blue-500/20'
-                            : 'hover:bg-gray-50 dark:hover:bg-white/5 border-transparent'
-                        }`}
+                        className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${selectedStudentIds.includes(student.id)
+                          ? 'bg-blue-500/10 border-blue-500/20'
+                          : 'hover:bg-gray-50 dark:hover:bg-white/5 border-transparent'
+                          }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-600 font-bold text-xs uppercase">
@@ -395,7 +458,7 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
                 </div>
               </div>
             </div>
-            
+
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
               <button
                 type="button"

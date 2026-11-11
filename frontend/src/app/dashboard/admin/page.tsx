@@ -1,11 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useSchoolStats, useSchoolPerformanceAnalysis, useSchoolSettings, useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { useClasses } from '@/lib/api/hooks/useClasses';
 import { useFeatureAccess } from '@/lib/api/hooks/useFeatureAccess';
 import AdminDashboardSkeleton from './components/dashboard/AdminDashboardSkeleton';
+import ClassModal from './classes/components/ClassModal';
+import { Class } from './classes/services/classService';
+import {
+  SchoolAcademicSetupWizardModal,
+  getSetupWizardStorageKeys,
+} from './classes/components/setup-wizard/SchoolAcademicSetupWizardModal';
 
 // Dashboard Components
 import ExamStatus from './components/dashboard/ExamStatus';
@@ -30,16 +38,35 @@ export default function AdminDashboard() {
   const userSchools = (user as any)?.schools as Array<any> | undefined;
   const schoolId = userSchools?.[0]?.schoolId || (user as any)?.schoolId || user?.tenantId || '';
   const { data: stats, isLoading: statsLoading } = useSchoolStats(schoolId);
-  const { data: schoolProfile } = useSchoolProfile(schoolId);
+  const { data: schoolProfile, isLoading: profileLoading } = useSchoolProfile(schoolId);
   const schoolName = schoolProfile?.name || userSchools?.[0]?.name || userSchools?.[0]?.schoolName || (user as any)?.tenant?.name || 'Future Academy';
   const userName = user?.name || 'Admin';
   const adminRole = (user?.adminRole || user?.role) as AdminRole | undefined;
   const canViewFinance = canAdminRoleAccessFeature(adminRole, 'finance');
   const canViewBilling = canAdminRoleAccessFeature(adminRole, 'billing');
+  const canManageSchoolSetup = canAdminRoleAccessFeature(adminRole, 'schoolProfile');
 
   const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
   const [isWeeklyReportOpen, setIsWeeklyReportOpen] = useState(false);
-  const { data: rawClasses = [] } = useClasses(schoolId);
+  const [isSetupWizardOpen, setIsSetupWizardOpen] = useState(false);
+  const [isClassModalOpen, setIsClassModalOpen] = useState(false);
+  const { data: rawClasses = [], refetch: refetchClasses } = useClasses(schoolId);
+
+  // Auto-open the 5-step School Setup Wizard on /dashboard/admin strictly for authorized school setup admins
+  // and only when the database `schoolProfile.profileCompleted` is false (plus localStorage fallback).
+  useEffect(() => {
+    if (typeof window === 'undefined' || !schoolId || profileLoading || !schoolProfile) return;
+    if (!canManageSchoolSetup) return;
+
+    const { savedKey, dismissedKey } = getSetupWizardStorageKeys(schoolId);
+    const hasCompletedInDb = Boolean(schoolProfile.profileCompleted);
+    const hasSavedLocally = localStorage.getItem(savedKey) === 'true';
+    const hasDismissedLocally = localStorage.getItem(dismissedKey) === 'true';
+
+    if (!hasCompletedInDb && !hasSavedLocally && !hasDismissedLocally) {
+      setIsSetupWizardOpen(true);
+    }
+  }, [schoolId, profileLoading, schoolProfile, canManageSchoolSetup]);
 
   const classesList: ClassItem[] = Array.isArray(rawClasses)
     ? rawClasses.map((c: { id: string; name: string; section?: string; _count?: { enrollments?: number }; studentCount?: number; classCode?: string }) => ({
@@ -70,11 +97,25 @@ export default function AdminDashboard() {
       <div className="w-[95%] max-w-none mx-auto space-y-6">
 
         {/* Header Section */}
-        <div>
-          <p className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">{today}</p>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            Good morning, {userName} <span className="text-xl">👋</span>
-          </h1>
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">{today}</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              Good morning, {userName} <span className="text-xl">👋</span>
+            </h1>
+          </div>
+
+          {canManageSchoolSetup && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsSetupWizardOpen(true)}
+              className="h-10 px-4 rounded-xl text-xs font-bold border-indigo-200 dark:border-indigo-800/80 text-indigo-700 dark:text-indigo-300 bg-indigo-50/60 hover:bg-indigo-100/70 dark:bg-indigo-950/30 flex items-center gap-2 transition-all self-start sm:self-auto"
+            >
+              <Sparkles size={15} className="text-indigo-600 dark:text-indigo-400" />
+              School Setup Guide
+            </Button>
+          )}
         </div>
 
         {/* Top Hero & Glance Section */}
@@ -141,6 +182,25 @@ export default function AdminDashboard() {
           currentTerm={currentTerm}
           currentSession={currentSession}
           schoolProfile={schoolProfile}
+        />
+
+        {canManageSchoolSetup && (
+          <SchoolAcademicSetupWizardModal
+            isOpen={isSetupWizardOpen}
+            onClose={() => setIsSetupWizardOpen(false)}
+            schoolId={schoolId}
+            existingClasses={(rawClasses as Class[]) || []}
+            onClassesUpdated={refetchClasses}
+            onOpenFullClassModal={() => setIsClassModalOpen(true)}
+          />
+        )}
+
+        <ClassModal
+          isOpen={isClassModalOpen}
+          onClose={() => setIsClassModalOpen(false)}
+          onSuccess={refetchClasses}
+          classItem={null}
+          schoolId={schoolId}
         />
 
       </div>

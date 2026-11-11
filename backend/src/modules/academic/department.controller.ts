@@ -14,11 +14,11 @@ import { handleError } from "../../utils/error-handler";
 
 const serializeDepartment = (dept: any): any => {
   if (!dept) return dept;
-  
+
   if (Array.isArray(dept)) {
     return dept.map(serializeDepartment);
   }
-  
+
   return dept;
 };
 
@@ -80,7 +80,12 @@ export const getSingleDepartment = async (req: Request, res: Response) => {
     }
 
     const departmentId = req.params.id as string;
-    const department = await getSingleDepartmentService(departmentId);
+    const schoolId = (req.query.schoolId as string) || req.user.schoolId;
+    const department = await getSingleDepartmentService(departmentId, {
+      userId: req.user.id,
+      userType: req.user.userType as UserRole,
+      schoolId,
+    });
 
     return res.status(200).json({
       success: true,
@@ -115,6 +120,9 @@ export const updateDepartment = async (req: Request, res: Response) => {
       name,
       code,
       description,
+      currentUserId: req.user.id,
+      currentUserType: req.user.userType as UserRole,
+      schoolId: req.user.schoolId,
     });
 
     return res.status(200).json({
@@ -144,7 +152,11 @@ export const archiveDepartment = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, message: "Permission denied" });
     }
 
-    const department = await archiveDepartmentService(departmentId as string);
+    const department = await archiveDepartmentService(departmentId as string, {
+      userId: req.user.id,
+      userType: req.user.userType as UserRole,
+      schoolId: req.user.schoolId,
+    });
 
     return res.status(200).json({
       success: true,
@@ -177,6 +189,8 @@ export const attachSubjectsToDepartment = async (req: Request, res: Response) =>
       departmentId,
       subjectIds,
       currentUserId: req.user.id,
+      currentUserType: req.user.userType as UserRole,
+      schoolId: req.user.schoolId,
     });
 
     return res.status(200).json({
@@ -210,6 +224,9 @@ export const removeSubjectFromDepartment = async (req: Request, res: Response) =
     await removeSubjectFromDepartmentService({
       departmentId,
       subjectId,
+      currentUserId: req.user.id,
+      currentUserType: req.user.userType as UserRole,
+      schoolId: req.user.schoolId,
     });
 
     return res.status(200).json({

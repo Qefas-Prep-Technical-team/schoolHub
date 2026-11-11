@@ -55,10 +55,19 @@ export const createSubjectService = async ({
       throw new Error("A school subject with this code already exists");
     }
 
+    // Handle archived subject with the same [schoolId, code] constraint
+    let finalCode = code;
+    const archivedCollision = await prisma.subject.findFirst({
+      where: { schoolId, code: finalCode },
+    });
+    if (archivedCollision) {
+      finalCode = `${code}-${Date.now().toString(36).slice(-3).toUpperCase()}`;
+    }
+
     return prisma.subject.create({
       data: {
         name,
-        code,
+        code: finalCode,
         description: description || null,
         schoolId,
         teacherId: null,
@@ -121,10 +130,19 @@ export const createSubjectService = async ({
       throw new Error("A school subject with this code already exists");
     }
 
+    // Handle archived subject with the same [schoolId, code] constraint
+    let finalCode = code;
+    const archivedCollision = await prisma.subject.findFirst({
+      where: { schoolId, code: finalCode },
+    });
+    if (archivedCollision) {
+      finalCode = `${code}-${Date.now().toString(36).slice(-3).toUpperCase()}`;
+    }
+
     return prisma.subject.create({
       data: {
         name,
-        code,
+        code: finalCode,
         description: description || null,
         schoolId,
         teacherId: null,
@@ -150,7 +168,7 @@ export const getSubjectsService = async ({
     return prisma.subject.findMany({
       where: {
         isArchived: false,
-        schoolId, 
+        schoolId,
         scope: AcademicOwnershipScope.SCHOOL
       },
       include: {
@@ -421,7 +439,7 @@ export const attachTeachersToSubjectService = async ({
   // Sync teachers: Remove existing, add new
   await prisma.$transaction([
     prisma.teacherSubject.deleteMany({
-      where: { 
+      where: {
         subjectId,
         schoolId
       }

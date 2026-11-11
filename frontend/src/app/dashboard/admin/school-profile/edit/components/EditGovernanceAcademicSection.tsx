@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { DEFAULT_GRADING_SYSTEM } from '@/utils/gradingSystem';
+import { getFilteredLevelSuggestions } from '@/utils/levelConstants';
 import FormInput from './FormInput';
 import {
   EditableSchoolFormState,
@@ -151,6 +152,32 @@ export default function EditGovernanceAcademicSection({
               <Plus size={16} /> Add Level
             </button>
           </div>
+
+          {/* Quick Suggestions - filtered so matching levels never repeat */}
+          {(() => {
+            const suggestions = getFilteredLevelSuggestions(schoolData.levels || []);
+            if (suggestions.length === 0) return null;
+            return (
+              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  Quick add suggestions:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {suggestions.map((sug) => (
+                    <button
+                      key={sug}
+                      type="button"
+                      onClick={() => onChange('levels', [...(schoolData.levels || []), sug])}
+                      className="px-2.5 py-1 text-xs font-medium rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800 transition-colors flex items-center gap-1"
+                    >
+                      <Plus size={12} />
+                      {sug}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
