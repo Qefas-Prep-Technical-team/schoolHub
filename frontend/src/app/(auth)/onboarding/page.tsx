@@ -6,7 +6,7 @@ import { Building2, CheckCircle2, ChevronRight, Mail, Shield, UploadCloud, Setti
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import CheerAnimation from './_components/CheerAnimation';
-import { useAuthStore } from '../login/services/auth-store';
+import { useAuthStore, resolveUserDashboard } from '../login/services/auth-store';
 import Lottie from "lottie-react";
 import Success from "../../../lotties/Success.json";
 
@@ -170,7 +170,7 @@ function OnboardingContent() {
         useAuthStore.getState().setHasCompletedOnboarding(true);
         if (isAuthenticated || user) {
             // Honor a pending join redirect (e.g. from Google sign-up via class invite link)
-            router.push(pendingRedirect || getDashboardRoute(userType));
+            router.push(pendingRedirect || resolveUserDashboard(user, userType));
         } else {
             router.push(getLoginRoute(userType));
         }
@@ -248,7 +248,7 @@ function OnboardingContent() {
                   onClick={() => {
                     useAuthStore.getState().setHasCompletedOnboarding(true);
                     // Honor a pending join redirect (e.g. from Google sign-up via class invite link)
-                    router.push(pendingRedirect || getDashboardRoute(userType));
+                    router.push(pendingRedirect || resolveUserDashboard(user, userType));
                   }}
                   className="text-xs font-bold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors uppercase tracking-wider flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60"
                 >

@@ -294,21 +294,23 @@ export const sendEmailVerifiedEmail = async (email: string) => {
 export const sendSetupCompleteEmail = async (email: string) => {
   const isTest = process.env.RESEND_TEST?.trim() === 'true';
   const recipient = isTest ? (process.env.TEST_EMAIL as string)?.trim() : email;
+  const baseUrl = (process.env.FRONTEND_URL || 'https://qefashub.com').replace(/\/$/, '');
 
   return await sendMail({
     from: isTest ? 'onboarding@resend.dev' : (process.env.MAIL_FROM as string)?.trim(),
     to: recipient,
-    subject: `Your Account is Ready - Qefas Hub ${isTest ? "(Original: " + email + ")" : ""}`,
+    subject: `Welcome to Qefas Hub - School Administration Ready ${isTest ? "(Original: " + email + ")" : ""}`,
     html: buildEmail({
       illustration: 'success',
       testMode: isTest,
       originalRecipient: email,
       body: `
-        <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Account Fully Setup,</h1>
-        <p style="margin:0 0 20px 0;color:#475569;font-size:15px;line-height:1.7;">Welcome to the fleet! Your institutional identity has been successfully established and your password is now active.</p>
-        ${infoCard('Deployment Success: You can now proceed to your dashboard or complete your payment/trial initialization if you have not already.', 'success')}
-        ${ctaButton('Access Your Dashboard', `${(process.env.FRONTEND_URL || 'https://qefashub.com').replace(/\/$/, '')}/auth/login`)}
-        ${secondaryLink('Go to website', process.env.FRONTEND_URL || 'https://qefashub.com')}
+        <h1 style="margin:0 0 10px 0;font-size:24px;font-weight:900;color:#0f172a;letter-spacing:-0.5px;">Welcome to Qefas Hub!</h1>
+        <p style="margin:0 0 16px 0;color:#334155;font-size:15px;line-height:1.7;">Congratulations on completing your setup. You now have full access to manage your school's activities digitally through Qefas Hub—seamlessly connecting administrators, teachers, students, and parents in one unified ecosystem.</p>
+        <p style="margin:0 0 20px 0;color:#64748b;font-size:14px;line-height:1.6;">From managing classes, grading, and timetables to facilitating direct parent-teacher engagement and streamlined fee management, everything your institution needs is now at your fingertips.</p>
+        ${infoCard('Your School Admin Portal is fully active. You can begin organizing your academic terms, inviting teachers, and managing student profiles directly.', 'success')}
+        ${ctaButton('Access Your Admin Dashboard', `${baseUrl}/dashboard/admin`, '#2563eb')}
+        ${secondaryLink('Explore Qefas Hub', baseUrl)}
       `,
     }),
   });

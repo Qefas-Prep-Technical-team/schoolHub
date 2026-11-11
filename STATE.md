@@ -1,3 +1,35 @@
+### Wednesday, November 11, 2026
+- [x] Registration Checkboxes UI & UX Modernization (All User Roles):
+  - Completely redesigned the checkboxes across all registration flows:
+    - **School Admin** ([SchoolRegisterForm.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/school/components/SchoolRegisterForm.tsx))
+    - **Student** ([StudentRegistrationForm.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/student/components/StudentRegistrationForm.tsx))
+    - **Parent** ([ParentCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/parent/components/ParentCard.tsx))
+    - **Teacher** ([TeacherCard.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/signup/teacher/components/TeacherCard.tsx)) — both the Terms checkbox and the Independent Account checkbox.
+  - Upgraded from raw, squished native HTML inputs to modern, rounded card containers with:
+    - Custom rounded-lg check boxes with smooth scaling checkmarks (`scale-0 peer-checked:scale-100`).
+    - Dedicated role-themed accent colors (School: Blue, Student: Rose, Parent: Orange, Teacher: Emerald).
+    - Subtle hover glow, active scale micro-interactions, and role-tinted shadow effects (`peer-checked:shadow-sm`).
+    - Error ring states (`border-red-300 ring-1 ring-red-400/30`) when terms are not accepted.
+    - Clickable card containers with `e.stopPropagation()` on modal trigger buttons so terms/privacy links open modals cleanly without toggling the checkbox.
+  - Verified with `tsc --noEmit` (0 errors).
+
+- [x] Admin Onboarding & Dashboard Direct Routing Resolution:
+  - Fixed "Wrong Dashboard / Access Restricted" bounce when newly registered and verified administrators complete onboarding.
+  - Replaced legacy string-based route deduction `getDashboardRoute(userType)` in [frontend/src/app/(auth)/onboarding/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/(auth)/onboarding/page.tsx) with the unified role authority `resolveUserDashboard(user, userType)` across step completion and skip-tour paths.
+  - Updated [ProtectedAdminRoute.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/components/ProtectedAdminRoute.tsx) to recognize `['ADMIN', 'SCHOOL_OWNER', 'SUPER_ADMIN']`.
+  - Updated route protection hooks in [frontend/src/hooks/useProtectedRoute.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/hooks/useProtectedRoute.ts) and [frontend/src/utils/useProtectedRoute.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/utils/useProtectedRoute.ts) so that administrative user roles (`ADMIN`, `SCHOOL_OWNER`, `SUPER_ADMIN`, `isSchoolOwner`, `adminRole`) seamlessly pass the admin route restriction check without getting bounced to `/unauthorized`.
+
+- [x] Executive Admin Welcome & Setup Complete Email Revamp:
+  - In [backend/src/modules/auth/auth.service.ts](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/backend/src/modules/auth/auth.service.ts), modernized `sendSetupCompleteEmail`.
+  - Replaced robotic "fleet / deployment" copy with an inspiring, institutional welcome highlighting full digital access across administrators, teachers, students, and parents.
+  - Set direct call-to-action button to `/dashboard/admin` with brand theme styling.
+
+- [x] Academic Sessions First-Load Crash / Vercel Error Resolution (`/dashboard/admin/sessions`):
+  - Diagnosed initial load Vercel crash when navigating to `/dashboard/admin/sessions` on fresh admin accounts where no sessions or terms exist yet or have null/undefined timestamps.
+  - In [frontend/src/app/dashboard/admin/sessions/page.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/sessions/page.tsx), created and applied `formatSafeDate` with `isNaN` timestamp validation to prevent date-fns `RangeError: Invalid time value` from breaking the component rendering tree.
+  - In [frontend/src/app/dashboard/admin/sessions/components/SessionForm.tsx](file:///c:/Users/HP/Documents/GitHub/Qefas%20Project/schoolHub/frontend/src/app/dashboard/admin/sessions/components/SessionForm.tsx), fortified `formatDateForInput` with try-catch and valid date verification.
+  - Both frontend and backend passed strict TypeScript verification (`tsc --noEmit`) with 0 errors.
+
 ### Tuesday, November 10, 2026
 - [x] Full System Build Verification & Environment Diagnostics:
   - **Disk Space Recovery**: Diagnosed and cleared 5.75 GB of bloated webpack cache in `frontend/.next/cache`, recovering disk capacity to prevent `ENOSPC` write failures.

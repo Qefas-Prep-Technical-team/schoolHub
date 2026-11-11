@@ -119,39 +119,43 @@ export default function SchoolRegisterForm({
       {/* Terms — checkbox card */}
       <label
         htmlFor="school-terms"
-        className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-200 ${
+        className={`group flex items-start gap-3.5 p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 select-none shadow-sm ${
           registerErrors.acceptTerms
-            ? 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-900/10'
+            ? 'border-red-300 dark:border-red-800 bg-red-50/40 dark:bg-red-950/20 ring-1 ring-red-400/30'
             : isChecked
-              ? 'border-blue-400 dark:border-blue-600 bg-blue-50/50 dark:bg-blue-900/10'
-              : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/30 dark:hover:bg-blue-900/10'
+              ? 'border-blue-500/60 dark:border-blue-500/50 bg-blue-50/50 dark:bg-blue-950/25 shadow-blue-500/5'
+              : 'border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 hover:border-blue-300 dark:hover:border-blue-700/60 hover:bg-blue-50/20 dark:hover:bg-blue-950/15'
         }`}
       >
-        <input
-          type="checkbox"
-          id="school-terms"
-          {...registerForm('acceptTerms')}
-          className="sr-only"
-        />
-        <div
-          className="mt-0.5 w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center transition-all duration-200"
-          style={{
-            borderColor: isChecked ? BLUE : '#cbd5e1',
-            background: isChecked ? BLUE : 'transparent',
-          }}
-        >
-          {isChecked && (
-            <span className="material-symbols-outlined text-white text-[13px] font-bold">
+        <div className="relative mt-0.5 shrink-0">
+          <input
+            type="checkbox"
+            id="school-terms"
+            {...registerForm('acceptTerms')}
+            className="peer sr-only"
+          />
+          <div
+            className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${
+              isChecked
+                ? 'bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-500/30 scale-100'
+                : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 group-hover:border-blue-400 dark:group-hover:border-blue-600 scale-95 group-hover:scale-100'
+            }`}
+          >
+            <span
+              className={`material-symbols-outlined text-[14px] font-black transition-transform duration-200 ${
+                isChecked ? 'scale-100 text-white' : 'scale-0 text-transparent'
+              }`}
+            >
               check
             </span>
-          )}
+          </div>
         </div>
-        <span className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed select-none">
+        <span className="text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed font-normal pt-0.5">
           I agree to the{' '}
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onOpenTerms(); }}
-            className="font-semibold underline underline-offset-2 hover:opacity-80"
+            className="font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity"
             style={{ color: BLUE }}
           >
             Terms of Service
@@ -160,7 +164,7 @@ export default function SchoolRegisterForm({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onOpenPrivacy(); }}
-            className="font-semibold underline underline-offset-2 hover:opacity-80"
+            className="font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity"
             style={{ color: BLUE }}
           >
             Privacy Policy

@@ -217,13 +217,13 @@ export default function StudentGradesPage() {
   const { data: schoolClassesRes } = useClasses(schoolId);
   const schoolClasses = schoolClassesRes?.classes || (Array.isArray(schoolClassesRes) ? schoolClassesRes : []);
 
-  const { data: allAttemptsRes } = useStudentExamAttempts({ limit: 1000 });
-  const { data: allGradesRes } = useGrades(undefined, { limit: 1000 });
+  const { data: allAttemptsRes, isLoading: isQueryLoadingAttempts } = useStudentExamAttempts({ limit: 1000 });
+  const { data: allGradesRes, isLoading: isQueryLoadingGrades } = useGrades(undefined, { limit: 1000 });
   const { data: assignmentsData, isLoading: isLoadingAssignments } = useStudentAssignments({ limit: 100 });
   const studentAssignments: Assignment[] = assignmentsData?.assignments || [];
 
-  const allAttempts = allAttemptsRes?.attempts || [];
-  const allGrades = allGradesRes?.grades || [];
+  const allAttempts = allAttemptsRes?.attempts || ((allAttemptsRes as any)?.data && Array.isArray((allAttemptsRes as any).data) ? (allAttemptsRes as any).data : Array.isArray(allAttemptsRes) ? allAttemptsRes : []);
+  const allGrades = allGradesRes?.grades || ((allGradesRes as any)?.data && Array.isArray((allGradesRes as any).data) ? (allGradesRes as any).data : Array.isArray(allGradesRes) ? allGradesRes : []);
 
   // Extract distinct classes available for this student
   const availableClasses = useMemo(() => {
@@ -344,8 +344,8 @@ export default function StudentGradesPage() {
 
   const attempts = paginatedAttempts;
   const standaloneGrades = paginatedGrades;
-  const isLoadingAttempts = !allAttemptsRes;
-  const isLoadingGrades = !allGradesRes;
+  const isLoadingAttempts = isQueryLoadingAttempts;
+  const isLoadingGrades = isQueryLoadingGrades;
 
   // Group paginated items by date using date_sectioning_display standard
   const groupedAttempts = useMemo(() => {
@@ -828,7 +828,15 @@ export default function StudentGradesPage() {
                         {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-44 rounded-2xl" />)}
                       </div>
                     ) : attempts.length === 0 ? (
-                      <div className="p-8 text-center text-slate-500 font-medium">No examinations found.</div>
+                      <div className="flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30 text-center">
+                        <div className="w-14 h-14 rounded-2xl bg-pink-500/10 dark:bg-pink-500/15 border border-pink-500/20 text-pink-600 dark:text-pink-400 flex items-center justify-center mb-3.5 shadow-sm">
+                          <GraduationCap className="w-7 h-7" />
+                        </div>
+                        <h4 className="text-base font-bold text-slate-800 dark:text-white">No examinations found</h4>
+                        <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 max-w-sm mt-1 leading-relaxed">
+                          You do not have any published examinations or completed test attempts recorded yet.
+                        </p>
+                      </div>
                     ) : (
                       <div className="space-y-6">
                         {groupedAttempts.map((section) => (
@@ -910,7 +918,15 @@ export default function StudentGradesPage() {
                     {isLoadingAttempts ? (
                       <div className="p-6"><Skeleton className="h-10 w-full rounded-xl" /></div>
                     ) : attempts.length === 0 ? (
-                      <div className="p-8 text-center text-slate-500 font-medium">No examinations found.</div>
+                      <div className="flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30 text-center">
+                        <div className="w-14 h-14 rounded-2xl bg-pink-500/10 dark:bg-pink-500/15 border border-pink-500/20 text-pink-600 dark:text-pink-400 flex items-center justify-center mb-3.5 shadow-sm">
+                          <GraduationCap className="w-7 h-7" />
+                        </div>
+                        <h4 className="text-base font-bold text-slate-800 dark:text-white">No examinations found</h4>
+                        <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 max-w-sm mt-1 leading-relaxed">
+                          You do not have any published examinations or completed test attempts recorded yet.
+                        </p>
+                      </div>
                     ) : (
                       <div className="space-y-6">
                         {groupedAttempts.map((section) => (

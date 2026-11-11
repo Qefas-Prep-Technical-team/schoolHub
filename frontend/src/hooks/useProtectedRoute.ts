@@ -72,10 +72,14 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
 
       // Check user type restrictions
       if (requireAuth && isAuthenticated && userTypes.length > 0) {
-        const userRole = (user?.userType || user?.role)?.toUpperCase();
-        const hasAccess = userTypes.some(
-          (type) => type.toUpperCase() === userRole
-        );
+        const userRole = (user?.userType || user?.role || user?.adminRole)?.toUpperCase();
+        const isAdminRole = userRole === 'ADMIN' || userRole === 'SCHOOL_OWNER' || userRole === 'SUPER_ADMIN' || !!user?.adminRole || !!user?.isSchoolOwner;
+        const hasAccess = userTypes.some((type) => {
+          const upperType = type.toUpperCase();
+          if (upperType === userRole) return true;
+          if ((upperType === 'ADMIN' || upperType === 'SCHOOL_OWNER') && isAdminRole) return true;
+          return false;
+        });
 
         if (!hasAccess) {
           // console.log("🔐 Redirecting: User type not allowed");

@@ -149,28 +149,35 @@ export default function StudentRegistrationForm({
         </div>
 
         {/* Terms */}
-        <div className="flex items-start gap-2.5 pt-2">
-          <div className="relative mt-0.5">
+        <label
+          htmlFor="student-terms"
+          className={`group flex items-start gap-3.5 p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 select-none shadow-sm ${
+            errors.acceptTerms
+              ? 'border-red-300 dark:border-red-800 bg-red-50/40 dark:bg-red-950/20 ring-1 ring-red-400/30'
+              : 'border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 hover:border-rose-300 dark:hover:border-rose-700/60 hover:bg-rose-50/20 dark:hover:bg-rose-950/15'
+          }`}
+        >
+          <div className="relative mt-0.5 shrink-0">
             <input
               type="checkbox"
               id="student-terms"
               {...register('acceptTerms')}
-              className="peer w-4 h-4 rounded appearance-none border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 transition-all cursor-pointer"
-              style={{ accentColor: ROSE }}
+              className="peer sr-only"
             />
-            <span
-              className="absolute inset-0 rounded flex items-center justify-center pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity"
-              style={{ background: ROSE }}
+            <div
+              className="w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all duration-200 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 group-hover:border-rose-400 dark:group-hover:border-rose-600 peer-checked:border-rose-600 peer-checked:bg-rose-600 peer-checked:shadow-sm peer-checked:shadow-rose-500/30"
             >
-              <span className="material-symbols-outlined text-white text-[11px] font-bold">check</span>
-            </span>
+              <span className="material-symbols-outlined text-[14px] font-black scale-0 peer-checked:scale-100 text-white transition-transform duration-200">
+                check
+              </span>
+            </div>
           </div>
-          <label htmlFor="student-terms" className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed cursor-pointer">
+          <span className="text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed font-normal pt-0.5">
             I agree to the{' '}
             <button
               type="button"
-              onClick={onOpenTerms}
-              className="font-semibold hover:underline underline-offset-2"
+              onClick={(e) => { e.stopPropagation(); onOpenTerms(); }}
+              className="font-semibold hover:underline underline-offset-2 transition-opacity"
               style={{ color: ROSE }}
             >
               Terms of Service
@@ -178,14 +185,14 @@ export default function StudentRegistrationForm({
             and{' '}
             <button
               type="button"
-              onClick={onOpenPrivacy}
-              className="font-semibold hover:underline underline-offset-2"
+              onClick={(e) => { e.stopPropagation(); onOpenPrivacy(); }}
+              className="font-semibold hover:underline underline-offset-2 transition-opacity"
               style={{ color: ROSE }}
             >
               Privacy Policy
             </button>
-          </label>
-        </div>
+          </span>
+        </label>
         {errors.acceptTerms && (
           <p className="text-red-500 text-xs -mt-3">{errors.acceptTerms.message}</p>
         )}

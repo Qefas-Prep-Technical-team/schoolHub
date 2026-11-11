@@ -73,7 +73,13 @@ type SessionFormValues = z.infer<typeof sessionSchema>;
 // Helper to format date for input[type="date"]
 const formatDateForInput = (dateString?: string) => {
   if (!dateString) return "";
-  return new Date(dateString).toISOString().split('T')[0];
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "";
+    return d.toISOString().split('T')[0];
+  } catch {
+    return "";
+  }
 };
 
 export function SessionForm({ 

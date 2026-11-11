@@ -62,16 +62,16 @@ const StudentList: React.FC<StudentListProps> = ({ students, isLoading, error, s
   if (students.length === 0) {
     return (
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center py-20 rounded-xl sm:rounded-2xl border border-dashed border-slate-200 dark:border-emerald-800/50 bg-slate-50/50 dark:bg-emerald-950/60/10"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col items-center justify-center py-16 px-4 rounded-xl sm:rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 text-center shadow-xs"
       >
-        <div className="p-4 rounded-full bg-slate-100 dark:bg-emerald-900/40 mb-4">
-          <User className="w-8 h-8 text-slate-400" />
+        <div className="size-14 sm:size-16 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 text-slate-400 dark:text-emerald-400 flex items-center justify-center mb-4 shadow-inner">
+          <User className="size-7 sm:size-8" />
         </div>
-        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">No students found</h3>
-        <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm text-center">
-          {searchQuery ? `No results for "${searchQuery}"` : "This class has no students assigned yet."}
+        <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">No students found</h3>
+        <p className="text-slate-500 dark:text-slate-400 mt-1.5 text-xs sm:text-sm max-w-sm text-center leading-relaxed">
+          {searchQuery ? `No results matching "${searchQuery}"` : "This class has no students assigned yet."}
         </p>
       </motion.div>
     );

@@ -14,7 +14,7 @@ import { useSchoolProfile } from '@/lib/api/hooks/useSchool';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { Assessment, StatCard } from './components/types';
 import { timeFilters } from './components/data';
-import { Loader2, Search, X, LayoutGrid, List, GraduationCap, ChevronDown, Download } from 'lucide-react';
+import { Loader2, Search, X, LayoutGrid, List, GraduationCap, ChevronDown, Download, AlertCircle, RefreshCw } from 'lucide-react';
 import Pagination from '@/components/ui/Pagination';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -119,10 +119,11 @@ export default function StudentAssessmentsPage() {
 
     // Fetch student stats and published assessments
     const { data: statsData, isLoading: isStatsLoading } = useStudentStats();
-    const { data: examsData = [], isLoading: isExamsLoading, isError: isExamsError } = useExams(examsQueryFilters);
-    const { data: assignmentsResponse, isLoading: isAssignmentsLoading, isError: isAssignmentsError } = useStudentAssignments({ limit: 100 });
+    const { data: examsData = [], isLoading: isExamsLoading, isError: isExamsError, refetch: refetchExams } = useExams(examsQueryFilters);
+    const { data: assignmentsResponse, isLoading: isAssignmentsLoading, isError: isAssignmentsError, refetch: refetchAssignments } = useStudentAssignments({ limit: 100 });
 
-    const isError = isExamsError || isAssignmentsError;
+    // Only flag genuine network/server failure when BOTH critical endpoints fail
+    const isError = isExamsError && isAssignmentsError;
     const isLoading = isExamsLoading || isAssignmentsLoading || isStatsLoading || isProfileLoading;
 
     // Normalize and combine assessments and assignments
@@ -431,9 +432,24 @@ export default function StudentAssessmentsPage() {
 
     if (isError) {
         return (
-            <div className="w-full py-20 flex flex-col items-center justify-center gap-4 text-center">
-                <p className="text-xl font-bold text-rose-500">Failed to load assessments</p>
-                <p className="text-sm text-slate-500 dark:text-zinc-400">Please check your network connection and try again.</p>
+            <div className="w-full py-16 px-4 flex flex-col items-center justify-center text-center">
+                <div className="size-16 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-4 shadow-xs">
+                    <AlertCircle className="size-8" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">Failed to load assessments</h3>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-zinc-400 max-w-sm mt-1.5 leading-relaxed">
+                    We were unable to connect to the assessment service. Please check your internet connection and try again.
+                </p>
+                <button
+                    onClick={() => {
+                        refetchExams();
+                        refetchAssignments();
+                    }}
+                    className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-semibold text-xs sm:text-sm shadow-sm transition-all active:scale-[0.98]"
+                >
+                    <RefreshCw className="size-4" />
+                    Retry
+                </button>
             </div>
         );
     }

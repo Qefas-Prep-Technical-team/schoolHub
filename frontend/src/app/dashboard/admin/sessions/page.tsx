@@ -27,6 +27,17 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+function formatSafeDate(dateVal?: string | Date | null, formatStr: string = 'MMM d, yyyy'): string {
+  if (!dateVal) return '-';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '-';
+    return format(d, formatStr);
+  } catch {
+    return '-';
+  }
+}
+
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -187,7 +198,7 @@ export default function SessionsPage() {
                 </div>
                 <p className="text-sm text-slate-500 flex items-center gap-2 font-medium">
                   <Clock size={14} className="text-slate-400" /> 
-                  {format(new Date(activeSession.startDate), 'MMM d, yyyy')} — {format(new Date(activeSession.endDate), 'MMM d, yyyy')}
+                  {formatSafeDate(activeSession.startDate, 'MMM d, yyyy')} — {formatSafeDate(activeSession.endDate, 'MMM d, yyyy')}
                 </p>
               </div>
             </div>
@@ -297,7 +308,7 @@ export default function SessionsPage() {
                           </div>
                           <p className="text-sm font-medium text-slate-500 flex items-center gap-1.5">
                             <Clock size={12} className="text-slate-400"/>
-                            {format(new Date(session.startDate), 'MMM d, yyyy')} — {format(new Date(session.endDate), 'MMM d, yyyy')}
+                            {formatSafeDate(session.startDate, 'MMM d, yyyy')} — {formatSafeDate(session.endDate, 'MMM d, yyyy')}
                           </p>
                         </div>
                       </div>
@@ -377,7 +388,7 @@ export default function SessionsPage() {
                           <div key={term.id} className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
                             <p className="text-[11px] font-semibold text-slate-500 mb-1">{term.term} Term</p>
                             <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                              {format(new Date(term.startDate), 'MMM d')} - {format(new Date(term.endDate), 'MMM d, yyyy')}
+                              {formatSafeDate(term.startDate, 'MMM d')} - {formatSafeDate(term.endDate, 'MMM d, yyyy')}
                             </p>
                           </div>
                         ))}
@@ -401,7 +412,7 @@ export default function SessionsPage() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{s.name}</p>
-                        <p className="text-[10px] font-medium text-slate-500 uppercase mt-0.5">Archived {format(new Date(s.updatedAt), 'MMM yyyy')}</p>
+                        <p className="text-[10px] font-medium text-slate-500 uppercase mt-0.5">Archived {formatSafeDate(s.updatedAt, 'MMM yyyy')}</p>
                       </div>
                     </div>
                   ))}
