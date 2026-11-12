@@ -84,7 +84,27 @@ export default function AdminDashboard() {
   const { data: hasPerformanceAccess, isLoading: checkingAccess } = useFeatureAccess(aiInsightsFeatureKey, schoolId);
   const { data: analysis } = useSchoolPerformanceAnalysis(schoolId, stats, { enabled: !!hasPerformanceAccess });
 
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase();
+  const [now, setNow] = useState<Date>(() => new Date());
+
+  useEffect(() => {
+    setNow(new Date());
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const currentHour = now.getHours();
+  const timeOfDayGreeting =
+    currentHour >= 5 && currentHour < 12
+      ? 'Good morning'
+      : currentHour >= 12 && currentHour < 17
+        ? 'Good afternoon'
+        : currentHour >= 17 && currentHour < 21
+          ? 'Good evening'
+          : 'Good night';
+
+  const today = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase();
   const currentTerm = 'Term 1';
   const currentSession = '2025-26';
 
@@ -101,7 +121,7 @@ export default function AdminDashboard() {
           <div>
             <p className="text-[10px] font-bold text-slate-500 tracking-widest uppercase mb-1">{today}</p>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              Good morning, {userName} <span className="text-xl">👋</span>
+              {timeOfDayGreeting}, {userName} <span className="text-xl">👋</span>
             </h1>
           </div>
 

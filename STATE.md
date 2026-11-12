@@ -7933,3 +7933,7 @@ px tsc --noEmit).- [x] **Bidirectional Auto-Setup & Linking Between Suggested De
 - [x] **Mobile-First Responsiveness Enhancements for 5-Step School Setup Wizard**:
   - Updated SchoolAcademicSetupWizardModal.tsx with w-[95vw] sm:max-w-[860px], max-h-[92dvh], a horizontally scrollable 5-step header bar on mobile (lex overflow-x-auto sm:grid sm:grid-cols-5), and full-width touch-friendly navigation buttons in the mobile footer.
   - Updated StepSchoolProfile.tsx, StepAcademicLevels.tsx, StepCurriculumSubjects.tsx, StepAcademicDepartments.tsx, and StepClassAndOnboardingGuide.tsx so all header banners, search filters, subject/department grids, and action buttons stack and expand cleanly on narrow mobile viewports.
+- [x] **Dynamic Time-of-Day Greetings on Admin & Teacher Dashboards**:
+  - Updated rontend/src/app/dashboard/admin/page.tsx (/dashboard/admin) and rontend/src/app/dashboard/teacher/components/dashboard/TeacherHero.tsx (/dashboard/teacher) to dynamically compute "Good morning" (< 12:00), "Good afternoon" (12:00–16:59), or "Good evening" (>= 17:00) based on the user's real-time local clock, refreshing automatically every 60 seconds.
+- [x] **Added "Good night" Time-of-Day Greeting to Admin & Teacher Dashboards**:
+  - Updated rontend/src/app/dashboard/admin/page.tsx and rontend/src/app/dashboard/teacher/components/dashboard/TeacherHero.tsx to display "Good morning" ( 5:00–11:59), "Good afternoon" (12:00–16:59), "Good evening" (17:00–20:59), and "Good night" (21:00–04:59).
