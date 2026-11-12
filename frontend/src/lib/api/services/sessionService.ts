@@ -14,6 +14,8 @@ export interface Session {
   startDate: string;
   endDate: string;
   status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
+  isActive?: boolean;
+  currentTerm?: "FIRST" | "SECOND" | "THIRD";
   schoolId: string;
   createdAt: string;
   updatedAt: string;
@@ -26,6 +28,7 @@ export interface CreateSessionDTO {
   endDate: string;
   schoolId: string;
   isActive?: boolean;
+  currentTerm?: "FIRST" | "SECOND" | "THIRD";
   termDates?: { term: string; startDate: string; endDate: string }[];
 }
 

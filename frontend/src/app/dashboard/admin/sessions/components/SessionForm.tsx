@@ -36,6 +36,7 @@ const sessionSchema = z.object({
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
   schoolId: z.string().min(1, "School ID is required"),
+  currentTerm: z.enum(["FIRST", "SECOND", "THIRD"]).optional().default("FIRST"),
   termDates: z.array(termDateSchema),
 }).superRefine((data, ctx) => {
   const sessionStart = new Date(data.startDate);
@@ -113,6 +114,7 @@ export function SessionForm({
       startDate: "",
       endDate: "",
       schoolId: schoolId,
+      currentTerm: "FIRST",
       termDates: [
         { term: "FIRST",  startDate: "", endDate: "" },
         { term: "SECOND", startDate: "", endDate: "" },
@@ -129,6 +131,9 @@ export function SessionForm({
     setValue("name", initialData.name);
     setValue("startDate", formatDateForInput(initialData.startDate));
     setValue("endDate", formatDateForInput(initialData.endDate));
+    if (initialData.currentTerm) {
+      setValue("currentTerm", initialData.currentTerm);
+    }
     const termOrder: Array<"FIRST" | "SECOND" | "THIRD"> = ["FIRST", "SECOND", "THIRD"];
     termOrder.forEach((termKey, idx) => {
       const found = initialData.termPeriods?.find((t) => t.term === termKey);
@@ -210,6 +215,22 @@ export function SessionForm({
           </div>
           {errors.endDate && <p className="text-red-500 text-xs font-medium mt-1">{errors.endDate.message}</p>}
         </div>
+      </div>
+
+      {/* Active Term Selector */}
+      <div className="space-y-2">
+        <Label htmlFor="currentTerm" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+          Active Term
+        </Label>
+        <select
+          id="currentTerm"
+          {...register("currentTerm")}
+          className="w-full h-10 px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-primary transition-all text-sm font-medium text-slate-900 dark:text-white outline-none"
+        >
+          <option value="FIRST">First Term</option>
+          <option value="SECOND">Second Term</option>
+          <option value="THIRD">Third Term</option>
+        </select>
       </div>
 
       {/* Term Schedule — all terms are individually optional */}

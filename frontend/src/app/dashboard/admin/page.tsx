@@ -5,6 +5,7 @@ import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
 import { useSchoolStats, useSchoolPerformanceAnalysis, useSchoolSettings, useSchoolProfile } from '@/lib/api/hooks/useSchool';
+import { useSessions } from '@/lib/api/hooks/useSessions';
 import { useClasses } from '@/lib/api/hooks/useClasses';
 import { useFeatureAccess } from '@/lib/api/hooks/useFeatureAccess';
 import AdminDashboardSkeleton from './components/dashboard/AdminDashboardSkeleton';
@@ -78,6 +79,7 @@ export default function AdminDashboard() {
     }))
     : [];
   const { data: settings } = useSchoolSettings(schoolId);
+  const { data: sessionsResponse } = useSessions(schoolId);
   const primaryColor = settings?.themeColor || '#2563eb';
 
   const aiInsightsFeatureKey = process.env.NEXT_PUBLIC_FEATURE_KEY_AI_INSIGHTS || 'aiInsights';
@@ -105,8 +107,75 @@ export default function AdminDashboard() {
           : 'Good night';
 
   const today = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase();
-  const currentTerm = 'Term 1';
-  const currentSession = '2025-26';
+
+  const formatTermLabel = (raw?: string | null): string | null => {
+    if (!raw) return null;
+    const upper = raw.trim().toUpperCase();
+    if (upper === 'FIRST' || upper === 'FIRST TERM' || upper === 'TERM 1' || upper === '1ST TERM') return 'First Term';
+    if (upper === 'SECOND' || upper === 'SECOND TERM' || upper === 'TERM 2' || upper === '2ND TERM') return 'Second Term';
+    if (upper === 'THIRD' || upper === 'THIRD TERM' || upper === 'TERM 3' || upper === '3RD TERM') return 'Third Term';
+    return raw.trim();
+  };
+
+  const sessionsList: Array<any> = Array.isArray(sessionsResponse?.data)
+    ? sessionsResponse.data
+    : Array.isArray(sessionsResponse)
+      ? sessionsResponse
+      : Array.isArray((schoolProfile as any)?.sessions)
+        ? (schoolProfile as any).sessions
+        : [];
+
+  const activeSessionObj =
+    sessionsList.find((s) => s.isActive || s.status === 'ACTIVE') ||
+    (settings?.defaultSession ? sessionsList.find((s) => s.name === settings.defaultSession) : undefined) ||
+    sessionsList[0] ||
+    (schoolProfile as any)?.sessions?.[0];
+
+  const resolveActiveTermFromSession = (sessionObj: any, currentDate: Date): string | null => {
+    if (!sessionObj) return null;
+    const termPeriods: Array<any> = Array.isArray(sessionObj.termPeriods) ? sessionObj.termPeriods : [];
+
+    // 1. Check if current date falls within any configured term period
+    for (const tp of termPeriods) {
+      if (!tp?.startDate || !tp?.endDate) continue;
+      const start = new Date(tp.startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(tp.endDate);
+      end.setHours(23, 59, 59, 999);
+      if (currentDate >= start && currentDate <= end) {
+        const formatted = formatTermLabel(tp.term);
+        if (formatted) return formatted;
+      }
+    }
+
+    // 2. If only one term period has dates configured on the session, use it
+    if (termPeriods.length === 1) {
+      return formatTermLabel(termPeriods[0].term);
+    }
+
+    // 3. If session.currentTerm was explicitly set to SECOND or THIRD, prioritize it
+    const explicitSessionTerm = formatTermLabel(sessionObj.currentTerm || sessionObj.term);
+    if (explicitSessionTerm && explicitSessionTerm !== 'First Term') {
+      return explicitSessionTerm;
+    }
+
+    // 4. Check admin-configured Default Term in School Settings
+    const settingsTerm = formatTermLabel(settings?.defaultTerm);
+    if (settingsTerm) return settingsTerm;
+
+    // 5. Fallback to session.currentTerm (e.g. First Term)
+    return explicitSessionTerm;
+  };
+
+  const currentTerm =
+    resolveActiveTermFromSession(activeSessionObj, now) ||
+    formatTermLabel(settings?.defaultTerm) ||
+    'First Term';
+
+  const currentSession =
+    activeSessionObj?.name ||
+    settings?.defaultSession ||
+    `${now.getFullYear()}/${now.getFullYear() + 1}`;
 
   if (statsLoading || checkingAccess) {
     return <AdminDashboardSkeleton />;

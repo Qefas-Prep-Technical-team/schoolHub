@@ -136,7 +136,37 @@ export default function ExamsQuizzesOverview() {
           ...e,
           _tabType: (e.category === 'QUIZ' ? 'quizzes' : e.category === 'CA' ? 'ca' : 'exams') as 'exams' | 'quizzes' | 'ca',
         }));
-        const taggedPapers = (allPapers || []).map((p: any) => ({
+
+        // Collect paper IDs that belong to single-paper / single-subject assessments in taggedExams
+        // so they do not appear twice on the "All Assessments" tab (once as Exam and once as Subject Paper).
+        const singleAssessmentPaperIds = new Set<string>();
+        for (const e of taggedExams) {
+          const isSingleAssessment =
+            e.mode === 'SINGLE_SUBJECT' ||
+            e.category === 'QUIZ' ||
+            e.category === 'CA' ||
+            (Array.isArray(e.subjectExamPapers) && e.subjectExamPapers.length === 1 && e.mode !== 'COMBINED');
+          if (isSingleAssessment && Array.isArray(e.subjectExamPapers)) {
+            for (const sep of e.subjectExamPapers) {
+              const pId = sep?.id || sep?.subjectPaperId || sep?.subjectPaper?.id;
+              if (pId) singleAssessmentPaperIds.add(pId);
+            }
+          }
+        }
+
+        const deduplicatedPapers = (allPapers || []).filter((p: any) => {
+          if (singleAssessmentPaperIds.has(p.id)) return false;
+          if (Array.isArray(p.exams) && p.exams.length > 0) {
+            const belongsOnlyToSingleAssessment = p.exams.every((link: any) => {
+              const ex = link.exam || link;
+              return ex?.mode === 'SINGLE_SUBJECT' || ex?.category === 'QUIZ' || ex?.category === 'CA';
+            });
+            if (belongsOnlyToSingleAssessment) return false;
+          }
+          return true;
+        });
+
+        const taggedPapers = deduplicatedPapers.map((p: any) => ({
           ...p,
           _tabType: 'subject-papers' as const,
           type: 'subject_paper',
@@ -230,12 +260,13 @@ export default function ExamsQuizzesOverview() {
       });
     }
 
-    // Strict assigned-subject filter for CA, quizzes, subject-papers, and assignments
+    // Strict assigned-subject filter for CA, quizzes, single-subject exams, subject-papers, and assignments.
+    // Even if a teacher has 0 assigned subjects, this filter still runs so they only see assessments
+    // they personally created, assigned to their subjects, or multi-paper terminal exams for their class.
     const mySubjectIds = new Set((subjectsData || []).map((s: any) => s.id || s.subjectId).filter(Boolean));
     const mySubjectNames = new Set((subjectsData || []).map((s: any) => (s.name || s.subject?.name || '').toLowerCase()).filter(Boolean));
-    const hasSubjectRestriction = mySubjectIds.size > 0 || mySubjectNames.size > 0;
 
-    if (!isPersonal && hasSubjectRestriction) {
+    if (!isPersonal) {
       list = list.filter(item => {
         const effectiveType = item._tabType || (
           item.type === 'assignment' ? 'assignment' :
@@ -245,11 +276,11 @@ export default function ExamsQuizzesOverview() {
                   'exams'
         );
 
-        // Terminal exams can be viewed by class teachers even across multiple subjects
-        if (effectiveType === 'exams') return true;
+        // Multi-paper terminal exams can be viewed by class teachers even across multiple subjects
+        if (effectiveType === 'exams' && item.mode === 'COMBINED') return true;
 
-        // For CA, quizzes, subject-papers, and assignments:
-        // Must belong to teacher's assigned subject OR be created by the teacher
+        // For CA, quizzes, single-subject exams, subject-papers, and assignments:
+        // Must belong to teacher's assigned subject OR be created/assigned directly to the teacher
         const isCreator = item.teacherId === user?.id || item.teacherId === (user as any)?.tenantId;
         if (isCreator) return true;
 
@@ -263,7 +294,7 @@ export default function ExamsQuizzesOverview() {
         const isAssignedDirectly = item.assignedTeachers?.some((t: any) => t.id === user?.id || t.id === (user as any)?.tenantId);
         if (isAssignedDirectly) return true;
 
-        // Check attached papers (for CA or quiz containers)
+        // Check attached papers (for single-subject exam, CA, or quiz containers)
         if (Array.isArray(item.subjectExamPapers) && item.subjectExamPapers.length > 0) {
           return item.subjectExamPapers.some((sep: any) => {
             const paper = sep.subjectPaper || sep;
@@ -605,8 +636,8 @@ export default function ExamsQuizzesOverview() {
                   <button
                     onClick={() => setViewMode('list')}
                     className={`p-2 rounded-lg cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${viewMode === 'list'
-                        ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md'
-                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                      ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md'
+                      : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                       }`}
                     title="List View"
                   >
@@ -615,8 +646,8 @@ export default function ExamsQuizzesOverview() {
                   <button
                     onClick={() => setViewMode('grid')}
                     className={`p-2 rounded-lg cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${viewMode === 'grid'
-                        ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md'
-                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                      ? 'bg-white dark:bg-slate-700 text-primary dark:text-white shadow-md'
+                      : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                       }`}
                     title="Grid View"
                   >
@@ -871,16 +902,16 @@ function TabButton({
       whileTap={{ scale: 0.96 }}
       onClick={onClick}
       className={`relative flex items-center cursor-pointer gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-300 overflow-hidden focus:outline-none shrink-0 whitespace-nowrap select-none ${active
-          ? 'text-white shadow-md shadow-emerald-600/20'
-          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30'
+        ? 'text-white shadow-md shadow-emerald-600/20'
+        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30'
         }`}
     >
       <Icon size={14} className="relative z-10 shrink-0" strokeWidth={2.5} />
       <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider relative z-10">{label}</span>
       {typeof count === 'number' && (
         <span className={`relative z-10 px-1.5 py-0.5 text-[9px] font-black rounded-md ${active
-            ? 'bg-white/20 text-white'
-            : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
+          ? 'bg-white/20 text-white'
+          : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
           }`}>
           {count}
         </span>

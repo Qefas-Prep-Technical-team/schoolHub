@@ -12,7 +12,7 @@ import { handleError } from "../../utils/error-handler";
 
 export const createSession = async (req: Request, res: Response) => {
   try {
-    const { schoolId, name, startDate, endDate, isActive, termDates } = req.body;
+    const { schoolId, name, startDate, endDate, isActive, currentTerm, termDates } = req.body;
 
     if (!req.user || req.user.userType !== UserRole.ADMIN) {
       return res.status(403).json({
@@ -28,6 +28,7 @@ export const createSession = async (req: Request, res: Response) => {
       startDate,
       endDate,
       isActive,
+      currentTerm,
       termDates,
     });
 
@@ -79,7 +80,7 @@ export const getActiveSession = async (req: Request, res: Response) => {
 export const updateSession = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, startDate, endDate, isActive, termDates } = req.body;
+    const { name, startDate, endDate, isActive, currentTerm, termDates } = req.body;
 
     if (!req.user || req.user.userType !== UserRole.ADMIN) {
       return res.status(403).json({
@@ -93,6 +94,7 @@ export const updateSession = async (req: Request, res: Response) => {
       startDate,
       endDate,
       isActive,
+      currentTerm,
       termDates,
     });
 

@@ -14,6 +14,10 @@ import { updateCurrentSchoolContext } from "utils/update-current-school";
 import { hasActiveSchoolLink } from "../academic/academic.permissions";
 import { StudentLifecycleService } from "../student/student.lifecycle.service";
 import { createNotification } from "../notification/notification.service";
+import {
+  formatAdminPosition,
+  resolveInitiatorIdentity,
+} from "../notification/services/notification-sender.util";
 
 type CreateClassInput = {
   currentUserId: string;
@@ -64,6 +68,9 @@ export const createClassService = async ({
         schoolId,
         active: true,
       },
+      include: {
+        admin: { select: { name: true } },
+      },
     });
 
     if (!schoolAdmin) {
@@ -108,6 +115,10 @@ export const createClassService = async ({
     // Notify assigned teachers
     if (teacherIds && teacherIds.length > 0) {
       const validTeacherIds = teacherIds.filter(Boolean);
+      const senderName = schoolAdmin.admin?.name || "School Admin";
+      const senderRole = formatAdminPosition(schoolAdmin.role);
+      const byLine = schoolAdmin.admin?.name ? ` by ${senderName} (${senderRole})` : "";
+
       for (const tId of validTeacherIds) {
         createNotification({
           recipientType: "TEACHER",
@@ -116,8 +127,16 @@ export const createClassService = async ({
           senderId: currentUserId,
           type: "ACADEMIC",
           title: "Assigned to New Class",
-          message: `You have been assigned to teach ${createdClass.name}${createdClass.section ? ` (${createdClass.section})` : ""}.`,
+          message: `You have been assigned to teach ${createdClass.name}${createdClass.section ? ` (${createdClass.section})` : ""}${byLine}.`,
           link: `/dashboard/teacher/my-classes/${createdClass.id}`,
+          meta: {
+            classId: createdClass.id,
+            className: createdClass.name,
+            schoolId,
+            senderName,
+            senderRole,
+            adminName: senderName,
+          },
         }).catch(err => console.error(`[Notification] Failed to notify teacher ${tId}:`, err));
       }
     }
@@ -1196,17 +1215,40 @@ export const updateClassService = async ({
   // Notify newly assigned teachers
   if (teacherIds && teacherIds.length > 0) {
     const newlyAssigned = teacherIds.filter(id => Boolean(id) && !existingTeacherIds.has(id));
-    for (const tId of newlyAssigned) {
-      createNotification({
-        recipientType: "TEACHER",
-        recipientId: tId,
-        senderType: currentUserType === "TEACHER" ? "TEACHER" : "ADMIN",
-        senderId: currentUserId || undefined,
-        type: "ACADEMIC",
-        title: "Assigned to Class",
-        message: `You have been assigned to teach ${updatedClass.name}${updatedClass.section ? ` (${updatedClass.section})` : ""}.`,
-        link: `/dashboard/teacher/my-classes/${updatedClass.id}`,
-      }).catch(err => console.error(`[Notification] Failed to notify teacher ${tId}:`, err));
+    if (newlyAssigned.length > 0) {
+      const initiator = await resolveInitiatorIdentity({
+        userId: currentUserId,
+        userType: currentUserType,
+        schoolId: updatedClass.schoolId,
+      });
+      const byLine = initiator
+        ? ` by ${initiator.senderName} (${initiator.senderRole})`
+        : "";
+
+      for (const tId of newlyAssigned) {
+        createNotification({
+          recipientType: "TEACHER",
+          recipientId: tId,
+          senderType: initiator?.senderType || (currentUserType === "TEACHER" ? "TEACHER" : "ADMIN"),
+          senderId: initiator?.senderId || currentUserId || undefined,
+          type: "ACADEMIC",
+          title: "Assigned to Class",
+          message: `You have been assigned to teach ${updatedClass.name}${updatedClass.section ? ` (${updatedClass.section})` : ""}${byLine}.`,
+          link: `/dashboard/teacher/my-classes/${updatedClass.id}`,
+          meta: {
+            classId: updatedClass.id,
+            className: updatedClass.name,
+            schoolId: updatedClass.schoolId,
+            ...(initiator
+              ? {
+                senderName: initiator.senderName,
+                senderRole: initiator.senderRole,
+                adminName: initiator.senderName,
+              }
+              : {}),
+          },
+        }).catch(err => console.error(`[Notification] Failed to notify teacher ${tId}:`, err));
+      }
     }
   }
 

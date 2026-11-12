@@ -1,10 +1,13 @@
 import prisma, { withRetry } from "../../../config/database";
+import { formatAdminPosition } from "./notification-sender.util";
 
 export interface RawNotificationItem {
   id: string;
   title: string;
   message: string;
   type: string;
+  recipientId?: string;
+  recipientType?: string;
   senderId?: string | null;
   senderType?: string | null;
   meta?: unknown;
@@ -18,6 +21,17 @@ export interface RawNotificationItem {
   [key: string]: unknown;
 }
 
+const ACADEMIC_ADMIN_NOTIFICATION_TITLES = new Set([
+  "subject assignment",
+  "subject unassigned",
+  "class assignment",
+  "class unassigned",
+  "assigned to class",
+  "assigned to new class",
+  "students promoted",
+  "student promoted",
+]);
+
 export const enrichNotificationsWithSenders = async <
   T extends RawNotificationItem,
 >(
@@ -28,6 +42,7 @@ export const enrichNotificationsWithSenders = async <
   const parentSenderIds = new Set<string>();
   const adminSenderIds = new Set<string>();
   const schoolSenderIds = new Set<string>();
+  const teacherRecipientsMissingSender = new Set<string>();
 
   for (const n of visibleNotifications) {
     if (n.senderId && n.senderType) {
@@ -36,61 +51,148 @@ export const enrichNotificationsWithSenders = async <
       else if (n.senderType === "PARENT") parentSenderIds.add(n.senderId);
       else if (n.senderType === "ADMIN") adminSenderIds.add(n.senderId);
       else if (n.senderType === "SCHOOL") schoolSenderIds.add(n.senderId);
+    } else if (
+      n.recipientId &&
+      n.recipientType === "TEACHER" &&
+      ACADEMIC_ADMIN_NOTIFICATION_TITLES.has((n.title || "").trim().toLowerCase())
+    ) {
+      teacherRecipientsMissingSender.add(n.recipientId);
     }
   }
 
-  const [students, teachers, parents, admins, schools] = await Promise.all([
+  const [students, teachers, parents, admins, schools, fallbackTeacherSchools] = await Promise.all([
     studentSenderIds.size > 0
       ? withRetry(
-          () =>
-            prisma.student.findMany({
-              where: { id: { in: Array.from(studentSenderIds) } },
-              select: { id: true, name: true },
-            }),
-          "notification.senders.students",
-        )
+        () =>
+          prisma.student.findMany({
+            where: { id: { in: Array.from(studentSenderIds) } },
+            select: { id: true, name: true },
+          }),
+        "notification.senders.students",
+      )
       : [],
     teacherSenderIds.size > 0
       ? withRetry(
-          () =>
-            prisma.teacher.findMany({
-              where: { id: { in: Array.from(teacherSenderIds) } },
-              select: { id: true, name: true },
-            }),
-          "notification.senders.teachers",
-        )
+        () =>
+          prisma.teacher.findMany({
+            where: { id: { in: Array.from(teacherSenderIds) } },
+            select: { id: true, name: true },
+          }),
+        "notification.senders.teachers",
+      )
       : [],
     parentSenderIds.size > 0
       ? withRetry(
-          () =>
-            prisma.parent.findMany({
-              where: { id: { in: Array.from(parentSenderIds) } },
-              select: { id: true, fullName: true },
-            }),
-          "notification.senders.parents",
-        )
+        () =>
+          prisma.parent.findMany({
+            where: { id: { in: Array.from(parentSenderIds) } },
+            select: { id: true, fullName: true },
+          }),
+        "notification.senders.parents",
+      )
       : [],
     adminSenderIds.size > 0
       ? withRetry(
-          () =>
-            prisma.admin.findMany({
-              where: { id: { in: Array.from(adminSenderIds) } },
-              select: { id: true, name: true },
-            }),
-          "notification.senders.admins",
-        )
+        () =>
+          prisma.admin.findMany({
+            where: { id: { in: Array.from(adminSenderIds) } },
+            select: {
+              id: true,
+              name: true,
+              schoolAdmins: {
+                where: { active: true },
+                select: { role: true, schoolId: true },
+                orderBy: { createdAt: "desc" },
+              },
+            },
+          }),
+        "notification.senders.admins",
+      )
       : [],
     schoolSenderIds.size > 0
       ? withRetry(
-          () =>
-            prisma.school.findMany({
-              where: { id: { in: Array.from(schoolSenderIds) } },
-              select: { id: true, name: true },
-            }),
-          "notification.senders.schools",
-        )
+        () =>
+          prisma.school.findMany({
+            where: { id: { in: Array.from(schoolSenderIds) } },
+            select: { id: true, name: true },
+          }),
+        "notification.senders.schools",
+      )
+      : [],
+    teacherRecipientsMissingSender.size > 0
+      ? withRetry(
+        () =>
+          prisma.teacher.findMany({
+            where: { id: { in: Array.from(teacherRecipientsMissingSender) } },
+            select: {
+              id: true,
+              activeSchoolId: true,
+              primarySchoolId: true,
+              schoolId: true,
+            },
+          }),
+        "notification.senders.fallbackTeacherSchools",
+      )
       : [],
   ]);
+
+  const fallbackSchoolIds = new Set<string>();
+  const teacherSchoolIdMap = new Map<string, string>();
+  for (const t of fallbackTeacherSchools) {
+    const resolvedSchoolId = t.activeSchoolId || t.primarySchoolId || t.schoolId;
+    if (resolvedSchoolId) {
+      fallbackSchoolIds.add(resolvedSchoolId);
+      teacherSchoolIdMap.set(t.id, resolvedSchoolId);
+    }
+  }
+
+  const schoolLeadershipBySchoolId = new Map<string, { name: string; role: string }>();
+  if (fallbackSchoolIds.size > 0) {
+    const schoolLeadAdmins = await withRetry(
+      () =>
+        prisma.schoolAdmin.findMany({
+          where: {
+            schoolId: { in: Array.from(fallbackSchoolIds) },
+            active: true,
+          },
+          include: {
+            admin: { select: { id: true, name: true } },
+          },
+          orderBy: { createdAt: "asc" },
+        }),
+      "notification.senders.schoolLeadership",
+    );
+
+    const priorityOrder: Record<string, number> = {
+      PRINCIPAL: 1,
+      SCHOOL_OWNER: 2,
+      REGISTRAR: 3,
+      ACCOUNTANT: 4,
+      SUPPORT: 5,
+    };
+
+    for (const sa of schoolLeadAdmins) {
+      const existing = schoolLeadershipBySchoolId.get(sa.schoolId);
+      const currentRank = priorityOrder[sa.role] ?? 99;
+      if (!existing) {
+        schoolLeadershipBySchoolId.set(sa.schoolId, {
+          name: sa.admin.name,
+          role: formatAdminPosition(sa.role),
+        });
+      } else {
+        const existingRoleEntry = Object.entries(priorityOrder).find(
+          ([key]) => formatAdminPosition(key) === existing.role,
+        );
+        const existingRank = existingRoleEntry ? existingRoleEntry[1] : 99;
+        if (currentRank < existingRank) {
+          schoolLeadershipBySchoolId.set(sa.schoolId, {
+            name: sa.admin.name,
+            role: formatAdminPosition(sa.role),
+          });
+        }
+      }
+    }
+  }
 
   const senderNameMap = new Map<string, { name: string; role: string }>();
   students.forEach((s) =>
@@ -102,9 +204,13 @@ export const enrichNotificationsWithSenders = async <
   parents.forEach((p) =>
     senderNameMap.set(`PARENT:${p.id}`, { name: p.fullName, role: "Parent" }),
   );
-  admins.forEach((a) =>
-    senderNameMap.set(`ADMIN:${a.id}`, { name: a.name, role: "School Admin" }),
-  );
+  admins.forEach((a) => {
+    const primaryRole = a.schoolAdmins?.[0]?.role;
+    senderNameMap.set(`ADMIN:${a.id}`, {
+      name: a.name,
+      role: formatAdminPosition(primaryRole),
+    });
+  });
   schools.forEach((sc) =>
     senderNameMap.set(`SCHOOL:${sc.id}`, { name: sc.name, role: "School" }),
   );
@@ -183,6 +289,22 @@ export const enrichNotificationsWithSenders = async <
       }
     }
 
+    if (!senderName && n.recipientId && n.recipientType === "TEACHER") {
+      const normalizedTitle = (n.title || "").trim().toLowerCase();
+      if (ACADEMIC_ADMIN_NOTIFICATION_TITLES.has(normalizedTitle)) {
+        const metaSchoolId = meta.schoolId as string | undefined;
+        const resolvedSchoolId =
+          metaSchoolId || teacherSchoolIdMap.get(n.recipientId);
+        if (resolvedSchoolId) {
+          const leadAdmin = schoolLeadershipBySchoolId.get(resolvedSchoolId);
+          if (leadAdmin) {
+            senderName = leadAdmin.name;
+            senderRole = senderRole || leadAdmin.role;
+          }
+        }
+      }
+    }
+
     if (!senderName) {
       if (n.senderType === "STUDENT") {
         senderName = "Student";
@@ -204,7 +326,7 @@ export const enrichNotificationsWithSenders = async <
         senderName = "School Administration";
         senderRole = "School";
       } else {
-        senderName = "System";
+        senderName = "Qefas Hub";
         senderRole = "System";
       }
     }

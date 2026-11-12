@@ -199,6 +199,8 @@ export const attachTeachersToSubject = async (req: Request, res: Response) => {
       subjectId: subjectId as string,
       teacherIds,
       schoolId: schoolId || req.user.schoolId,
+      initiatorUserId: req.user.id,
+      initiatorUserType: req.user.userType,
     });
 
     return res.status(200).json({

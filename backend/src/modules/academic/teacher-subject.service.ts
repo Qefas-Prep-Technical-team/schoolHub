@@ -1,6 +1,8 @@
 import prisma from "../../config/database";
 import { LinkEntityType } from "@prisma/client";
 import { hasActiveSchoolLink } from "./academic.permissions";
+import { createNotification } from "../notification/notification.service";
+import { resolveInitiatorIdentity } from "../notification/services/notification-sender.util";
 
 export const assignTeacherToSubjectService = async ({
   adminId,
@@ -33,7 +35,7 @@ export const assignTeacherToSubjectService = async ({
     throw new Error("Subject does not belong to this school");
   }
 
-  return prisma.teacherSubject.upsert({
+  const assignment = await prisma.teacherSubject.upsert({
     where: {
       teacherId_subjectId_schoolId: {
         teacherId,
@@ -48,6 +50,40 @@ export const assignTeacherToSubjectService = async ({
       schoolId,
     },
   });
+
+  const initiator = await resolveInitiatorIdentity({
+    userId: adminId,
+    userType: "ADMIN",
+    schoolId,
+  });
+  const byLine = initiator
+    ? ` by ${initiator.senderName} (${initiator.senderRole})`
+    : "";
+
+  await createNotification({
+    recipientType: "TEACHER",
+    recipientId: teacherId,
+    senderType: initiator?.senderType || "ADMIN",
+    senderId: initiator?.senderId || adminId,
+    type: "ACADEMIC",
+    title: "Subject Assignment",
+    message: `You have been assigned to teach ${subject.name}${byLine}.`,
+    link: `/dashboard/teacher/subjects/${subject.id}`,
+    meta: {
+      subjectId: subject.id,
+      subjectName: subject.name,
+      schoolId,
+      ...(initiator
+        ? {
+          senderName: initiator.senderName,
+          senderRole: initiator.senderRole,
+          adminName: initiator.senderName,
+        }
+        : {}),
+    },
+  });
+
+  return assignment;
 };
 
 export const getTeacherSubjectsService = async ({

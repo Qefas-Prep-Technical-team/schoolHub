@@ -88,19 +88,22 @@ export default function ExamsPage() {
 
   // Map backend exam format to frontend exam format
   const exams: Exam[] = useMemo(() => {
-    console.log("LOG: Recomputing exams", { 
+    console.log("LOG: Recomputing exams", {
       examsCount: data?.exams?.length,
       authorizedSubjectIds: Array.from(authorizedSubjectIds),
       authorizedSubjects: Array.from(authorizedSubjects)
     });
-    
+
     const hasAuthorizedFilter = authorizedSubjectIds.size > 0 || authorizedSubjects.size > 0;
 
     const filteredRawExams = (data?.exams || []).filter((e: any) => {
       // Must strictly belong to this class if classId is defined on the exam
       if (e.classId && e.classId !== classId) return false;
-      if (!hasAuthorizedFilter) return true;
       if (e.teacherId && currentTeacherId && e.teacherId === currentTeacherId) return true;
+      // Multi-subject terminal exams can be viewed by class teachers for their class
+      const isMultiSubjectTerminalExam =
+        (e.category === 'EXAM' || !e.category) && e.mode === 'COMBINED';
+      if (isMultiSubjectTerminalExam) return true;
       if (e.subjectId && authorizedSubjectIds.has(e.subjectId)) return true;
       if (e.subject?.id && authorizedSubjectIds.has(e.subject.id)) return true;
       const examSubName = (e.subject?.name || e.subject || '').toLowerCase();
@@ -116,16 +119,37 @@ export default function ExamsPage() {
       return false;
     });
 
+    // Exclude subject papers that are already represented by a single-paper / single-subject exam in filteredRawExams
+    const examLinkedPaperIds = new Set<string>();
+    for (const e of filteredRawExams) {
+      const isSingleAssessment =
+        e.mode === 'SINGLE_SUBJECT' ||
+        e.category === 'QUIZ' ||
+        e.category === 'CA' ||
+        (Array.isArray(e.subjectExamPapers) && e.subjectExamPapers.length === 1 && e.mode !== 'COMBINED');
+      if (isSingleAssessment && Array.isArray(e.subjectExamPapers)) {
+        for (const sep of e.subjectExamPapers) {
+          const pId = sep?.id || sep?.subjectPaperId || sep?.subjectPaper?.id;
+          if (pId) examLinkedPaperIds.add(pId);
+        }
+      }
+    }
+
     const filteredRawPapers = (data?.papers || []).filter((p: any) => {
-      // Check if paper is linked to an exam for another class
+      if (examLinkedPaperIds.has(p.id)) return false;
+      // Check if paper is linked to an exam for another class or a single-subject/quiz/CA exam
       if (Array.isArray(p.exams) && p.exams.length > 0) {
+        const belongsOnlyToSingleAssessment = p.exams.every((pe: any) => {
+          const ex = pe.exam || pe;
+          return ex?.mode === 'SINGLE_SUBJECT' || ex?.category === 'QUIZ' || ex?.category === 'CA';
+        });
+        if (belongsOnlyToSingleAssessment) return false;
         const hasMatchingClass = p.exams.some((pe: any) => {
           const ex = pe.exam || pe;
           return !ex?.classId || ex.classId === classId;
         });
         if (!hasMatchingClass) return false;
       }
-      if (!hasAuthorizedFilter) return true;
       if (p.teacherId && currentTeacherId && p.teacherId === currentTeacherId) return true;
       const subId = p.subject?.id || p.subjectId;
       if (subId && authorizedSubjectIds.has(subId)) return true;
@@ -148,123 +172,123 @@ export default function ExamsPage() {
     };
 
     return [
-    ...filteredRawExams.map((e: any) => {
-      const myPaper = e.subjectExamPapers?.find((sep: any) => {
-        const subId = sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId || sep.subject?.id;
-        const subName = (sep.subjectPaper?.subject?.name || sep.subject?.name || '').toLowerCase();
-        const hasId = authorizedSubjectIds.has(subId);
-        const hasName = authorizedSubjects.has(subName);
-        const isMyPaper = (sep.teacherId && currentTeacherId && sep.teacherId === currentTeacherId) || (sep.subjectPaper?.teacherId && currentTeacherId && sep.subjectPaper?.teacherId === currentTeacherId);
-        return hasId || hasName || isMyPaper;
-      });
+      ...filteredRawExams.map((e: any) => {
+        const myPaper = e.subjectExamPapers?.find((sep: any) => {
+          const subId = sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId || sep.subject?.id;
+          const subName = (sep.subjectPaper?.subject?.name || sep.subject?.name || '').toLowerCase();
+          const hasId = authorizedSubjectIds.has(subId);
+          const hasName = authorizedSubjects.has(subName);
+          const isMyPaper = (sep.teacherId && currentTeacherId && sep.teacherId === currentTeacherId) || (sep.subjectPaper?.teacherId && currentTeacherId && sep.subjectPaper?.teacherId === currentTeacherId);
+          return hasId || hasName || isMyPaper;
+        });
 
-      const relevantSubjectPapers = (e.subjectExamPapers || []).filter((sep: any) => {
-        if (!hasAuthorizedFilter) return true;
-        const subId = sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId || sep.subject?.id;
-        const subName = (sep.subjectPaper?.subject?.name || sep.subject?.name || '').toLowerCase();
-        const isMyPaper = (sep.teacherId && currentTeacherId && sep.teacherId === currentTeacherId) || (sep.subjectPaper?.teacherId && currentTeacherId && sep.subjectPaper?.teacherId === currentTeacherId);
-        return (subId && authorizedSubjectIds.has(subId)) || (subName && authorizedSubjects.has(subName)) || isMyPaper;
-      });
+        const relevantSubjectPapers = (e.subjectExamPapers || []).filter((sep: any) => {
+          if (!hasAuthorizedFilter) return true;
+          const subId = sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId || sep.subject?.id;
+          const subName = (sep.subjectPaper?.subject?.name || sep.subject?.name || '').toLowerCase();
+          const isMyPaper = (sep.teacherId && currentTeacherId && sep.teacherId === currentTeacherId) || (sep.subjectPaper?.teacherId && currentTeacherId && sep.subjectPaper?.teacherId === currentTeacherId);
+          return (subId && authorizedSubjectIds.has(subId)) || (subName && authorizedSubjects.has(subName)) || isMyPaper;
+        });
 
-      const assessmentType = normalizeCategory(e.category, e.title);
+        const assessmentType = normalizeCategory(e.category, e.title);
 
-      const examPaperTotalMarks = relevantSubjectPapers.reduce((sum: number, sep: any) => {
-        const pMarks = Number(sep.totalMarks || sep.subjectPaper?.totalMarks || sep.paper?.totalMarks || 0);
-        const qMarks = (sep.questions || sep.subjectPaper?.questions || sep.paper?.questions || []).reduce(
-          (qSum: number, q: any) => qSum + (Number(q.marks) || 1),
-          0
-        );
-        return sum + (pMarks > 0 ? pMarks : qMarks);
-      }, 0);
+        const examPaperTotalMarks = relevantSubjectPapers.reduce((sum: number, sep: any) => {
+          const pMarks = Number(sep.totalMarks || sep.subjectPaper?.totalMarks || sep.paper?.totalMarks || 0);
+          const qMarks = (sep.questions || sep.subjectPaper?.questions || sep.paper?.questions || []).reduce(
+            (qSum: number, q: any) => qSum + (Number(q.marks) || 1),
+            0
+          );
+          return sum + (pMarks > 0 ? pMarks : qMarks);
+        }, 0);
 
-      const calculatedTotalMarks = Number(e.totalMarks || 0) > 0 ? Number(e.totalMarks) : examPaperTotalMarks;
+        const calculatedTotalMarks = Number(e.totalMarks || 0) > 0 ? Number(e.totalMarks) : examPaperTotalMarks;
 
-      const examPaperTotalQuestions = relevantSubjectPapers.reduce((sum: number, sep: any) => {
-        return sum + Number(
-          sep.questions?.length ||
-          sep.totalQuestions ||
-          sep._count?.questions ||
-          sep.subjectPaper?.questions?.length ||
-          sep.paper?.questions?.length ||
-          0
-        );
-      }, 0);
+        const examPaperTotalQuestions = relevantSubjectPapers.reduce((sum: number, sep: any) => {
+          return sum + Number(
+            sep.questions?.length ||
+            sep.totalQuestions ||
+            sep._count?.questions ||
+            sep.subjectPaper?.questions?.length ||
+            sep.paper?.questions?.length ||
+            0
+          );
+        }, 0);
 
-      const calculatedQuestions = Number(e.totalQuestions || 0) > 0 ? Number(e.totalQuestions) : examPaperTotalQuestions;
+        const calculatedQuestions = Number(e.totalQuestions || 0) > 0 ? Number(e.totalQuestions) : examPaperTotalQuestions;
 
-      return {
-      id: e.id,
-      title: e.title,
-      type: assessmentType,
-      subjects: [
-        ...(relevantSubjectPapers.map((sep: any) => sep.subjectPaper?.subject?.name || sep.subject?.name) || []),
-        e.subject?.name || e.subject
-      ].filter(Boolean),
-      subjectIds: [
-        ...(relevantSubjectPapers.map((sep: any) => sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId || sep.subject?.id) || []),
-        e.subject?.id || e.subjectId
-      ].filter(Boolean),
-      teacherId: e.teacherId,
-      questions: calculatedQuestions,
-      totalMarks: calculatedTotalMarks,
-      scheduledDate: new Date(e.startDate || e.createdAt),
-      status: e.status?.toLowerCase() || 'draft',
-      createdAt: new Date(e.createdAt),
-      updatedAt: new Date(e.updatedAt),
-      classId: classId,
-      subjectPaperIds: relevantSubjectPapers.map((sep: any) => sep.subjectPaperId).filter(Boolean),
-      mySubjectPaperId: myPaper?.subjectPaperId || undefined,
-      subjectPapers: relevantSubjectPapers.map((sep: any) => {
-        const title = sep.title || sep.subjectPaper?.title || sep.paper?.title || sep.subjectPaper?.subject?.name || sep.subject?.name || 'Untitled Subject Paper';
-        const subjectId = sep.subject?.id || sep.subjectId || sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId;
-        const subjectName = sep.subject?.name || sep.subjectPaper?.subject?.name;
-        const pQuestions = Number(sep.questions?.length || sep.totalQuestions || sep._count?.questions || sep.subjectPaper?.questions?.length || sep.paper?.questions?.length || 0);
-        const pMarksRaw = Number(sep.totalMarks || sep.subjectPaper?.totalMarks || sep.paper?.totalMarks || 0);
-        const qSumMarks = (sep.questions || sep.subjectPaper?.questions || sep.paper?.questions || []).reduce(
-          (sum: number, q: any) => sum + (Number(q.marks) || 1),
-          0
-        );
-        const pMarks = pMarksRaw > 0 ? pMarksRaw : qSumMarks;
-        
         return {
-          id: sep.id || sep.subjectPaperId || sep.subjectPaper?.id,
-          title: title,
-          subjectId: subjectId,
-          subjectName: subjectName !== title ? subjectName : undefined,
-          questionsCount: pQuestions,
-          totalMarks: pMarks
+          id: e.id,
+          title: e.title,
+          type: assessmentType,
+          subjects: [
+            ...(relevantSubjectPapers.map((sep: any) => sep.subjectPaper?.subject?.name || sep.subject?.name) || []),
+            e.subject?.name || e.subject
+          ].filter(Boolean),
+          subjectIds: [
+            ...(relevantSubjectPapers.map((sep: any) => sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId || sep.subjectId || sep.subject?.id) || []),
+            e.subject?.id || e.subjectId
+          ].filter(Boolean),
+          teacherId: e.teacherId,
+          questions: calculatedQuestions,
+          totalMarks: calculatedTotalMarks,
+          scheduledDate: new Date(e.startDate || e.createdAt),
+          status: e.status?.toLowerCase() || 'draft',
+          createdAt: new Date(e.createdAt),
+          updatedAt: new Date(e.updatedAt),
+          classId: classId,
+          subjectPaperIds: relevantSubjectPapers.map((sep: any) => sep.subjectPaperId).filter(Boolean),
+          mySubjectPaperId: myPaper?.subjectPaperId || undefined,
+          subjectPapers: relevantSubjectPapers.map((sep: any) => {
+            const title = sep.title || sep.subjectPaper?.title || sep.paper?.title || sep.subjectPaper?.subject?.name || sep.subject?.name || 'Untitled Subject Paper';
+            const subjectId = sep.subject?.id || sep.subjectId || sep.subjectPaper?.subject?.id || sep.subjectPaper?.subjectId;
+            const subjectName = sep.subject?.name || sep.subjectPaper?.subject?.name;
+            const pQuestions = Number(sep.questions?.length || sep.totalQuestions || sep._count?.questions || sep.subjectPaper?.questions?.length || sep.paper?.questions?.length || 0);
+            const pMarksRaw = Number(sep.totalMarks || sep.subjectPaper?.totalMarks || sep.paper?.totalMarks || 0);
+            const qSumMarks = (sep.questions || sep.subjectPaper?.questions || sep.paper?.questions || []).reduce(
+              (sum: number, q: any) => sum + (Number(q.marks) || 1),
+              0
+            );
+            const pMarks = pMarksRaw > 0 ? pMarksRaw : qSumMarks;
+
+            return {
+              id: sep.id || sep.subjectPaperId || sep.subjectPaper?.id,
+              title: title,
+              subjectId: subjectId,
+              subjectName: subjectName !== title ? subjectName : undefined,
+              questionsCount: pQuestions,
+              totalMarks: pMarks
+            };
+          })
+        };
+      }),
+      ...filteredRawPapers.map((p: any) => {
+        const assessmentType = normalizeCategory(p.category, p.title);
+        const paperMarksRaw = Number(p.totalMarks || 0);
+        const questionCount = Number(p.questionsCount || p.totalQuestions || p.questions?.length || p._count?.questions || 0);
+        const questionsSum = Array.isArray(p.questions)
+          ? p.questions.reduce((sum: number, q: any) => sum + (Number(q.marks) || 1), 0)
+          : questionCount;
+        const calculatedPaperMarks = paperMarksRaw > 0 ? paperMarksRaw : questionsSum;
+
+        return {
+          id: p.id,
+          title: p.title || 'Untitled Subject Paper',
+          type: assessmentType,
+          subjects: [p.subject?.name || p.subject].filter(Boolean),
+          subjectIds: [p.subject?.id || p.subjectId].filter(Boolean),
+          teacherId: p.teacherId,
+          questions: questionCount,
+          totalMarks: calculatedPaperMarks,
+          scheduledDate: new Date(p.createdAt),
+          status: p.status === 'APPROVED' ? 'published' : 'draft',
+          createdAt: new Date(p.createdAt),
+          updatedAt: new Date(p.updatedAt),
+          classId: classId,
+          subjectPaperIds: [p.id],
+          mySubjectPaperId: p.id
         };
       })
-    };
-    }),
-    ...filteredRawPapers.map((p: any) => {
-      const assessmentType = normalizeCategory(p.category, p.title);
-      const paperMarksRaw = Number(p.totalMarks || 0);
-      const questionCount = Number(p.questionsCount || p.totalQuestions || p.questions?.length || p._count?.questions || 0);
-      const questionsSum = Array.isArray(p.questions)
-        ? p.questions.reduce((sum: number, q: any) => sum + (Number(q.marks) || 1), 0)
-        : questionCount;
-      const calculatedPaperMarks = paperMarksRaw > 0 ? paperMarksRaw : questionsSum;
-
-      return {
-        id: p.id,
-        title: p.title || 'Untitled Subject Paper',
-        type: assessmentType,
-        subjects: [p.subject?.name || p.subject].filter(Boolean),
-        subjectIds: [p.subject?.id || p.subjectId].filter(Boolean),
-        teacherId: p.teacherId,
-        questions: questionCount,
-        totalMarks: calculatedPaperMarks,
-        scheduledDate: new Date(p.createdAt),
-        status: p.status === 'APPROVED' ? 'published' : 'draft',
-        createdAt: new Date(p.createdAt),
-        updatedAt: new Date(p.updatedAt),
-        classId: classId,
-        subjectPaperIds: [p.id],
-        mySubjectPaperId: p.id
-      };
-    })
-  ];
+    ];
   }, [data, classId, authorizedSubjects, authorizedSubjectIds, currentTeacherId]);
 
   const [activeSubTab, setActiveSubTab] = useState<'all' | 'exam' | 'ca' | 'quiz' | 'assignment'>('all');
@@ -401,7 +425,7 @@ export default function ExamsPage() {
     < >
       <div className="w-full flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-       
+
 
         {/* Assessment Category Sub-Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -420,19 +444,17 @@ export default function ExamsPage() {
                   setActiveSubTab(tab.id);
                   setCurrentPage(1);
                 }}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
-                  isActive
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${isActive
                     ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
                     : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800'
-                }`}
+                  }`}
               >
                 <span>{tab.label}</span>
                 <span
-                  className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
-                    isActive
+                  className={`text-[11px] font-black px-2 py-0.5 rounded-full ${isActive
                       ? 'bg-white/20 text-white'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
+                    }`}
                 >
                   {tab.count}
                 </span>
@@ -461,17 +483,17 @@ export default function ExamsPage() {
           authorizedSubjects={authorizedSubjects}
           authorizedSubjectIds={authorizedSubjectIds}
         />
-        
+
         {filteredExams.length > 0 && (
-            <div className="mt-8 flex justify-center pb-8">
-                <Pagination
-                    currentPage={currentPage}
-                    totalPages={Math.ceil(filteredExams.length / itemsPerPage)}
-                    totalItems={filteredExams.length}
-                    itemsPerPage={itemsPerPage}
-                    onPageChange={setCurrentPage}
-                />
-            </div>
+          <div className="mt-8 flex justify-center pb-8">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(filteredExams.length / itemsPerPage)}
+              totalItems={filteredExams.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         )}
 
         <ExamFilterDialog

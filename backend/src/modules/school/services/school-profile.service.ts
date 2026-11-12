@@ -55,8 +55,9 @@ const SAFE_SCHOOL_PROFILE_SELECT = {
     },
   },
   sessions: {
-    orderBy: { startDate: "desc" as const },
+    orderBy: [{ isActive: "desc" as const }, { startDate: "desc" as const }],
     take: 1,
+    include: { termPeriods: true },
   },
   subscriptionPlan: {
     select: {
@@ -251,7 +252,37 @@ export const updateSchoolSettingsService = async (
   }
 
   return withRetry(
-    () => prisma.schoolSetting.update({ where: { schoolId: resolvedId }, data: updatePayload }),
+    async () => {
+      const updatedSettings = await prisma.schoolSetting.update({
+        where: { schoolId: resolvedId },
+        data: updatePayload,
+      });
+
+      // Keep the school's active Session.currentTerm synchronized when defaultTerm is updated in Settings
+      if (data.defaultTerm) {
+        const rawTerm = String(data.defaultTerm).trim().toUpperCase();
+        const mappedTerm =
+          rawTerm === "FIRST" || rawTerm === "FIRST TERM" || rawTerm === "TERM 1" || rawTerm === "1ST TERM"
+            ? "FIRST"
+            : rawTerm === "SECOND" || rawTerm === "SECOND TERM" || rawTerm === "TERM 2" || rawTerm === "2ND TERM"
+              ? "SECOND"
+              : rawTerm === "THIRD" || rawTerm === "THIRD TERM" || rawTerm === "TERM 3" || rawTerm === "3RD TERM"
+                ? "THIRD"
+                : null;
+
+        if (mappedTerm) {
+          await prisma.session.updateMany({
+            where: {
+              schoolId: resolvedId,
+              ...(data.defaultSession ? { name: data.defaultSession } : { isActive: true }),
+            },
+            data: { currentTerm: mappedTerm },
+          });
+        }
+      }
+
+      return updatedSettings;
+    },
     "school.updateSchoolSettingsService.update",
   );
 };

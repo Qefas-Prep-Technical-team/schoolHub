@@ -31,6 +31,7 @@ export const createExamService = async ({
   resultReleaseAt,
   term,
   teacherId,
+  subjectId,
   endDate,
   departmentIds = [],
 }: {
@@ -53,6 +54,7 @@ export const createExamService = async ({
   resultReleaseAt?: Date | string;
   endDate?: Date | string;
   teacherId?: string;
+  subjectId?: string;
 }) => {
   if (schoolId) await enforceExamLimit(schoolId);
   console.log("LOG: [createExamService] Data received:", { title, scope, schoolId });
@@ -77,6 +79,7 @@ export const createExamService = async ({
       endDate: endDate ? new Date(endDate) : null,
       term: term || null,
       teacherId: teacherId || null,
+      subjectId: subjectId || null,
       departments: departmentIds.length > 0 ? {
         create: departmentIds.map(id => ({ departmentId: id }))
       } : undefined,
@@ -297,12 +300,21 @@ export const getExamsService = async (filters: {
       const classIds = assignedClasses.map(c => c.classId);
 
       if (!isSingleSubjectAssessment && classIds.length > 0) {
-        // Multi-subject terminal exams allow class teachers to monitor all papers in their class
-        teacherOrConditions.push({ classId: { in: classIds } });
+        // Multi-subject terminal exams allow class teachers to monitor all papers in their class.
+        // Strictly scope this to COMBINED terminal exams so class teachers with no subject
+        // (or another subject) do not see other subjects' Quizzes, CAs, or Single-Subject Exams.
+        teacherOrConditions.push({
+          classId: { in: classIds },
+          category: ExamCategory.EXAM,
+          mode: ExamMode.COMBINED,
+        });
       }
 
-      // They can also always see assessments they created
-      teacherOrConditions.push({ teacherId });
+      // They can also always see assessments they created or where they are assigned on a paper
+      teacherOrConditions.push(
+        { teacherId },
+        { subjectExamPapers: { some: { subjectPaper: { teacherId } } } }
+      );
 
       if (teacherOrConditions.length > 0) {
         where.AND = [{ OR: teacherOrConditions }];
@@ -826,13 +838,17 @@ export const getSubjectPapersService = async (filters: {
       where.AND.push({ id: "none" });
     }
 
-    // Exclude papers linked to CA or QUIZ category exams (ASSIGNMENT is a separate model)
+    // Exclude papers linked to CA, QUIZ, or SINGLE_SUBJECT exams (ASSIGNMENT is a separate model).
+    // Single-paper assessments are already surfaced via their parent Exam/Quiz/CA record.
     where.AND.push({
       NOT: {
         exams: {
           some: {
             exam: {
-              category: { in: [ExamCategory.CA, ExamCategory.QUIZ] }
+              OR: [
+                { category: { in: [ExamCategory.CA, ExamCategory.QUIZ] } },
+                { mode: ExamMode.SINGLE_SUBJECT }
+              ]
             }
           }
         }
@@ -1204,7 +1220,7 @@ export const createSubjectPaperService = async ({
   creationMode?: "MANUAL" | "AI" | "OMR";
   category?: string;
 }) => {
-  return prisma.subjectExamPaper.create({
+  const createdPaper = await prisma.subjectExamPaper.create({
     data: {
       subjectId: subjectId || null,
       schoolId: schoolId || null,
@@ -1232,6 +1248,30 @@ export const createSubjectPaperService = async ({
       teacher: true,
     },
   });
+
+  // Synchronize subjectId and teacherId onto the parent Exam if it is a single-paper assessment
+  if (examId && examId !== "none" && (subjectId || teacherId)) {
+    const parentExam = createdPaper.exams?.[0]?.exam;
+    const isSingleAssessment =
+      parentExam &&
+      (parentExam.mode === ExamMode.SINGLE_SUBJECT ||
+        parentExam.category === ExamCategory.CA ||
+        parentExam.category === ExamCategory.QUIZ);
+
+    if (isSingleAssessment) {
+      const examSyncData: Record<string, string> = {};
+      if (subjectId && !parentExam.subjectId) examSyncData.subjectId = subjectId;
+      if (teacherId && !parentExam.teacherId) examSyncData.teacherId = teacherId;
+      if (Object.keys(examSyncData).length > 0) {
+        await prisma.exam.update({
+          where: { id: examId },
+          data: examSyncData,
+        }).catch((err) => console.warn("[createSubjectPaperService] Parent exam sync failed:", err));
+      }
+    }
+  }
+
+  return createdPaper;
 };
 
 export const updateSubjectPaperService = async (paperId: string, data: {

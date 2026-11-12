@@ -5,6 +5,8 @@ import {
   UserRole,
 } from "@prisma/client";
 import { hasActiveSchoolLink } from "./academic.permissions";
+import { createNotification } from "../notification/notification.service";
+import { resolveInitiatorIdentity } from "../notification/services/notification-sender.util";
 
 export const createSubjectService = async ({
   currentUserId,
@@ -409,13 +411,23 @@ export const attachTeachersToSubjectService = async ({
   subjectId,
   teacherIds,
   schoolId,
+  initiatorUserId,
+  initiatorUserType,
 }: {
   subjectId: string;
   teacherIds: string[];
   schoolId: string;
+  initiatorUserId?: string;
+  initiatorUserType?: string;
 }) => {
   const subject = await prisma.subject.findUnique({
     where: { id: subjectId },
+    include: {
+      teacherSubjects: {
+        where: { schoolId },
+        select: { teacherId: true },
+      },
+    },
   });
 
   if (!subject) {
@@ -436,6 +448,13 @@ export const attachTeachersToSubjectService = async ({
     throw new Error("Some teachers were not found");
   }
 
+  const existingTeacherIds = new Set(
+    subject.teacherSubjects.map((ts) => ts.teacherId),
+  );
+  const newlyAssignedTeacherIds = teacherIds.filter(
+    (tId) => Boolean(tId) && !existingTeacherIds.has(tId),
+  );
+
   // Sync teachers: Remove existing, add new
   await prisma.$transaction([
     prisma.teacherSubject.deleteMany({
@@ -453,6 +472,44 @@ export const attachTeachersToSubjectService = async ({
       skipDuplicates: true,
     })
   ]);
+
+  if (newlyAssignedTeacherIds.length > 0) {
+    const initiator = await resolveInitiatorIdentity({
+      userId: initiatorUserId,
+      userType: initiatorUserType,
+      schoolId,
+    });
+    const byLine = initiator
+      ? ` by ${initiator.senderName} (${initiator.senderRole})`
+      : "";
+
+    for (const tId of newlyAssignedTeacherIds) {
+      createNotification({
+        recipientType: "TEACHER",
+        recipientId: tId,
+        senderType: initiator?.senderType || "ADMIN",
+        senderId: initiator?.senderId || initiatorUserId,
+        type: "ACADEMIC",
+        title: "Subject Assignment",
+        message: `You have been assigned to teach ${subject.name}${byLine}.`,
+        link: `/dashboard/teacher/subjects/${subject.id}`,
+        meta: {
+          subjectId: subject.id,
+          subjectName: subject.name,
+          schoolId,
+          ...(initiator
+            ? {
+              senderName: initiator.senderName,
+              senderRole: initiator.senderRole,
+              adminName: initiator.senderName,
+            }
+            : {}),
+        },
+      }).catch((err) =>
+        console.error(`[Notification] Failed to notify teacher ${tId}:`, err),
+      );
+    }
+  }
 
   return prisma.subject.findUnique({
     where: { id: subjectId },

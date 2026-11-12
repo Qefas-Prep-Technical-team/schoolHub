@@ -19,18 +19,18 @@ export function formatSenderType(type?: string): string {
 
 export function resolveNotificationSender(n: any): ResolvedSenderInfo {
   if (!n) {
-    return { name: 'System', role: 'System', isDirect: false, avatarText: 'S' };
+    return { name: 'Qefas Hub', role: 'System', isDirect: false, avatarText: 'Q' };
   }
 
   const meta = (n.meta || n.data || {}) as Record<string, any>;
   const directName = n.senderName || meta.senderName;
 
-  // 1. If explicit senderName is present (and not a generic "system")
+  // 1. If explicit senderName is present (and not a generic "system" or "school hub")
   if (
     directName &&
     typeof directName === 'string' &&
     directName.trim().length > 0 &&
-    !['system', 'undefined', 'null'].includes(directName.trim().toLowerCase())
+    !['system', 'school hub', 'undefined', 'null'].includes(directName.trim().toLowerCase())
   ) {
     const role = n.senderRole || meta.senderRole || (n.senderType ? formatSenderType(n.senderType) : 'Sender');
     return {
@@ -58,12 +58,14 @@ export function resolveNotificationSender(n: any): ResolvedSenderInfo {
 
   if (metaName && typeof metaName === 'string' && metaName.trim().length > 0) {
     const role =
-      meta.studentName || meta.student?.name ? 'Student'
-      : meta.teacherName || meta.teacher?.name ? 'Teacher'
-      : meta.parentName || meta.parent?.fullName || meta.parent?.name ? 'Parent'
-      : meta.adminName || meta.admin?.name ? 'School Admin'
-      : meta.school?.name ? 'School'
-      : 'User';
+      meta.senderRole ||
+      n.senderRole ||
+      (meta.studentName || meta.student?.name ? 'Student'
+        : meta.teacherName || meta.teacher?.name ? 'Teacher'
+          : meta.parentName || meta.parent?.fullName || meta.parent?.name ? 'Parent'
+            : meta.adminName || meta.admin?.name ? 'School Admin'
+              : meta.school?.name ? 'School'
+                : 'User');
 
     return {
       name: metaName.trim(),
@@ -188,9 +190,22 @@ export function resolveNotificationSender(n: any): ResolvedSenderInfo {
     };
   }
 
+  // e.g. "You have been assigned to teach Mathematics by John Doe (Principal)."
+  const assignedByMatch = msg.match(/\bby\s+([A-Za-z\s.'-]+?)\s*\(([^)]+)\)/i);
+  if (assignedByMatch && assignedByMatch[1] && assignedByMatch[2]) {
+    const cleanName = assignedByMatch[1].trim();
+    const cleanRole = assignedByMatch[2].trim();
+    return {
+      name: cleanName,
+      role: cleanRole,
+      isDirect: true,
+      avatarText: cleanName.charAt(0).toUpperCase(),
+    };
+  }
+
   // 5. Fallback on Sender Type or Notification Type
   if (n.senderType) {
-    const roleName = formatSenderType(n.senderType);
+    const roleName = n.senderRole || meta.senderRole || formatSenderType(n.senderType);
     return {
       name: roleName,
       role: roleName,
@@ -207,5 +222,5 @@ export function resolveNotificationSender(n: any): ResolvedSenderInfo {
     return { name: 'Academic Office', role: 'Academic', isDirect: false, avatarText: 'A' };
   }
 
-  return { name: 'School Hub', role: 'System', isDirect: false, avatarText: 'S' };
+  return { name: 'Qefas Hub', role: 'System', isDirect: false, avatarText: 'Q' };
 }

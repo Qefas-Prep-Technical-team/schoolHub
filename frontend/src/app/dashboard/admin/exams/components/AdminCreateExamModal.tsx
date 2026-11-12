@@ -142,6 +142,7 @@ export default function AdminCreateExamModal({
         scope: data.classId ? 'CLASS' : 'SCHOOL',
         creationMode: 'MANUAL',
         mode: data.mode,
+        subjectId: isSingle ? (data.subjectId || undefined) : undefined,
         classId: data.classId || undefined,
         departmentIds: data.departmentIds,
         sessionId: data.sessionId || undefined,

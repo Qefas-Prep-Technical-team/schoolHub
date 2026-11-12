@@ -1,15 +1,15 @@
 "use client"
 
 import { usePlatformSettings, useUpdatePlatformSettings } from "@/lib/api/hooks/usePlatformGovernance"
-import { 
-    Settings, 
-    Globe, 
-    Bell, 
-    Cpu, 
-    Save, 
-    ShieldCheck, 
-    Layout, 
-    Cloud 
+import {
+    Settings,
+    Globe,
+    Bell,
+    Cpu,
+    Save,
+    ShieldCheck,
+    Layout,
+    Cloud
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -51,14 +51,14 @@ export default function PlatformSettingsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Platform Name</label>
-                                    <Input 
+                                    <Input
                                         className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl h-12 text-slate-900 dark:text-white font-bold placeholder:text-slate-400"
-                                        placeholder="School Hub"
+                                        placeholder="Qefas Hub"
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Official Domain</label>
-                                    <Input 
+                                    <Input
                                         className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 rounded-xl h-12 text-slate-900 dark:text-white font-bold placeholder:text-slate-400"
                                         placeholder="core-ops@schoolhub.io"
                                     />
@@ -66,7 +66,7 @@ export default function PlatformSettingsPage() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Support Email</label>
-                                <Input 
+                                <Input
                                     className="bg-slate-950 border-slate-800 rounded-xl h-12 text-white font-bold"
                                     placeholder="core-ops@schoolhub.io"
                                 />
@@ -75,7 +75,7 @@ export default function PlatformSettingsPage() {
                     </Card>
 
                     <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-xl dark:shadow-2xl transition-all hover:bg-slate-50 dark:hover:bg-slate-900/80">
-                         <div className="flex items-center gap-4 mb-10">
+                        <div className="flex items-center gap-4 mb-10">
                             <div className="h-12 w-12 rounded-2xl bg-emerald-600/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                                 <Cpu size={24} />
                             </div>
@@ -87,29 +87,29 @@ export default function PlatformSettingsPage() {
 
                         <div className="space-y-6">
                             {[
-                                { 
-                                    key: "google_auth_enabled", 
-                                    title: "Google Authentication", 
-                                    desc: "Enable/Disable Google Login and Sign Up platform-wide.", 
-                                    enabled: String(settings?.google_auth_enabled) !== "false" 
+                                {
+                                    key: "google_auth_enabled",
+                                    title: "Google Authentication",
+                                    desc: "Enable/Disable Google Login and Sign Up platform-wide.",
+                                    enabled: String(settings?.google_auth_enabled) !== "false"
                                 },
-                                { 
-                                    key: "facebook_auth_enabled", 
-                                    title: "Facebook Authentication", 
-                                    desc: "Enable/Disable Facebook Login and Sign Up platform-wide.", 
-                                    enabled: String(settings?.facebook_auth_enabled) !== "false" 
+                                {
+                                    key: "facebook_auth_enabled",
+                                    title: "Facebook Authentication",
+                                    desc: "Enable/Disable Facebook Login and Sign Up platform-wide.",
+                                    enabled: String(settings?.facebook_auth_enabled) !== "false"
                                 },
-                                { 
-                                    key: "global_registration", 
-                                    title: "Global Registration", 
-                                    desc: "Enable/Disable new school signups globally.", 
-                                    enabled: String(settings?.global_registration) !== "false" 
+                                {
+                                    key: "global_registration",
+                                    title: "Global Registration",
+                                    desc: "Enable/Disable new school signups globally.",
+                                    enabled: String(settings?.global_registration) !== "false"
                                 },
-                                { 
-                                    key: "maintenance_mode", 
-                                    title: "Maintenance Mode", 
-                                    desc: "Activate platform-wide technical lockdown.", 
-                                    enabled: String(settings?.maintenance_mode) === "true" 
+                                {
+                                    key: "maintenance_mode",
+                                    title: "Maintenance Mode",
+                                    desc: "Activate platform-wide technical lockdown.",
+                                    enabled: String(settings?.maintenance_mode) === "true"
                                 },
                             ].map((opt, i) => (
                                 <div key={i} className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-white/5 flex items-center justify-between group hover:border-emerald-500/30 transition-all">
@@ -117,12 +117,12 @@ export default function PlatformSettingsPage() {
                                         <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{opt.title}</p>
                                         <p className="text-[10px] text-slate-500 font-medium">{opt.desc}</p>
                                     </div>
-                                    <Switch 
-                                        checked={opt.enabled} 
+                                    <Switch
+                                        checked={opt.enabled}
                                         onCheckedChange={(checked) => {
                                             update.mutate({ key: opt.key, value: String(checked) })
                                         }}
-                                        className="data-[state=checked]:bg-emerald-500" 
+                                        className="data-[state=checked]:bg-emerald-500"
                                     />
                                 </div>
                             ))}
@@ -137,7 +137,7 @@ export default function PlatformSettingsPage() {
                             <Cloud size={200} />
                         </div>
                         <div className="relative z-10 space-y-6">
-                            <h3 className="text-2xl font-black text-white tracking-tighter leading-none">Security <br/> Consensus</h3>
+                            <h3 className="text-2xl font-black text-white tracking-tighter leading-none">Security <br /> Consensus</h3>
                             <p className="text-sm font-medium text-indigo-100 opacity-80 leading-relaxed">
                                 All global configuration changes require OWNER consensus and are logged to the immutable audit trail.
                             </p>
