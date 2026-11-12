@@ -53,9 +53,9 @@ export function useTranscriptClearance(params: UseTranscriptClearanceParams) {
   const [restoreInput, setRestoreInput] = useState("");
   const [isRestoring, setIsRestoring] = useState(false);
 
-  // Verify ?pass=... or Flutterwave callback on mount/redirect
+  // Verify ?pass=... or Flutterwave/Paystack callback on mount/redirect, or auto-restore saved 30-day pass from localStorage
   useEffect(() => {
-    const txRef = searchParams.get("tx_ref") || searchParams.get("reference");
+    const txRef = searchParams.get("tx_ref") || searchParams.get("reference") || searchParams.get("trxref");
     const transactionId = searchParams.get("transaction_id");
     const flwStatus = searchParams.get("status");
     const passParam = searchParams.get("pass");
@@ -96,6 +96,34 @@ export function useTranscriptClearance(params: UseTranscriptClearanceParams) {
         .catch(() => {
           toast.error("Could not validate this 30-day transcript access pass.");
         });
+    } else if (!txRef && studentId && typeof window !== "undefined") {
+      // Auto-restore persisted 30-day pass from localStorage on normal page visits/reloads
+      const storedPass = localStorage.getItem(`transcript_access_pass_${studentId}`);
+      if (storedPass) {
+        financeService
+          .verifyTranscriptPass(storedPass, studentId)
+          .then((res) => {
+            if (
+              res &&
+              res.valid &&
+              (!res.studentId || res.studentId === studentId)
+            ) {
+              setDirectAccessPass({
+                token: storedPass,
+                expiresAt: res.expiresAt || "",
+                sessionId: res.sessionId,
+                term: res.term,
+              });
+              const targetKey = `${res.sessionId || "ALL"}_${res.term || "ALL"}`;
+              setUnlockedClearances((prev) => new Set(prev).add(targetKey));
+            } else {
+              localStorage.removeItem(`transcript_access_pass_${studentId}`);
+            }
+          })
+          .catch(() => {
+            // Leave storedPass intact on transient network failure
+          });
+      }
     }
 
     if (!txRef) return;
@@ -111,7 +139,7 @@ export function useTranscriptClearance(params: UseTranscriptClearanceParams) {
     const verifyTransaction = async () => {
       try {
         toast.info(
-          "Verifying your transcript clearance payment with Flutterwave...",
+          "Verifying your transcript clearance payment...",
           { autoClose: 3500 },
         );
         const res = await financeService.verifyPayment(
@@ -175,9 +203,11 @@ export function useTranscriptClearance(params: UseTranscriptClearanceParams) {
           p.term === "All Terms" ||
           String(p.session).includes("Session")),
     );
-    return (
-      list.length + (unlockedClearances.size > 0 ? unlockedClearances.size : 0)
-    );
+    // Avoid double-counting the same payment when both auditPayments (server) and unlockedClearances (client state) reflect it
+    if (list.length > 0) {
+      return list.length;
+    }
+    return unlockedClearances.size > 0 ? unlockedClearances.size : 0;
   }, [auditPayments, unlockedClearances]);
 
   const totalTranscriptDownloads = useMemo(() => {
@@ -220,10 +250,19 @@ export function useTranscriptClearance(params: UseTranscriptClearanceParams) {
       }
       const passSession = directAccessPass.sessionId || "ALL";
       const passTerm = directAccessPass.term || "ALL";
+      const matchingResultGroup = results.find(
+        (r) => r.sessionId === sId || r.session?.id === sId || r.session?.name === sId,
+      );
+      const targetSessionName = matchingResultGroup?.session?.name || "";
+      const targetSessionUuid = matchingResultGroup?.sessionId || matchingResultGroup?.session?.id || "";
+
       const sessionMatches =
         passSession === "ALL" ||
         passSession === "All Sessions" ||
-        passSession === sId;
+        passSession === sId ||
+        (Boolean(targetSessionName) && passSession === targetSessionName) ||
+        (Boolean(targetSessionUuid) && passSession === targetSessionUuid);
+
       const termMatches =
         passTerm === "ALL" ||
         passTerm === "All Terms" ||
@@ -231,7 +270,7 @@ export function useTranscriptClearance(params: UseTranscriptClearanceParams) {
         passTerm === getTermLabel(termVal);
       return sessionMatches && termMatches;
     },
-    [requiresPayment, directAccessPass],
+    [requiresPayment, directAccessPass, results],
   );
 
   const recentClearancePayments = useMemo(() => {

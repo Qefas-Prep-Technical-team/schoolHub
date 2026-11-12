@@ -141,6 +141,8 @@ export class UserSubscriptionService {
     planId: string;
     type: SubscriptionType;
     durationDays?: number;
+    expiresAtOverride?: Date | null;
+    billingCycleOverride?: "monthly" | "yearly";
     amountPaid?: number;
     paymentReference?: string;
     note?: string;
@@ -148,13 +150,13 @@ export class UserSubscriptionService {
     trialPlan?: string;
     trialEndsAt?: Date;
   }) {
-    const { 
-      userId, userType, planId, type, durationDays, amountPaid, 
-      paymentReference, note, isTrial, trialPlan, trialEndsAt 
+    const {
+      userId, userType, planId, type, durationDays, expiresAtOverride, billingCycleOverride, amountPaid,
+      paymentReference, note, isTrial, trialPlan, trialEndsAt
     } = params;
 
     const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
-    
+
     // Validate scope compatibility
     const isSchoolPlanForAdmin = plan?.planScope === PlanScope.SCHOOL && userType === UserRole.ADMIN;
     const isIndividualPlanForIndividual = plan?.planScope !== PlanScope.SCHOOL && userType !== UserRole.ADMIN;
@@ -163,7 +165,15 @@ export class UserSubscriptionService {
       throw new Error(`Invalid plan scope for role ${userType}. Plan scope is ${plan?.planScope}.`);
     }
 
-    const expiresAt = durationDays ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000) : null;
+    const expiresAt =
+      expiresAtOverride !== undefined
+        ? expiresAtOverride
+        : durationDays
+          ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
+          : null;
+
+    const effectiveBillingCycle =
+      billingCycleOverride || ((durationDays && durationDays >= 350) ? 'yearly' : 'monthly');
 
     return await prisma.$transaction(async (tx) => {
       const currentSub = await tx.userSubscription.findUnique({
@@ -209,7 +219,7 @@ export class UserSubscriptionService {
           trialUsed: isTrial ? true : undefined,
           trialPlan: isTrial ? trialPlan : undefined,
           trialEndsAt: isTrial ? trialEndsAt : undefined,
-          billingCycle: (durationDays && durationDays >= 365) ? 'yearly' : 'monthly',
+          billingCycle: effectiveBillingCycle,
         }
       });
 

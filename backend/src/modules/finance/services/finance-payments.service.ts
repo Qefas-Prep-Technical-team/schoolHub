@@ -119,6 +119,7 @@ export async function verifyPaymentService(reference: string, flwTransactionId?:
               data: {
                 schoolId: existingPayment.schoolId,
                 paymentId: existingPayment.id,
+                settlementAccountId: existingPayment.settlementAccountId ?? null,
                 transactionReference: reference,
                 amount: existingPayment.amount,
                 channel: existingPayment.paymentMethod || "GATEWAY",
@@ -129,6 +130,15 @@ export async function verifyPaymentService(reference: string, flwTransactionId?:
             }),
           "finance.verifyPaymentService.createTx",
         );
+      } else if (!existingTx.settlementAccountId && existingPayment.settlementAccountId) {
+        await withRetry(
+          () =>
+            prisma.transactionHistory.update({
+              where: { transactionReference: reference },
+              data: { settlementAccountId: existingPayment.settlementAccountId },
+            }),
+          "finance.verifyPaymentService.backfillTxSettlement",
+        );
       }
       return { success: true, payment: existingPayment, accessPass: buildPassForPaymentService(existingPayment) };
     }
@@ -137,31 +147,65 @@ export async function verifyPaymentService(reference: string, flwTransactionId?:
     const verified = await gateway.verify(reference, flwTransactionId);
     if (!verified.success) return { success: false, status: "failed" };
 
+    // Server-side amount verification guard against underpayment attacks
+    if (existingPayment && verified.amountNaira + 1 < existingPayment.amount) {
+      throw new Error(
+        `AMOUNT_MISMATCH: Gateway verified ₦${verified.amountNaira.toLocaleString()} which is less than expected ₦${existingPayment.amount.toLocaleString()}.`,
+      );
+    }
+
     const paymentMeta = verified.meta as Record<string, unknown>;
     const schoolId = (paymentMeta["schoolId"] || paymentMeta["schoolid"]) as string | undefined;
 
+    // Atomic status transition: ensure only the first concurrent caller (webhook vs redirect) dispatches notifications & emails
+    const atomicUpdate = await withRetry(
+      () =>
+        prisma.payment.updateMany({
+          where: {
+            paymentReference: reference,
+            status: { notIn: ["SUCCESS", "PAID"] },
+          },
+          data: {
+            status: "SUCCESS",
+            paidAt: new Date(),
+            paymentMethod: verified.channel,
+          },
+        }),
+      "finance.verifyPaymentService.atomicUpdatePayment",
+    );
+
     const payment = await withRetry(
       () =>
-        prisma.payment.update({
+        prisma.payment.findUnique({
           where: { paymentReference: reference },
-          data: { status: "SUCCESS", paidAt: new Date(), paymentMethod: verified.channel },
           include: {
             student: { select: { id: true, name: true, studentCode: true, email: true } },
             school: { select: { id: true, name: true, schoolEmail: true, admins: { include: { admin: { select: { email: true } } } } } },
             parent: { select: { id: true, fullName: true, email: true } },
           },
         }),
-      "finance.verifyPaymentService.updatePayment",
+      "finance.verifyPaymentService.fetchUpdatedPayment",
     );
+
+    if (!payment) {
+      throw new Error(`Payment record not found for reference ${reference}`);
+    }
 
     await withRetry(
       () =>
         prisma.transactionHistory.upsert({
           where: { transactionReference: reference },
-          update: { status: "SUCCESS", amount: verified.amountNaira, channel: verified.channel, paidAt: new Date() },
+          update: {
+            status: "SUCCESS",
+            amount: verified.amountNaira,
+            channel: verified.channel,
+            settlementAccountId: payment.settlementAccountId ?? undefined,
+            paidAt: new Date(),
+          },
           create: {
             schoolId: schoolId || payment.schoolId,
             paymentId: payment.id,
+            settlementAccountId: payment.settlementAccountId ?? null,
             transactionReference: reference,
             amount: verified.amountNaira,
             gatewayResponse: { gateway: verified.gateway, gatewayRef: verified.gatewayRef },
@@ -175,87 +219,161 @@ export async function verifyPaymentService(reference: string, flwTransactionId?:
     );
 
     const pass = buildPassForPaymentService(payment);
+
+    // If another concurrent request (e.g. webhook) already transitioned this payment to SUCCESS, skip duplicate emails/notifications
+    if (atomicUpdate.count === 0) {
+      return { success: true, payment, accessPass: pass };
+    }
+
     const studentName = payment.student?.name || "Student";
     const studentCode = payment.student?.studentCode || "Scholar";
-    const sessionLabel = payment.session === "ALL" ? "Cumulative Transcript" : payment.session || "Official Transcript";
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let resolvedSessionLabel = payment.session || "All Sessions";
+    if (uuidRegex.test(resolvedSessionLabel)) {
+      const sRecord = await withRetry(
+        () => prisma.session.findUnique({ where: { id: resolvedSessionLabel }, select: { name: true } }),
+        "finance.verifyPaymentService.resolveSessionName",
+      );
+      if (sRecord?.name) resolvedSessionLabel = sRecord.name;
+    }
+
+    const sessionLabel =
+      resolvedSessionLabel === "ALL" || resolvedSessionLabel === "All Sessions"
+        ? "Cumulative Transcript"
+        : resolvedSessionLabel || "Official Transcript";
     const termLabel = payment.term && payment.term !== "ALL" && payment.term !== "All Terms" ? ` (${payment.term})` : "";
 
-    await createNotification({
-      recipientType: "SCHOOL",
-      recipientId: payment.schoolId,
-      type: "GENERAL",
-      title: "Transcript Clearance Fee Received",
-      message: `${studentName} (${studentCode}) has completed clearance payment of ₦${verified.amountNaira.toLocaleString()} for ${sessionLabel}${termLabel}.`,
-      link: `/dashboard/admin/finance?tab=transcripts`,
-      priority: "HIGH",
-      meta: {
-        paymentId: payment.id, paymentReference: reference, studentId: payment.studentId,
-        amount: verified.amountNaira, paymentType: "TRANSCRIPT", accessUrl: pass.accessUrl,
-      },
-    }).catch(() => {});
+    const isTranscriptPayment =
+      payment.paymentType === "TRANSCRIPT" || payment.paymentType === "PORTAL_ACCESS";
 
-    if (payment.studentId) {
+    if (isTranscriptPayment) {
       await createNotification({
-        recipientType: "STUDENT",
-        recipientId: payment.studentId,
+        recipientType: "SCHOOL",
+        recipientId: payment.schoolId,
         type: "GENERAL",
-        title: "Official Transcript Clearance Confirmed",
-        message: `Your clearance payment of ₦${verified.amountNaira.toLocaleString()} has been confirmed. Your transcript records are unlocked with 30-day guaranteed access.`,
-        link: `/dashboard/student/transcript?pass=${encodeURIComponent(pass.token)}`,
+        title: "Transcript Clearance Fee Received",
+        message: `${studentName} (${studentCode}) has completed clearance payment of ₦${verified.amountNaira.toLocaleString()} for ${sessionLabel}${termLabel}.`,
+        link: `/dashboard/admin/finance?tab=transcripts`,
         priority: "HIGH",
         meta: {
-          paymentReference: reference, amount: verified.amountNaira, paymentType: "TRANSCRIPT",
-          accessPass: pass.token, expiresAt: pass.expiresAt.toISOString(),
-        },
-      }).catch(() => {});
-    }
-
-    const emailsToSend = new Set<string>();
-    if (payment.student?.email) emailsToSend.add(payment.student.email.trim());
-    if (payment.parent?.email) emailsToSend.add(payment.parent.email.trim());
-    if (paymentMeta["email"] && typeof paymentMeta["email"] === "string") emailsToSend.add(paymentMeta["email"].trim());
-
-    for (const recipientEmail of emailsToSend) {
-      if (!recipientEmail || !recipientEmail.includes("@")) continue;
-      // Send 30-day Access Pass
-      await sendTranscriptPassEmailService({
-        studentId: payment.studentId, schoolId: payment.schoolId, email: recipientEmail, token: pass.token, reference,
-      }).catch(() => {});
-
-      // Send Dedicated Transcript Order Payment Success Receipt
-      await sendTranscriptPaymentSuccessEmail({
-        email: recipientEmail,
-        studentName,
-        schoolName: payment.school?.name || "Institution",
-        reference,
-        amount: verified.amountNaira,
-        paymentMethod: verified.channel,
-        session: payment.session || "All Sessions",
-        term: payment.term || "All Terms",
-      }).catch((err) => console.error("[PaymentVerification] Error sending student transcript payment success email:", err));
-    }
-
-    // Send School Institutional Notification
-    try {
-      const targetSchoolEmail = payment.school?.schoolEmail || payment.school?.admins?.[0]?.admin?.email;
-      if (targetSchoolEmail && targetSchoolEmail.includes("@")) {
-        await sendSchoolTranscriptPaymentReceivedEmail({
-          schoolEmail: targetSchoolEmail,
-          schoolName: payment.school?.name || "Institution",
-          studentName,
-          studentCode,
+          paymentId: payment.id,
+          paymentReference: reference,
+          studentId: payment.studentId,
           amount: verified.amountNaira,
-          reference,
-          session: payment.session || "All Sessions",
-          term: payment.term || "All Terms",
-          paymentMethod: verified.channel,
-        });
+          paymentType: "TRANSCRIPT",
+          accessUrl: pass.accessUrl,
+        },
+      }).catch(() => { });
+
+      if (payment.studentId) {
+        await createNotification({
+          recipientType: "STUDENT",
+          recipientId: payment.studentId,
+          type: "GENERAL",
+          title: "Official Transcript Clearance Confirmed",
+          message: `Your clearance payment of ₦${verified.amountNaira.toLocaleString()} has been confirmed. Your transcript records are unlocked with 30-day guaranteed access.`,
+          link: `/dashboard/student/transcript?pass=${encodeURIComponent(pass.token)}`,
+          priority: "HIGH",
+          meta: {
+            paymentReference: reference,
+            amount: verified.amountNaira,
+            paymentType: "TRANSCRIPT",
+            accessPass: pass.token,
+            expiresAt: pass.expiresAt.toISOString(),
+          },
+        }).catch(() => { });
       }
-    } catch (schoolMailErr) {
-      console.error("[PaymentVerification] Error sending school transcript notification email:", schoolMailErr);
+
+      const emailsToSend = new Set<string>();
+      if (payment.student?.email) emailsToSend.add(payment.student.email.trim());
+      if (payment.parent?.email && !payment.parent.email.endsWith("@qefas.local")) {
+        emailsToSend.add(payment.parent.email.trim());
+      }
+      if (paymentMeta["email"] && typeof paymentMeta["email"] === "string" && !paymentMeta["email"].endsWith("@qefas.local")) {
+        emailsToSend.add(paymentMeta["email"].trim());
+      }
+
+      for (const recipientEmail of emailsToSend) {
+        if (!recipientEmail || !recipientEmail.includes("@")) continue;
+        // Send 30-day Access Pass
+        await sendTranscriptPassEmailService({
+          studentId: payment.studentId,
+          schoolId: payment.schoolId,
+          email: recipientEmail,
+          token: pass.token,
+          reference,
+        }).catch(() => { });
+
+        // Send Dedicated Transcript Order Payment Success Receipt
+        await sendTranscriptPaymentSuccessEmail({
+          email: recipientEmail,
+          studentName,
+          schoolName: payment.school?.name || "Institution",
+          reference,
+          amount: verified.amountNaira,
+          paymentMethod: verified.channel,
+          session: resolvedSessionLabel || "All Sessions",
+          term: payment.term || "All Terms",
+        }).catch((err) => console.error("[PaymentVerification] Error sending student transcript payment success email:", err));
+      }
+
+      // Send School Institutional Notification
+      try {
+        const targetSchoolEmail = payment.school?.schoolEmail || payment.school?.admins?.[0]?.admin?.email;
+        if (targetSchoolEmail && targetSchoolEmail.includes("@")) {
+          await sendSchoolTranscriptPaymentReceivedEmail({
+            schoolEmail: targetSchoolEmail,
+            schoolName: payment.school?.name || "Institution",
+            studentName,
+            studentCode,
+            amount: verified.amountNaira,
+            reference,
+            session: resolvedSessionLabel || "All Sessions",
+            term: payment.term || "All Terms",
+            paymentMethod: verified.channel,
+          });
+        }
+      } catch (schoolMailErr) {
+        console.error("[PaymentVerification] Error sending school transcript notification email:", schoolMailErr);
+      }
+    } else {
+      // School Fees / Tuition Payment Notifications
+      await createNotification({
+        recipientType: "SCHOOL",
+        recipientId: payment.schoolId,
+        type: "GENERAL",
+        title: "School Fees Payment Received",
+        message: `${studentName} (${studentCode}) has completed a school fees payment of ₦${verified.amountNaira.toLocaleString()} for ${resolvedSessionLabel}${termLabel}.`,
+        link: `/dashboard/admin/finance`,
+        priority: "HIGH",
+        meta: {
+          paymentId: payment.id,
+          paymentReference: reference,
+          studentId: payment.studentId,
+          amount: verified.amountNaira,
+          paymentType: payment.paymentType,
+        },
+      }).catch(() => { });
+
+      if (payment.studentId) {
+        await createNotification({
+          recipientType: "STUDENT",
+          recipientId: payment.studentId,
+          type: "GENERAL",
+          title: "School Fees Payment Confirmed",
+          message: `Your school fees payment of ₦${verified.amountNaira.toLocaleString()} for ${resolvedSessionLabel}${termLabel} has been confirmed (Ref: ${reference}).`,
+          link: `/dashboard/student`,
+          priority: "HIGH",
+          meta: {
+            paymentReference: reference,
+            amount: verified.amountNaira,
+            paymentType: payment.paymentType,
+          },
+        }).catch(() => { });
+      }
     }
 
-    return { success: true, payment, accessPass: pass };
+    return { success: true, payment, accessPass: isTranscriptPayment ? pass : undefined };
   } catch (error: unknown) {
     const err = error as { message?: string };
     throw new Error("Verification failed: " + (err.message || "Unknown error"));

@@ -638,16 +638,16 @@ export default function CheckoutPage() {
                   <button
                     onClick={() => { setSelectedBilling("monthly"); setAppliedCoupon(null); }}
                     className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${selectedBilling === "monthly"
-                        ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                        : "text-slate-500 hover:text-slate-700"
+                      ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
                       }`}>
                     Monthly
                   </button>
                   <button
                     onClick={() => { setSelectedBilling("yearly"); setAppliedCoupon(null); setMonthQty(1); }}
                     className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${selectedBilling === "yearly"
-                        ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                        : "text-slate-500 hover:text-slate-700"
+                      ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
                       }`}>
                     Yearly
                     {monthlyPrice > 0 && yearlyPrice > 0 && (
@@ -665,8 +665,8 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* ── Month quantity picker (monthly billing only) ── */}
-            {!isUpgrade && !isDowngrade && selectedBilling === "monthly" && monthlyPrice > 0 && (
+            {/* ── Month quantity picker (monthly billing only, not applicable during free trial) ── */}
+            {!isUpgrade && !isDowngrade && !canUseTrial && selectedBilling === "monthly" && monthlyPrice > 0 && (
               <div className="mb-6">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Number of Months</p>
                 <div className="flex items-center gap-3">
@@ -693,11 +693,28 @@ export default function CheckoutPage() {
               </div>
             )}
 
+            {/* Trial active notice banner */}
+            {canUseTrial && (
+              <div className="mb-6 bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 rounded-2xl p-4 text-xs text-indigo-900 dark:text-indigo-200 space-y-1">
+                <div className="flex items-center gap-2 font-bold text-indigo-700 dark:text-indigo-300">
+                  <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <span>{trialDaysCount || 7}-Day Free Trial Included</span>
+                </div>
+                <p className="text-indigo-600/90 dark:text-indigo-300/80 leading-relaxed">
+                  Only a ₦100 refundable validation charge is processed today to register your card for auto-renewal after the trial concludes.
+                </p>
+              </div>
+            )}
+
             {/* Line items */}
             <div className="space-y-3 mb-5">
               <div className="flex justify-between items-center">
-                <span className="text-slate-500 text-base">{planDisplayName} Plan ({billing === "monthly" && monthQty > 1 ? `${monthQty} months` : billing})</span>
-                <span className="font-bold text-slate-900 dark:text-white text-lg">₦{amount.toLocaleString()}</span>
+                <span className="text-slate-500 text-base">
+                  {planDisplayName} Plan {canUseTrial ? `(${trialDaysCount || 7}-Day Free Trial)` : (billing === "monthly" && monthQty > 1 ? `(${monthQty} months)` : `(${billing})`)}
+                </span>
+                <span className="font-bold text-slate-900 dark:text-white text-lg">
+                  {canUseTrial ? "Free" : `₦${amount.toLocaleString()}`}
+                </span>
               </div>
 
               {isUpgrade && discountedAmount !== undefined && amount > discountedAmount && (

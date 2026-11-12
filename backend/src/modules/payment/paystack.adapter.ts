@@ -34,17 +34,37 @@ export class PaystackAdapter implements PaymentGateway {
   // Initialize
   // ─────────────────────────────────────────────────────────────
   async initialize(params: InitializeParams): Promise<InitializeResult> {
+    const subaccountCode = (params.metadata?.['subaccountCode'] || params.metadata?.['subaccountId']) as string | undefined;
+    const redirectUrl =
+      (params.metadata?.['redirect_url'] as string) ||
+      (params.metadata?.['callbackUrl'] as string) ||
+      undefined;
+
     const payload: Record<string, unknown> = {
       email: params.email,
-      amount: params.amount * 100, // Paystack works in kobo
+      amount: Math.round(params.amount * 100), // Paystack works in kobo
+      ...(redirectUrl ? { callback_url: redirectUrl } : {}),
+      ...(subaccountCode ? { subaccount: subaccountCode } : {}),
       metadata: {
+        ...params.metadata,
+        paymentType: params.metadata?.['paymentType'] ?? params.plan,
         custom_fields: [
-          { display_name: 'User ID',   variable_name: 'user_id',   value: params.userId },
+          { display_name: 'User ID', variable_name: 'user_id', value: params.userId },
           { display_name: 'User Role', variable_name: 'user_role', value: params.metadata?.['user_role'] ?? '' },
-          { display_name: 'Plan',      variable_name: 'plan',      value: params.plan },
-          { display_name: 'Billing',   variable_name: 'billing',   value: params.metadata?.['billing'] ?? 'monthly' },
-          { display_name: 'Is Upgrade',variable_name: 'is_upgrade',value: String(params.metadata?.['is_upgrade'] ?? false) },
-          { display_name: 'Is Trial',  variable_name: 'is_trial',  value: String(params.metadata?.['is_trial'] ?? false) },
+          { display_name: 'Plan', variable_name: 'plan', value: params.plan },
+          { display_name: 'Payment Type', variable_name: 'paymentType', value: String(params.metadata?.['paymentType'] ?? params.plan) },
+          { display_name: 'School ID', variable_name: 'schoolId', value: String(params.metadata?.['schoolId'] ?? '') },
+          { display_name: 'Student ID', variable_name: 'studentId', value: String(params.metadata?.['studentId'] ?? '') },
+          { display_name: 'Session ID', variable_name: 'sessionId', value: String(params.metadata?.['sessionId'] ?? '') },
+          { display_name: 'Term', variable_name: 'term', value: String(params.metadata?.['term'] ?? '') },
+          { display_name: 'Billing', variable_name: 'billing', value: params.metadata?.['billing'] ?? 'monthly' },
+          { display_name: 'Months', variable_name: 'months', value: String(params.metadata?.['months'] ?? 1) },
+          { display_name: 'Is Upgrade', variable_name: 'is_upgrade', value: String(params.metadata?.['is_upgrade'] ?? false) },
+          { display_name: 'Reset Cycle', variable_name: 'reset_cycle', value: String(params.metadata?.['reset_cycle'] ?? false) },
+          { display_name: 'Is Trial', variable_name: 'is_trial', value: String(params.metadata?.['is_trial'] ?? false) },
+          { display_name: 'Coupon ID', variable_name: 'coupon_id', value: String(params.metadata?.['couponId'] ?? '') },
+          { display_name: 'Coupon Code', variable_name: 'coupon_code', value: String(params.metadata?.['couponCode'] ?? '') },
+          { display_name: 'Coupon Discount', variable_name: 'coupon_discount', value: String(params.metadata?.['couponDiscount'] ?? 0) },
         ],
       },
     };
@@ -96,6 +116,12 @@ export class PaystackAdapter implements PaymentGateway {
       const fields = tx.metadata?.custom_fields ?? [];
       const getField = (key: string) =>
         fields.find((f) => f.variable_name === key)?.value;
+      const rawMeta = (tx.metadata ?? {}) as Record<string, unknown>;
+
+      const rawMonths = getField('months') || String(rawMeta['months'] ?? '1');
+      const parsedMonths = parseInt(rawMonths, 10);
+      const rawCouponDiscount = getField('coupon_discount') || String(rawMeta['couponDiscount'] ?? '0');
+      const parsedCouponDiscount = parseFloat(rawCouponDiscount);
 
       return {
         success: true,
@@ -105,12 +131,23 @@ export class PaystackAdapter implements PaymentGateway {
         channel: tx.channel,
         authorizationToken: tx.authorization?.authorization_code,
         meta: {
-          userId: getField('user_id'),
-          userRole: getField('user_role'),
-          plan: getField('plan'),
-          billing: getField('billing'),
-          isUpgrade: getField('is_upgrade') === 'true',
-          isTrial: getField('is_trial') === 'true',
+          ...rawMeta,
+          userId: getField('user_id') || (rawMeta['userId'] as string | undefined),
+          userRole: getField('user_role') || (rawMeta['userRole'] as string | undefined) || (rawMeta['user_role'] as string | undefined),
+          plan: getField('plan') || (rawMeta['plan'] as string | undefined),
+          paymentType: getField('paymentType') || (rawMeta['paymentType'] as string | undefined),
+          schoolId: getField('schoolId') || (rawMeta['schoolId'] as string | undefined),
+          studentId: getField('studentId') || (rawMeta['studentId'] as string | undefined),
+          sessionId: getField('sessionId') || (rawMeta['sessionId'] as string | undefined),
+          term: getField('term') || (rawMeta['term'] as string | undefined),
+          billing: getField('billing') || (rawMeta['billing'] as string | undefined),
+          months: Number.isFinite(parsedMonths) && parsedMonths > 0 ? parsedMonths : 1,
+          isUpgrade: getField('is_upgrade') === 'true' || rawMeta['is_upgrade'] === true || rawMeta['isUpgrade'] === true,
+          resetCycle: getField('reset_cycle') === 'true' || rawMeta['reset_cycle'] === true || rawMeta['resetCycle'] === true,
+          isTrial: getField('is_trial') === 'true' || rawMeta['is_trial'] === true || rawMeta['isTrial'] === true,
+          couponId: getField('coupon_id') || (rawMeta['couponId'] as string | undefined) || undefined,
+          couponCode: getField('coupon_code') || (rawMeta['couponCode'] as string | undefined) || undefined,
+          couponDiscount: Number.isFinite(parsedCouponDiscount) ? parsedCouponDiscount : 0,
         },
         gateway: 'PAYSTACK',
       };
@@ -170,7 +207,7 @@ export class PaystackAdapter implements PaymentGateway {
             'authorization_code'
           ],
           email: customer?.['email'],
-          paymentType: meta?.['paymentType'] as string | undefined,
+          paymentType: (meta?.['paymentType'] as string | undefined) || getField('paymentType'),
           meta: Object.fromEntries(
             customFields.map((f) => [f.variable_name, f.value])
           ),

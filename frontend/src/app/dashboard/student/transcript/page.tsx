@@ -143,6 +143,10 @@ export default function StudentTranscriptPage() {
       actions.openPaymentModalForCurrentScope();
       return;
     }
+    if (data.isGraduated && !clearance.hasDownloadRemaining) {
+      actions.openPaymentModalForCurrentScope();
+      return;
+    }
     setIsExportModalOpen(true);
   };
 
@@ -341,6 +345,20 @@ export default function StudentTranscriptPage() {
         schoolId={data.schoolId}
         onExportPdf={actions.handleDownloadPDF}
         isExportingPdf={clearance.isExporting}
+        onRecordSpreadsheetExport={async (format) => {
+          const studentCode = String(data.studentProfile?.studentCode || "Scholar");
+          const ext = format === "excel" ? "xlsx" : "csv";
+          try {
+            await data.recordDownloadMutation.mutateAsync({
+              fileName: `${studentCode}_Academic_Transcript.${ext}`,
+              fileType: "TRANSCRIPT_DOWNLOAD",
+            });
+            clearance.setLocalTranscriptDownloads((prev) => prev + 1);
+            data.refetchAudit();
+          } catch {
+            // Non-blocking audit log fallback
+          }
+        }}
       />
     </div>
   );

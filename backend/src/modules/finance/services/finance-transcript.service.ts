@@ -84,9 +84,23 @@ export async function sendTranscriptPassEmailService(params: {
   const expiryStr = verifyResult.expiresAt ? verifyResult.expiresAt.toDateString() : "30 days from confirmation";
 
   let sessionName = "All Sessions";
-  if (verifyResult.sessionId && verifyResult.sessionId !== "ALL") {
-    const sess = await withRetry(() => prisma.session.findUnique({ where: { id: verifyResult.sessionId } }), "finance.sendTranscriptPassEmail.session");
-    if (sess?.name) sessionName = sess.name;
+  if (verifyResult.sessionId && verifyResult.sessionId !== "ALL" && verifyResult.sessionId !== "All Sessions") {
+    if (verifyResult.sessionId.includes("/")) {
+      sessionName = verifyResult.sessionId;
+    } else {
+      const sess = await withRetry(
+        () =>
+          prisma.session.findFirst({
+            where: {
+              schoolId: params.schoolId,
+              OR: [{ id: verifyResult.sessionId }, { name: verifyResult.sessionId }],
+            },
+          }),
+        "finance.sendTranscriptPassEmail.session",
+      );
+      if (sess?.name) sessionName = sess.name;
+      else sessionName = verifyResult.sessionId;
+    }
   }
 
   const termMap: Record<string, string> = { ALL: "All Terms", FIRST: "1st Term", SECOND: "2nd Term", THIRD: "3rd Term" };
@@ -161,29 +175,64 @@ export async function initiateTranscriptPaymentService(params: {
   );
   if (!school) throw new Error("School not found");
 
-  const configuredFee = Number((school.settings as { transcriptFee?: number } | null)?.transcriptFee ?? 5000);
-  const feeAmount = configuredFee > 0 ? configuredFee : 5000;
-
-  const isFlw = gateway.name === "FLUTTERWAVE";
-  const defaultAccount = school.settlementAccounts?.[0] ?? null;
-  const fallbackAccount = !defaultAccount
-    ? isFlw
-      ? await withRetry(() => prisma.settlementAccount.findFirst({ where: { schoolId: params.schoolId, flwAccountStatus: "active" } }), "finance.initiateTranscriptPayment.flwAccount")
-      : await withRetry(() => prisma.settlementAccount.findFirst({ where: { schoolId: params.schoolId, paystackSubaccountStatus: "active" } }), "finance.initiateTranscriptPayment.psAccount")
-    : null;
-  const activeAccount = defaultAccount || fallbackAccount;
-  const subaccountCode: string =
-    (isFlw ? activeAccount?.flwSubaccountId || activeAccount?.flwSubaccountCode : activeAccount?.paystackSubaccountCode) ?? "";
-
   const student = await withRetry(
     () => prisma.student.findUnique({ where: { id: params.studentId }, include: { parentLinks: true } }),
     "finance.initiateTranscriptPayment.student",
   );
   if (!student) throw new Error("Student record not found");
 
+  const isGraduated = student.status === "GRADUATED" || student.status === "ALUMNI";
+  const rawPlan = String(school.plan || "FREE").toUpperCase();
+  const rawSubStatus = String(school.subscriptionStatus || "").toUpperCase();
+  const isSchoolPaidPlan =
+    Boolean(school.isTrialActive) ||
+    (rawPlan !== "FREE" && rawPlan !== "" && rawSubStatus !== "EXPIRED" && rawSubStatus !== "CANCELLED");
+
+  const rawConfiguredFee = (school.settings as { transcriptFee?: number } | null)?.transcriptFee;
+  const configuredFee =
+    rawConfiguredFee !== undefined && rawConfiguredFee !== null
+      ? Number(rawConfiguredFee)
+      : 5000;
+
+  let feeAmount = configuredFee;
+  if (isGraduated) {
+    feeAmount = configuredFee > 0 ? configuredFee : 5000;
+  } else if (!isSchoolPaidPlan) {
+    feeAmount = configuredFee > 0 ? configuredFee : 5000;
+  } else {
+    feeAmount = Math.max(0, configuredFee);
+  }
+
   // Validate that official records exist for the targeted payment scope
-  const targetSessionId = params.sessionId && params.sessionId !== "All Sessions" && params.sessionId !== "ALL" ? params.sessionId : undefined;
-  const targetTerm = params.term && params.term !== "All Terms" && params.term !== "ALL" ? params.term : undefined;
+  const rawSessionParam =
+    params.sessionId && params.sessionId !== "All Sessions" && params.sessionId !== "ALL"
+      ? params.sessionId.trim()
+      : undefined;
+  const targetTerm =
+    params.term && params.term !== "All Terms" && params.term !== "ALL"
+      ? params.term.trim()
+      : undefined;
+
+  let resolvedSessionId: string | undefined = rawSessionParam;
+  let resolvedSessionName = rawSessionParam || "All Sessions";
+
+  if (rawSessionParam) {
+    const matchedSession = await withRetry(
+      () =>
+        prisma.session.findFirst({
+          where: {
+            schoolId: params.schoolId,
+            OR: [{ id: rawSessionParam }, { name: rawSessionParam }],
+          },
+          select: { id: true, name: true },
+        }),
+      "finance.initiateTranscriptPayment.resolveSession",
+    );
+    if (matchedSession) {
+      resolvedSessionId = matchedSession.id;
+      resolvedSessionName = matchedSession.name;
+    }
+  }
 
   const resultCount = await withRetry(
     () =>
@@ -192,7 +241,7 @@ export async function initiateTranscriptPaymentService(params: {
           studentId: params.studentId,
           schoolId: params.schoolId,
           status: "PUBLISHED",
-          ...(targetSessionId ? { sessionId: targetSessionId } : {}),
+          ...(resolvedSessionId ? { sessionId: resolvedSessionId } : {}),
           ...(targetTerm ? { term: targetTerm as any } : {}),
         },
       }),
@@ -200,20 +249,65 @@ export async function initiateTranscriptPaymentService(params: {
   );
 
   if (resultCount === 0) {
-    const isGraduated = student.status === "GRADUATED" || student.status === "ALUMNI";
     const scopeLabel = targetTerm ? `${targetTerm} Term` : "the selected period";
     throw new Error(
       isGraduated
         ? `No published academic records exist for ${scopeLabel}. Graduated scholars cannot pay for unrecorded or empty terms.`
-        : `No published academic records exist for ${scopeLabel}. Clearance payment is unavailable until results are officially published.`
+        : `No published academic records exist for ${scopeLabel}. Clearance payment is unavailable until results are officially published.`,
+    );
+  }
+
+  // If complimentary (₦0 on Paid School Plan for active student), issue a 30-day pass immediately without hitting gateway
+  if (feeAmount === 0) {
+    const freeRef = `COMP-TRANS-${Date.now()}-${params.studentId.slice(0, 6).toUpperCase()}`;
+    const accessPass = generateTranscriptPassService({
+      studentId: params.studentId,
+      schoolId: params.schoolId,
+      sessionId: resolvedSessionId || "ALL",
+      term: targetTerm || "ALL",
+      paymentReference: freeRef,
+    });
+    return {
+      checkoutUrl: accessPass.accessUrl,
+      paymentReference: freeRef,
+      amount: 0,
+      accessPass,
+      settlementAccount: null,
+    };
+  }
+
+  const isFlw = gateway.name === "FLUTTERWAVE";
+  const defaultAccount = school.settlementAccounts?.[0] ?? null;
+  const fallbackAccount = !defaultAccount
+    ? isFlw
+      ? await withRetry(
+          () => prisma.settlementAccount.findFirst({ where: { schoolId: params.schoolId, flwAccountStatus: "active" } }),
+          "finance.initiateTranscriptPayment.flwAccount",
+        )
+      : await withRetry(
+          () => prisma.settlementAccount.findFirst({ where: { schoolId: params.schoolId, paystackSubaccountStatus: "active" } }),
+          "finance.initiateTranscriptPayment.psAccount",
+        )
+    : null;
+  const activeAccount = defaultAccount || fallbackAccount;
+  const accountStatus = isFlw ? activeAccount?.flwAccountStatus : activeAccount?.paystackSubaccountStatus;
+  const subaccountCode: string =
+    (isFlw ? activeAccount?.flwSubaccountId || activeAccount?.flwSubaccountCode : activeAccount?.paystackSubaccountCode) ?? "";
+
+  if (!activeAccount || accountStatus !== "active" || !subaccountCode) {
+    throw new Error(
+      "PAYMENT_GATE_LOCKED: School settlement bank account is not active or verified yet. Please contact your school administration to complete bank verification.",
     );
   }
 
   let parentId = params.parentId || student?.parentLinks?.[0]?.parentId;
   if (!parentId) {
-    const defaultPayerEmail = `payer-${params.schoolId.slice(0, 8)}@qefas.local`;
+    const studentDirectEmail =
+      student.email && student.email.includes("@")
+        ? `scholar-payer-${student.id.slice(0, 12)}@qefas.local`
+        : `scholar-payer-${student.id}@qefas.local`;
     const existingPayer = await withRetry(
-      () => prisma.parent.findFirst({ where: { email: defaultPayerEmail } }),
+      () => prisma.parent.findFirst({ where: { email: studentDirectEmail } }),
       "finance.initiateTranscriptPayment.findPayer",
     );
     const resolvedPayer =
@@ -222,10 +316,10 @@ export async function initiateTranscriptPaymentService(params: {
         () =>
           prisma.parent.create({
             data: {
-              fullName: params.name || student?.name ? `${params.name || student?.name} (Direct Scholar/Payer)` : "Direct Scholar Payer",
-              email: defaultPayerEmail,
+              fullName: `${student.name || params.name || "Scholar"} (Direct Scholar Payer)`,
+              email: studentDirectEmail,
               phone: "0000000000",
-              parentCode: `PAR-DIRECT-${Date.now().toString().slice(-4)}`,
+              parentCode: `PAR-SCH-${student.id.slice(0, 6).toUpperCase()}`,
               role: "PARENT",
             },
           }),
@@ -245,9 +339,11 @@ export async function initiateTranscriptPaymentService(params: {
     metadata: {
       schoolId: params.schoolId,
       studentId: params.studentId,
-      sessionId: params.sessionId || "All Sessions",
-      term: params.term || "All Terms",
+      sessionId: resolvedSessionId || "All Sessions",
+      sessionName: resolvedSessionName,
+      term: targetTerm || "All Terms",
       paymentType: "TRANSCRIPT",
+      settlementAccountId: activeAccount.id,
       subaccountCode,
       name: params.name || student?.name || "Student",
       redirect_url: redirectUrl,
@@ -263,11 +359,11 @@ export async function initiateTranscriptPaymentService(params: {
           studentId: params.studentId,
           parentId,
           amount: feeAmount,
-          term: params.term || "All Terms",
-          session: params.sessionId || "All Sessions",
+          term: targetTerm || "All Terms",
+          session: resolvedSessionName,
           paymentType: "TRANSCRIPT",
           status: "PENDING",
-          settlementAccountId: activeAccount?.id || null,
+          settlementAccountId: activeAccount.id,
         },
       }),
     "finance.initiateTranscriptPayment.createPayment",
@@ -277,8 +373,10 @@ export async function initiateTranscriptPaymentService(params: {
     checkoutUrl: result.checkoutUrl,
     paymentReference: result.txRef,
     amount: feeAmount,
-    settlementAccount: activeAccount
-      ? { bankName: activeAccount.bankName, accountNumber: activeAccount.accountNumber, accountName: activeAccount.accountName }
-      : null,
+    settlementAccount: {
+      bankName: activeAccount.bankName,
+      accountNumber: activeAccount.accountNumber,
+      accountName: activeAccount.accountName,
+    },
   };
 }

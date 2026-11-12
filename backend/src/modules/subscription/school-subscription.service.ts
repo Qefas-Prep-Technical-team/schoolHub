@@ -106,6 +106,8 @@ export class SchoolSubscriptionService {
     planId: string;
     type: SubscriptionType;
     durationDays?: number;
+    expiresAtOverride?: Date | null;
+    billingCycleOverride?: "monthly" | "yearly";
     amountPaid?: number;
     paymentReference?: string;
     note?: string;
@@ -114,10 +116,10 @@ export class SchoolSubscriptionService {
     trialEndsAt?: Date;
     assignedBy?: string;
   }) {
-    const { 
-      schoolId, planId, type, durationDays, amountPaid, 
-      paymentReference, note, isTrial, trialPlan, 
-      trialEndsAt, assignedBy 
+    const {
+      schoolId, planId, type, durationDays, expiresAtOverride, billingCycleOverride, amountPaid,
+      paymentReference, note, isTrial, trialPlan,
+      trialEndsAt, assignedBy
     } = params;
 
     const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
@@ -125,7 +127,15 @@ export class SchoolSubscriptionService {
       throw new Error("Invalid school subscription plan.");
     }
 
-    const expiresAt = durationDays ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000) : null;
+    const expiresAt =
+      expiresAtOverride !== undefined
+        ? expiresAtOverride
+        : durationDays
+          ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
+          : null;
+
+    const effectiveBillingCycle =
+      billingCycleOverride || ((durationDays && durationDays >= 350) ? 'yearly' : 'monthly');
 
     return await prisma.$transaction(async (tx) => {
       // The previous plan history record remains open (endedAt: null) until it explicitly expires via the scheduler
@@ -169,7 +179,7 @@ export class SchoolSubscriptionService {
           trialUsed: isTrial ? true : undefined,
           trialPlan: isTrial ? trialPlan : undefined,
           trialEndsAt: isTrial ? trialEndsAt : undefined,
-          billingCycle: (durationDays && durationDays >= 365) ? 'yearly' : 'monthly',
+          billingCycle: effectiveBillingCycle,
         }
       });
 

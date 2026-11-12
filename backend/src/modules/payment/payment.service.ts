@@ -8,6 +8,16 @@ import { FinanceService } from "../finance/finance.service";
 import { getPaymentGateway } from "./gateway.factory";
 import { CouponService } from "./coupon.service";
 import { PlatformAlertRecipientService } from "../platform/notifications/recipient.service";
+import {
+  initializeSubscriptionCheckout,
+  verifySubscriptionPayment,
+  processSubscriptionRenewal,
+} from "./services/subscription-checkout.service";
+import {
+  resolveAdminSchoolLink,
+  assertBillingAdmin,
+  getPlanId as resolvePlanId,
+} from "./services/subscription-plan.helpers";
 
 const getPlanId = async (userType: string, plan: string) => {
   const categoryMap: Record<string, string> = {
@@ -21,9 +31,9 @@ const getPlanId = async (userType: string, plan: string) => {
   // Requirement: Fetch the real UUID from the database, not from plans.data.ts
   const dbPlan = await prisma.subscriptionPlan.findFirst({
     where: {
-        category: { equals: category, mode: 'insensitive' },
-        type: { equals: plan, mode: 'insensitive' },
-        isActive: true
+      category: { equals: category, mode: 'insensitive' },
+      type: { equals: plan, mode: 'insensitive' },
+      isActive: true
     },
     select: { id: true }
   });
@@ -33,8 +43,8 @@ const getPlanId = async (userType: string, plan: string) => {
   // Fallback: check if any active plan matches type
   const fallbackPlan = await prisma.subscriptionPlan.findFirst({
     where: {
-        type: { equals: plan, mode: 'insensitive' },
-        isActive: true
+      type: { equals: plan, mode: 'insensitive' },
+      isActive: true
     },
     select: { id: true }
   });
@@ -223,52 +233,24 @@ export const initializePaymentService = async (params: {
   plan: string;
   planCode?: string;
   metadata?: Record<string, unknown>;
+  authUser?: { id: string; userType?: string; email?: string; schoolId?: string };
 }) => {
-  // --- ZERO AMOUNT / 100% COUPON HANDLER ---
-  if (params.amount === 0) {
-    const freeRef = `FREE_${Date.now()}_${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-    const userRoleRaw = (params.metadata?.user_role as string) || (params.metadata?.role as string) || "ADMIN";
-    const billingType = (params.metadata?.billing as "monthly" | "yearly") || "monthly";
+  const formattedAuthUser = params.authUser && params.authUser.userType
+    ? {
+        id: params.authUser.id,
+        userType: params.authUser.userType,
+        schoolId: params.authUser.schoolId,
+      }
+    : undefined;
 
-    await processZeroAmountCheckout({
-      reference: freeRef,
-      userId: params.userId,
-      email: params.email,
-      userRoleRaw,
-      plan: params.plan,
-      billingType,
-      metadata: params.metadata,
-    });
-
-    const frontendUrl = process.env.FRONTEND_URL || "https://www.qefashub.com";
-    return {
-      authorization_url: `${frontendUrl}/payment/callback?reference=${freeRef}&status=successful`,
-      checkoutUrl: `${frontendUrl}/payment/callback?reference=${freeRef}&status=successful`,
-      access_code: "FREE_COUPON",
-      reference: freeRef,
-      isFree: true,
-    };
-  }
-
-  const gateway = getPaymentGateway();
-  const result = await gateway.initialize({
-    userId: params.userId,
+  return await initializeSubscriptionCheckout({
+    authUser: formattedAuthUser,
+    clientAmount: params.amount,
     email: params.email,
-    amount: params.amount,
     plan: params.plan,
-    metadata: {
-      ...params.metadata,
-      planCode: params.planCode,
-    },
+    planCode: params.planCode,
+    metadata: params.metadata,
   });
-
-  // Return a shape the controller and frontend already understand
-  return {
-    authorization_url: result.checkoutUrl,
-    checkoutUrl: result.checkoutUrl,
-    access_code: result.accessCode,
-    reference: result.txRef,
-  };
 };
 
 /**
@@ -283,516 +265,160 @@ export const verifyPaymentService = async (
   /** FLW-only: numeric transaction_id from the redirect callback query param */
   flwTransactionId?: string
 ) => {
-  const userRole = userRoleRaw.toUpperCase();
-  console.log(`[PaymentService] Verifying payment for user: ${userId}, role: ${userRole}, reference: ${reference}`);
-
-  try {
-    // --- IDEMPOTENCY GUARD ---
-    // Prevent the same reference from being processed more than once.
-    const existingTransaction = await prisma.transaction.findUnique({
-      where: { reference }
-    });
-    if (existingTransaction) {
-      console.log(`[PaymentService] Reference ${reference} already processed. Skipping.`);
-      return { 
-        alreadyProcessed: true, 
-        reference,
-        paymentMethod: existingTransaction.paymentMethod || "COUPON",
-        expiryDate: existingTransaction.expiryDate ? existingTransaction.expiryDate.toISOString() : null
-      };
-    }
-
-    // Delegate verification to the active gateway adapter
-    const gateway = getPaymentGateway();
-    let verified;
-    try {
-      verified = await gateway.verify(reference, flwTransactionId);
-    } catch (error) {
-      // TRACK FAILED PAYMENT
-      try {
-        await prisma.transaction.upsert({
-          where: { reference },
-          create: {
-            reference,
-            userId: userId || "unknown",
-            userType: (userRole as UserRole) || "ADMIN",
-            amount: 0,
-            status: "FAILED",
-            gateway: gateway.name || "UNKNOWN"
-          },
-          update: {
-            status: "FAILED",
-            userId: userId || undefined,
-          }
-        });
-        console.error(`[PaymentService] Tracked failed payment for reference: ${reference}`);
-
-        try {
-          let userEmail: string | undefined;
-          if (userRole === "ADMIN") {
-              const admin = await prisma.admin.findUnique({ where: { id: userId }, select: { email: true } });
-              userEmail = admin?.email;
-          } else {
-              userEmail = await (prisma as unknown as Record<string, { findUnique: (args: { where: { id: string }; select: { email: boolean } }) => Promise<{ email: string } | null> }>)[userRole.toLowerCase()].findUnique({ where: { id: userId }, select: { email: true } }).then(u => u?.email);
-          }
-
-          if (userEmail) {
-              await sendPaymentFailedEmail({
-                  email: userEmail,
-                  amount: 0, // Since it failed during verification, the actual amount might be unknown from gateway, but we can pass 0 or a placeholder.
-                  date: new Date(),
-                  method: gateway.name,
-                  plan: plan
-              });
-              console.log(`[PaymentService] Failed payment email sent to ${userEmail}`);
-          }
-        } catch (emailError) {
-          console.error("[PaymentService] Could not send failed payment email:", emailError);
-        }
-
-      } catch (dbError) {
-        console.error("[PaymentService] Could not track failed payment:", dbError);
-      }
-      throw error;
-    }
-
-    const paystackAmount = verified.amountNaira; // Already in Naira from adapter
-    const paystackRef = verified.reference;
-    const channel = verified.channel;
-    const authCode = verified.authorizationToken;
-
-    // SECURITY: Extract Plan and Billing from gateway-normalised metadata (Source of Truth)
-    const metadataPlan = verified.meta.plan;
-    const metadataBilling = verified.meta.billing;
-    const isUpgrade = verified.meta.isUpgrade ?? verified.meta.is_upgrade ?? false;
-    const resetCycle = verified.meta.resetCycle ?? verified.meta.reset_cycle ?? false;
-
-    // Frontend passes isTrial but we MUST verify it server-side — never trust the client.
-    const isTrial = await (async () => {
-      const claimedTrial = verified.meta.isTrial ?? false;
-      if (!claimedTrial) return false; // Not even claiming trial — fast path
-
-      // Look up the actual user record to check trialUsed
-      const tableMap: Record<string, string> = { ADMIN: 'admin', TEACHER: 'teacher', STUDENT: 'student', PARENT: 'parent' };
-      const table = tableMap[userRole] || 'admin';
-      try {
-        const dbUser = await (prisma as unknown as Record<string, { findUnique: (a: { where: { id: string }; select: { trialUsed: boolean } }) => Promise<{ trialUsed: boolean } | null> }>)[table].findUnique({
-          where: { id: userId },
-          select: { trialUsed: true },
-        });
-        if (dbUser?.trialUsed) {
-          console.warn(`[PaymentSecurity] User ${userId} already used their trial. Denying isTrial claim.`);
-          return false; // Trial already used — reject the claim silently (full price applies)
-        }
-        return true;
-      } catch {
-        console.warn(`[PaymentSecurity] Could not verify trialUsed for user ${userId} — defaulting isTrial=false.`);
-        return false;
-      }
-    })();
-
-    // Prioritize metadata, fallback to provided params (for backward compatibility if needed)
-    const verifiedPlan = metadataPlan || plan;
-    const verifiedBilling: 'monthly' | 'yearly' = (metadataBilling || billingType) as 'monthly' | 'yearly';
-
-    if (metadataPlan && plan && metadataPlan.toLowerCase() !== plan.toLowerCase()) {
-        console.warn(`[PaymentSecurity] Plan mismatch detected! Request: ${plan}, Metadata: ${metadataPlan}. Using Metadata.`);
-    }
-
-    // Calculate duration in months
-    const metadataMonths = typeof verified.meta.months === 'number' && verified.meta.months > 0
-      ? verified.meta.months
-      : 1;
-    const durationMonths = verifiedBilling === 'yearly' ? 12 : metadataMonths;
-    
-    // Find existing subscription end to preserve it if upgrading, or extend if renewing
-    let existingEnd: Date | null = null;
-    if (userRole === "ADMIN") {
-        const schoolAdmin = await prisma.schoolAdmin.findFirst({
-            where: { adminId: userId },
-            include: { school: { select: { subscriptionEnd: true } } }
-        });
-        existingEnd = schoolAdmin?.school?.subscriptionEnd || null;
-    } else {
-        const user = await (prisma as unknown as Record<string, { findUnique: (args: { where: { id: string }; select: { subscriptionEnd: boolean } }) => Promise<{ subscriptionEnd: Date | null } | null> }>)[userRole.toLowerCase()].findUnique({
-            where: { id: userId },
-            select: { subscriptionEnd: true }
-        });
-        existingEnd = user?.subscriptionEnd || null;
-    }
-
-    // Calculate subscription end date
-    let subscriptionEnd = new Date();
-
-    if (isTrial) {
-        // Fetch trial days from plans config
-        const categoryMap: Record<string, string> = { 'ADMIN': 'schools', 'TEACHER': 'teachers', 'STUDENT': 'students', 'PARENT': 'parents' };
-        const category = categoryMap[userRole] || 'schools';
-        const planData = PRICING_PLANS.find(p => p.category === category)?.tabs.find(t => t.type.toLowerCase() === verifiedPlan.toLowerCase());
-        const trialDays = planData?.trialDays || 7;
-
-        subscriptionEnd.setDate(subscriptionEnd.getDate() + trialDays);
-    } else {
-        if (isUpgrade && !resetCycle) {
-            // Prorated upgrade: keep existing end date
-            if (existingEnd && existingEnd > new Date()) {
-                subscriptionEnd = new Date(existingEnd.getTime());
-            } else {
-                subscriptionEnd.setMonth(subscriptionEnd.getMonth() + durationMonths);
-            }
-        } else {
-            // Full cycle renewal or upgrade with resetCycle
-            if (existingEnd && existingEnd > new Date()) {
-                // Add new months to the current future expiry date so they don't lose days
-                subscriptionEnd = new Date(existingEnd.getTime());
-                subscriptionEnd.setMonth(subscriptionEnd.getMonth() + durationMonths);
-            } else {
-                // Expired or brand new: start from today
-                subscriptionEnd.setMonth(subscriptionEnd.getMonth() + durationMonths);
-            }
-        }
-    }
-
-    const planId = await getPlanId(userRole, verifiedPlan);
-    const dbPlan = await prisma.subscriptionPlan.findUnique({ where: { id: planId }, select: { name: true } });
-    const actualPlanName = dbPlan?.name || verifiedPlan;
-
-    const updateData: {
-      plan: string;
-      planId: string;
-      subscriptionPlanId: string;
-      subscriptionStatus: string;
-      lastPaymentDate: Date;
-      isTrialActive: boolean;
-      trialUsed: boolean;
-      trialEndsAt?: Date;
-      trialPlan?: string;
-      billingCycle: string;
-      subscriptionEnd: Date;
-    } = {
-        plan: verifiedPlan, // Human readable plan name (e.g. "Growth")
-        planId: planId, // UUID of the plan
-        subscriptionPlanId: planId, // UUID of the plan (Standardized field)
-        subscriptionStatus: "ACTIVE",
-        lastPaymentDate: new Date(),
-        isTrialActive: isTrial,
-        trialUsed: true,
-        trialEndsAt: isTrial ? subscriptionEnd : undefined,
-        trialPlan: isTrial ? verifiedPlan : undefined, // Requirement: Set trial plan name if trialing
-        billingCycle: verifiedBilling,
-        subscriptionEnd,
-    };
-
-    // Save transaction record
-    let schoolId: string | undefined;
-    if (userRole === "ADMIN") {
-        const schoolAdmin = await prisma.schoolAdmin.findFirst({
-            where: { adminId: userId },
-            select: { schoolId: true }
-        });
-        schoolId = schoolAdmin?.schoolId;
-    }
-
-    await prisma.transaction.create({
-        data: {
-            reference: paystackRef,
-            amount: paystackAmount,
-            currency: "NGN",
-            status: "SUCCESS",
-            paymentMethod: channel,
-            authorizationToken: authCode,
-            paidAt: new Date(),
-            schoolId,
-            userId,
-            userType: userRole as "ADMIN" | "TEACHER" | "STUDENT" | "PARENT",
-            plan: actualPlanName,
-            planId,
-            billingCycle: billingType,
-            expiryDate: updateData.subscriptionEnd,
-            gateway: gateway.name,
-            gatewayRef: verified.gatewayRef,
-        }
-    });
-
-
-    // Determine Subscription Type for the professional tracking tables
-    const subType = isTrial ? SubscriptionType.TRIAL : SubscriptionType.PAID;
-    const durationDays = Math.ceil((updateData.subscriptionEnd.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-
-    // Update the corresponding professional subscription tables and history
-    switch (userRole) {
-        case "TEACHER":
-        case "STUDENT":
-        case "PARENT":
-            await UserSubscriptionService.updatePlan({
-                userId,
-                userType: userRole as UserRole,
-                planId: updateData.planId,
-                type: subType,
-                durationDays,
-                amountPaid: paystackAmount,
-                paymentReference: paystackRef,
-                note: `Payment via ${gateway.name} (${channel})`,
-                isTrial,
-                trialPlan: verifiedPlan,
-                trialEndsAt: subscriptionEnd
-            });
-            break;
-
-        case "ADMIN": {
-            const schoolAdmin = await prisma.schoolAdmin.findFirst({
-                where: { adminId: userId },
-                select: { schoolId: true }
-            });
-
-            console.log(`[PaymentService] Admin link check: ${schoolAdmin ? 'Link found: ' + schoolAdmin.schoolId : 'No link found for admin ' + userId}`);
-
-            // 1. Update the Individual Admin Subscription
-            await UserSubscriptionService.updatePlan({
-                userId,
-                userType: UserRole.ADMIN,
-                planId: updateData.planId,
-                type: subType,
-                durationDays,
-                amountPaid: paystackAmount,
-                paymentReference: paystackRef,
-                note: `Payment via ${gateway.name} (${channel})`,
-                isTrial,
-                trialPlan: verifiedPlan,
-                trialEndsAt: subscriptionEnd
-            });
-
-            // 2. Update the Institutional School Subscription (Primary source for billing dashboard)
-            if (schoolAdmin?.schoolId) {
-                await SchoolSubscriptionService.updatePlan({
-                    schoolId: schoolAdmin.schoolId,
-                    planId: updateData.planId,
-                    type: subType,
-                    durationDays,
-                    amountPaid: paystackAmount,
-                    paymentReference: paystackRef,
-                    note: `Institutional Payment via ${gateway.name} (${channel})`,
-                    isTrial,
-                    trialPlan: verifiedPlan,
-                    trialEndsAt: subscriptionEnd,
-                    assignedBy: userId // The admin ID who paid
-                });
-                console.log(`[PaymentService] School ${schoolAdmin.schoolId} updated successfully.`);
-            }
-            break;
-        }
-    }
-
-    // 4. Send Receipt Email & Platform Alert
-    let userEmail: string | undefined;
-    try {
-        if (userRole === "ADMIN") {
-            const admin = await prisma.admin.findUnique({ where: { id: userId }, select: { email: true } });
-            userEmail = admin?.email;
-        } else {
-            userEmail = await (prisma as unknown as Record<string, { findUnique: (args: { where: { id: string }; select: { email: boolean } }) => Promise<{ email: string } | null> }>)[userRole.toLowerCase()].findUnique({ where: { id: userId }, select: { email: true } }).then(u => u?.email);
-        }
-
-        if (userEmail) {
-            await sendPaymentReceiptEmail({
-                email: userEmail,
-                amount: paystackAmount,
-                date: new Date(),
-                method: channel || 'Card',
-                plan: plan,
-                expiryDate: updateData.subscriptionEnd
-            });
-            console.log(`[PaymentService] Receipt email sent to ${userEmail}`);
-        }
-    } catch (emailError) {
-        console.error("[PaymentService] Failed to send receipt email:", emailError);
-        // Don't throw here as the payment was successful
-    }
-
-    // Dispatch payment and subscription alerts to registered platform recipients
-    PlatformAlertRecipientService.dispatchAlert("PAYMENTS", {
-      subject: `💳 Payment Received: ₦${paystackAmount.toLocaleString()} (${plan.toUpperCase()})`,
-      title: "Subscription Payment Received",
-      description: `A payment of ₦${paystackAmount.toLocaleString()} was successfully processed via ${gateway.name} (${channel || 'Card'}).\n\nPlan: ${plan.toUpperCase()}\nReference: ${paystackRef}\nExpiry: ${updateData.subscriptionEnd?.toISOString()}`,
-      userEmail: userEmail,
-      userType: userRole,
-      priority: "HIGH"
-    }).catch(err => console.error("[PaymentService] Failed dispatching payment alert:", err));
-
-    PlatformAlertRecipientService.dispatchAlert("SUBSCRIPTIONS", {
-      subject: `⭐ [Subscription Upgraded] ${plan.toUpperCase()} Plan Active`,
-      title: "Subscription Tier Upgraded / Renewed",
-      description: `User ${userEmail} (${userRole}) has subscribed to ${plan.toUpperCase()}.\n\nAmount: ₦${paystackAmount.toLocaleString()}\nGateway: ${gateway.name}\nReference: ${paystackRef}\nExpiry Date: ${updateData.subscriptionEnd?.toISOString()}`,
-      userEmail: userEmail,
-      userType: userRole,
-      priority: "HIGH"
-    }).catch(err => console.error("[PaymentService] Failed dispatching subscription alert:", err));
-
-    return { 
-        reference: paystackRef, 
-        gateway: gateway.name,
-        paymentMethod: channel,
-        expiryDate: updateData.subscriptionEnd
-    };
-  } catch (error: any) {
-    console.error("[PaymentService] Error during verification:", error);
-    // Extract Prisma errors or nested messages safely
-    const errorMessage = error?.response?.data?.message || error?.message || "Payment verification failed";
-    throw new Error(errorMessage);
-  }
+  return await verifySubscriptionPayment(reference, flwTransactionId);
 };
 
 /**
  * Fetch consolidated billing data for a user (Student, Teacher, or Parent)
  */
 export const getUserBillingService = async (userId: string, role: string, page = 1, limit = 5) => {
-    const table = role.toLowerCase();
-    const userRole = role.toUpperCase();
+  const table = role.toLowerCase();
+  const userRole = role.toUpperCase();
 
-    // Fetch user with subscription info
-    const user = await (prisma as unknown as Record<string, { findUnique: (args: { where: { id: string }; select: Record<string, boolean> }) => Promise<Record<string, unknown> | null> }>)[table].findUnique({
-        where: { id: userId },
-        select: {
-            id: true,
-            plan: true,
-            subscriptionStatus: true,
-            subscriptionEnd: true,
-            isTrialActive: true,
-            lastPaymentDate: true,
-            paystackCustomerCode: true,
-            billingCycle: true,
-            subscriptionPlanId: true,
+  // Fetch user with subscription info
+  const user = await (prisma as unknown as Record<string, { findUnique: (args: { where: { id: string }; select: Record<string, boolean> }) => Promise<Record<string, unknown> | null> }>)[table].findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      plan: true,
+      subscriptionStatus: true,
+      subscriptionEnd: true,
+      isTrialActive: true,
+      lastPaymentDate: true,
+      paystackCustomerCode: true,
+      billingCycle: true,
+      subscriptionPlanId: true,
+    }
+  });
+
+  if (!user) {
+    throw new Error(`User not found for ID: "${userId}" or role mismatch.`);
+  }
+
+  const skip = (page - 1) * limit;
+
+  // Determine which field to use for FileMetric based on role
+  let fileMetricWhere: Record<string, string> = {};
+  if (userRole === 'STUDENT') fileMetricWhere = { studentId: userId };
+  else if (userRole === 'TEACHER') fileMetricWhere = { teacherId: userId };
+  else if (userRole === 'PARENT') fileMetricWhere = { parentId: userId };
+  else if (userRole === 'ADMIN') {
+    const schoolAdmin = await prisma.schoolAdmin.findFirst({
+      where: { adminId: userId },
+      select: { schoolId: true }
+    });
+    if (schoolAdmin?.schoolId) fileMetricWhere = { schoolId: schoolAdmin.schoolId };
+    else fileMetricWhere = { id: 'none' }; // No school, no files
+  }
+
+  // Fetch transactions and usage sequentially to save connections
+  const transactions = await prisma.transaction.findMany({
+    where: { userId: userId },
+    orderBy: { createdAt: "desc" },
+    skip,
+    take: limit,
+  });
+  const totalTransactions = await prisma.transaction.count({
+    where: { userId: userId }
+  });
+  const storageMetric = await prisma.fileMetric.aggregate({
+    where: fileMetricWhere,
+    _sum: { fileSize: true }
+  });
+
+  // Role-specific usage metrics
+  const usage: { storageBytes: number; classes: number; students: number; schools: number } = {
+    storageBytes: storageMetric._sum.fileSize ? Number(storageMetric._sum.fileSize) : 0,
+    classes: 0,
+    students: 0,
+    schools: 0
+  };
+
+  try {
+    if (userRole === 'TEACHER') {
+      const classCount = await prisma.classTeacher.count({ where: { teacherId: userId } });
+      const studentCount = await prisma.relationshipLink.count({
+        where: {
+          linkType: 'TEACHER_STUDENT',
+          status: 'ACTIVE',
+          OR: [{ leftEntityId: userId }, { rightEntityId: userId }]
         }
-    });
-
-    if (!user) {
-        throw new Error(`User not found for ID: "${userId}" or role mismatch.`);
-    }
-
-    const skip = (page - 1) * limit;
-
-    // Determine which field to use for FileMetric based on role
-    let fileMetricWhere: Record<string, string> = {};
-    if (userRole === 'STUDENT') fileMetricWhere = { studentId: userId };
-    else if (userRole === 'TEACHER') fileMetricWhere = { teacherId: userId };
-    else if (userRole === 'PARENT') fileMetricWhere = { parentId: userId };
-    else if (userRole === 'ADMIN') {
-        const schoolAdmin = await prisma.schoolAdmin.findFirst({
-            where: { adminId: userId },
-            select: { schoolId: true }
-        });
-        if (schoolAdmin?.schoolId) fileMetricWhere = { schoolId: schoolAdmin.schoolId };
-        else fileMetricWhere = { id: 'none' }; // No school, no files
-    }
-
-    // Fetch transactions and usage sequentially to save connections
-    const transactions = await prisma.transaction.findMany({
-        where: { userId: userId },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-    });
-    const totalTransactions = await prisma.transaction.count({
-        where: { userId: userId }
-    });
-    const storageMetric = await prisma.fileMetric.aggregate({
-        where: fileMetricWhere,
-        _sum: { fileSize: true }
-    });
-
-    // Role-specific usage metrics
-    const usage: { storageBytes: number; classes: number; students: number; schools: number } = {
-        storageBytes: storageMetric._sum.fileSize ? Number(storageMetric._sum.fileSize) : 0,
-        classes: 0,
-        students: 0,
-        schools: 0
-    };
-
-    try {
-        if (userRole === 'TEACHER') {
-            const classCount = await prisma.classTeacher.count({ where: { teacherId: userId } });
-            const studentCount = await prisma.relationshipLink.count({
-                where: {
-                    linkType: 'TEACHER_STUDENT',
-                    status: 'ACTIVE',
-                    OR: [{ leftEntityId: userId }, { rightEntityId: userId }]
-                }
-            });
-            const schoolLinkCount = await prisma.relationshipLink.count({
-                where: {
-                    linkType: 'SCHOOL_TEACHER',
-                    status: 'ACTIVE',
-                    OR: [{ leftEntityId: userId }, { rightEntityId: userId }]
-                }
-            });
-            usage.classes = classCount;
-            usage.students = studentCount;
-            usage.schools = schoolLinkCount;
-        } else if (userRole === 'PARENT') {
-            const childCount = await prisma.parentChildLink.count({ where: { parentId: userId, status: 'active' } });
-            usage.students = childCount;
+      });
+      const schoolLinkCount = await prisma.relationshipLink.count({
+        where: {
+          linkType: 'SCHOOL_TEACHER',
+          status: 'ACTIVE',
+          OR: [{ leftEntityId: userId }, { rightEntityId: userId }]
         }
-    } catch (usageError) {
-        console.error("[PaymentService] Usage calculation error:", usageError);
+      });
+      usage.classes = classCount;
+      usage.students = studentCount;
+      usage.schools = schoolLinkCount;
+    } else if (userRole === 'PARENT') {
+      const childCount = await prisma.parentChildLink.count({ where: { parentId: userId, status: 'active' } });
+      usage.students = childCount;
     }
+  } catch (usageError) {
+    console.error("[PaymentService] Usage calculation error:", usageError);
+  }
 
-    // Fetch Subscription Plan with Features separately for accuracy across roles
-    let subscriptionPlan: Record<string, unknown> | null = null;
-    try {
-        if (userRole === 'ADMIN') {
-            const schoolAdmin = await prisma.schoolAdmin.findFirst({
-                where: { adminId: userId, active: true },
-                select: { schoolId: true }
-            });
-            if (schoolAdmin) {
-                const school = await prisma.school.findUnique({
-                    where: { id: schoolAdmin.schoolId },
-                    include: {
-                        subscriptionPlan: {
-                            include: { featureAccess: { where: { enabled: true }, include: { feature: true } } }
-                        }
-                    }
-                });
-                subscriptionPlan = school?.subscriptionPlan as Record<string, unknown> | null;
+  // Fetch Subscription Plan with Features separately for accuracy across roles
+  let subscriptionPlan: Record<string, unknown> | null = null;
+  try {
+    if (userRole === 'ADMIN') {
+      const schoolAdmin = await prisma.schoolAdmin.findFirst({
+        where: { adminId: userId, active: true },
+        select: { schoolId: true }
+      });
+      if (schoolAdmin) {
+        const school = await prisma.school.findUnique({
+          where: { id: schoolAdmin.schoolId },
+          include: {
+            subscriptionPlan: {
+              include: { featureAccess: { where: { enabled: true }, include: { feature: true } } }
             }
-        } else if (['TEACHER', 'STUDENT', 'PARENT'].includes(userRole)) {
-            const profile = await (prisma as unknown as Record<string, { findUnique: (args: { where: { id: string }; include: Record<string, unknown> }) => Promise<Record<string, unknown> | null> }>)[table].findUnique({
-                where: { id: userId },
-                include: {
-                    subscriptionPlan: {
-                        include: { featureAccess: { where: { enabled: true }, include: { feature: true } } }
-                    }
-                }
-            });
-            subscriptionPlan = profile?.subscriptionPlan as Record<string, unknown> | null;
+          }
+        });
+        subscriptionPlan = school?.subscriptionPlan as Record<string, unknown> | null;
+      }
+    } else if (['TEACHER', 'STUDENT', 'PARENT'].includes(userRole)) {
+      const profile = await (prisma as unknown as Record<string, { findUnique: (args: { where: { id: string }; include: Record<string, unknown> }) => Promise<Record<string, unknown> | null> }>)[table].findUnique({
+        where: { id: userId },
+        include: {
+          subscriptionPlan: {
+            include: { featureAccess: { where: { enabled: true }, include: { feature: true } } }
+          }
         }
-    } catch (planError) {
-        console.error("[PaymentService] Error fetching subscription plan features:", planError);
+      });
+      subscriptionPlan = profile?.subscriptionPlan as Record<string, unknown> | null;
     }
+  } catch (planError) {
+    console.error("[PaymentService] Error fetching subscription plan features:", planError);
+  }
 
-    const featureAccess = subscriptionPlan?.featureAccess as Array<{ feature: { featureKey: string; label?: string; name: string }; limitValue: number; enabled: boolean }> | undefined;
+  const featureAccess = subscriptionPlan?.featureAccess as Array<{ feature: { featureKey: string; label?: string; name: string }; limitValue: number; enabled: boolean }> | undefined;
 
-    return {
-        subscription: {
-            plan: user.plan,
-            subscriptionStatus: user.subscriptionStatus,
-            subscriptionEnd: user.subscriptionEnd,
-            isTrialActive: user.isTrialActive,
-            lastPaymentDate: user.lastPaymentDate,
-            paystackCustomerCode: user.paystackCustomerCode,
-            subscriptionPlanId: user.subscriptionPlanId,
-            billingCycle: user.billingCycle || 'MONTHLY',
-            features: featureAccess?.map((fa) => ({
-                key: fa.feature.featureKey,
-                name: fa.feature.label || fa.feature.name,
-                limit: fa.limitValue,
-                enabled: fa.enabled
-            })) || []
-        },
-        usage,
-        transactions,
-        totalTransactions,
-    };
+  return {
+    subscription: {
+      plan: user.plan,
+      subscriptionStatus: user.subscriptionStatus,
+      subscriptionEnd: user.subscriptionEnd,
+      isTrialActive: user.isTrialActive,
+      lastPaymentDate: user.lastPaymentDate,
+      paystackCustomerCode: user.paystackCustomerCode,
+      subscriptionPlanId: user.subscriptionPlanId,
+      billingCycle: user.billingCycle || 'MONTHLY',
+      features: featureAccess?.map((fa) => ({
+        key: fa.feature.featureKey,
+        name: fa.feature.label || fa.feature.name,
+        limit: fa.limitValue,
+        enabled: fa.enabled
+      })) || []
+    },
+    usage,
+    transactions,
+    totalTransactions,
+  };
 };
 
 /**
@@ -807,29 +433,32 @@ export const scheduleDowngradeService = async (
   billingCycle: 'monthly' | 'yearly'
 ) => {
   const role = userRole.toUpperCase();
-  const newPlanId = await getPlanId(role, newPlan);
+  const newPlanId = await resolvePlanId(role, newPlan);
 
   if (role === 'ADMIN') {
-    const schoolAdmin = await prisma.schoolAdmin.findFirst({
-      where: { adminId: userId },
-      select: { schoolId: true }
-    });
-
-    if (!schoolAdmin?.schoolId) {
-      throw new Error('No school found for this admin');
+    const link = await assertBillingAdmin(userId);
+    if (!link) {
+      throw new Error('No active school link found for this administrator');
     }
+
+    // Cancel any older PENDING_DOWNGRADE records for this school
+    await prisma.transaction.updateMany({
+      where: {
+        schoolId: link.schoolId,
+        status: 'PENDING_DOWNGRADE',
+      },
+      data: { status: 'CANCELLED' },
+    });
 
     // Record the pending downgrade on the school — active plan is unchanged
     await prisma.school.update({
-      where: { id: schoolAdmin.schoolId },
+      where: { id: link.schoolId },
       data: {
         pendingPlan: newPlan,
         pendingPlanId: newPlanId,
         pendingBillingCycle: billingCycle,
       } as any // Graceful: only persisted if schema has these fields
     }).catch(() => {
-      // If schema doesn't have the field yet, log and continue.
-      // The downgrade intent is captured in the audit log below.
       console.warn('[ScheduleDowngrade] pendingPlan field not found in schema. Audit-log only.');
     });
 
@@ -840,7 +469,7 @@ export const scheduleDowngradeService = async (
         amount: 0,
         currency: 'NGN',
         status: 'PENDING_DOWNGRADE',
-        schoolId: schoolAdmin.schoolId,
+        schoolId: link.schoolId,
         userId,
         userType: 'ADMIN',
         plan: newPlan,
@@ -850,7 +479,7 @@ export const scheduleDowngradeService = async (
       }
     });
 
-    console.log(`[PaymentService] Downgrade scheduled: Admin ${userId} → ${newPlan} (${billingCycle})`);
+    console.log(`[PaymentService] Downgrade scheduled: Admin ${userId} (School ${link.schoolId}) → ${newPlan} (${billingCycle})`);
     return { scheduled: true, plan: newPlan, billingCycle };
   }
 
@@ -873,34 +502,34 @@ export const getPaymentHistoryService = async (userId: string) => {
  * is embedded in the tx_ref stored at initialization time.
  */
 export const getMetadataFromReference = async (reference: string, flwTransactionId?: string) => {
-    if (reference.startsWith("FREE_")) {
-        const tx = await prisma.transaction.findUnique({
-            where: { reference },
-            select: { userId: true, userType: true }
-        });
-        if (tx?.userId && tx?.userType) {
-            return { userId: tx.userId, userRole: tx.userType };
-        }
+  if (reference.startsWith("FREE_")) {
+    const tx = await prisma.transaction.findUnique({
+      where: { reference },
+      select: { userId: true, userType: true }
+    });
+    if (tx?.userId && tx?.userType) {
+      return { userId: tx.userId, userRole: tx.userType };
     }
-    try {
-        const gateway = getPaymentGateway();
-        const verified = await gateway.verify(reference, flwTransactionId);
-        return {
-            userId: verified.meta.userId,
-            userRole: verified.meta.userRole,
-        };
-    } catch {
-        // Fallback: look up a previously stored Transaction record by reference
-        const tx = await prisma.transaction.findUnique({
-            where: { reference },
-            select: { userId: true, userType: true }
-        });
-        if (tx?.userId && tx?.userType) {
-            return { userId: tx.userId, userRole: tx.userType };
-        }
-        console.error(`[PaymentService] Could not extract metadata for ref: ${reference}`);
-        throw new Error("Failed to retrieve transaction metadata");
+  }
+  try {
+    const gateway = getPaymentGateway();
+    const verified = await gateway.verify(reference, flwTransactionId);
+    return {
+      userId: verified.meta.userId,
+      userRole: verified.meta.userRole,
+    };
+  } catch {
+    // Fallback: look up a previously stored Transaction record by reference
+    const tx = await prisma.transaction.findUnique({
+      where: { reference },
+      select: { userId: true, userType: true }
+    });
+    if (tx?.userId && tx?.userType) {
+      return { userId: tx.userId, userRole: tx.userType };
     }
+    console.error(`[PaymentService] Could not extract metadata for ref: ${reference}`);
+    throw new Error("Failed to retrieve transaction metadata");
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1149,21 +778,27 @@ export const paystackWebhookService = async (
       return { success: true };
     }
 
-    // ── Branch A-2: Subscription auto-renewal ─────────────────────────────────
-    // Idempotency: skip if already processed
+    // ── Branch A-2: Subscription checkout completion or auto-renewal ─────────
     const existing = await prisma.transaction.findUnique({ where: { reference } });
-    if (existing) {
-      console.log(`[Webhook] Reference ${reference} already recorded. Skipping.`);
+    if (existing && existing.status === 'SUCCESS') {
+      console.log(`[Webhook] Reference ${reference} already recorded as SUCCESS. Skipping.`);
       return { success: true };
     }
 
+    // If an INITIATED or PROCESSING ledger entry exists, this is the callback verification
+    if (existing && (existing.status === 'INITIATED' || existing.status === 'PROCESSING')) {
+      console.log(`[Webhook] Reference ${reference} matches pending ledger row. Finalizing via verifySubscriptionPayment.`);
+      await verifySubscriptionPayment(reference);
+      return { success: true };
+    }
+
+    // Otherwise, treat as an automated recurring renewal charge
     // Resolve which user and plan this charge belongs to
-    // Normalized meta from the adapter already contains userId / userRole
     let resolved: { userId: string; userRole: string; planId: string; planName: string; billingCycle: string } | null = null;
 
     if (data.meta?.['userId'] && data.meta?.['user_role'] && data.meta?.['plan']) {
       try {
-        const planId = await getPlanId(data.meta['user_role'], data.meta['plan']);
+        const planId = await resolvePlanId(data.meta['user_role'], data.meta['plan']);
         resolved = {
           userId: data.meta['userId'],
           userRole: data.meta['user_role'].toUpperCase(),
@@ -1199,14 +834,13 @@ export const paystackWebhookService = async (
     const { userId, userRole, planId, planName, billingCycle } = resolved;
 
     console.log(
-      `[Webhook] Processing auto-renewal for user ${userId} (${userRole}), plan: ${planName}, amount: ₦${amountNaira}`
+      `[Webhook] Processing auto-renewal via processSubscriptionRenewal for user ${userId} (${userRole}), plan: ${planName}, amount: ₦${amountNaira}`
     );
 
-    await extendSubscriptionOnRenewal({
+    await processSubscriptionRenewal({
       userId,
       userRole,
       planId,
-      planName,
       billingCycle,
       amountPaid: amountNaira,
       paymentReference: reference,
@@ -1249,7 +883,7 @@ export const paystackWebhookService = async (
           planName: data.meta['plan'],
           billingCycle: data.meta['billing'] || 'monthly',
         };
-      } catch {}
+      } catch { }
     }
 
     if (!resolved) {
@@ -1267,7 +901,7 @@ export const paystackWebhookService = async (
     if (resolved) {
       const { userId, userRole, planName } = resolved;
       console.log(`[Webhook] Processing charge.failed for user ${userId} (${userRole}), plan: ${planName}`);
-      
+
       try {
         let userEmail: string | undefined;
         if (userRole === "ADMIN") {
@@ -1292,7 +926,7 @@ export const paystackWebhookService = async (
         console.error("[Webhook] Could not send failed payment email:", err);
       }
     }
-    
+
     return { success: true };
   }
 

@@ -1,8 +1,62 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import rateLimit from "express-rate-limit";
+import jwt from "jsonwebtoken";
 import { authenticateToken } from "../../middleware/authMiddleware";
+import prisma, { withRetry } from "../../config/database";
 
 const router = Router();
+
+/**
+ * Optional authentication middleware for checkout endpoints that support both
+ * logged-in users and guest onboarding checkouts.
+ */
+const optionalAuthenticateToken = async (
+    req: Request,
+    _res: Response,
+    next: NextFunction,
+) => {
+    try {
+        const authHeader = req.header("Authorization");
+        const bearerToken = authHeader?.startsWith("Bearer ")
+            ? authHeader.replace("Bearer ", "")
+            : undefined;
+        const token = bearerToken || req.cookies?.token;
+        if (!token || !process.env.JWT_ACCESS_SECRET) {
+            return next();
+        }
+        const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET) as {
+            userId?: string;
+            userType?: string;
+        };
+        if (decoded?.userId && decoded?.userType) {
+            let schoolId: string | undefined;
+            let adminRole: string | undefined;
+            if (decoded.userType === "ADMIN") {
+                const sa = await withRetry(
+                    () =>
+                        prisma.schoolAdmin.findFirst({
+                            where: { adminId: decoded.userId, active: true },
+                            select: { schoolId: true, role: true },
+                        }),
+                    "payment.optionalAuth.schoolAdmin",
+                );
+                schoolId = sa?.schoolId;
+                adminRole = sa?.role;
+            }
+            req.user = {
+                id: decoded.userId,
+                userId: decoded.userId,
+                userType: decoded.userType,
+                role: decoded.userType,
+                schoolId,
+                adminRole,
+            };
+        }
+    } catch {
+        // Proceed as guest if token is absent or expired during onboarding checkout
+    }
+    return next();
+};
 
 // Rate limiter for payment initialization (prevent spamming Paystack)
 const paymentInitLimiter = rateLimit({
@@ -22,9 +76,9 @@ const paymentVerifyLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-import { 
-    initializePayment, 
-    verifyPayment, 
+import {
+    initializePayment,
+    verifyPayment,
     getPaymentHistory,
     getPricingPlans,
     getPricingFAQ,
@@ -55,20 +109,16 @@ router.get("/faq", getPricingFAQ);
 /**
  * @route   POST /api/v1/payment/initialize
  * @desc    Initialize a payment transaction
- * @access  Public (Guest support needed for checkout)
+ * @access  Public / Optional Auth (Guest support needed for checkout)
  */
-router.post("/initialize", paymentInitLimiter, (req, res, next) => {
-    // If authenticated, authenticateToken will populate req.user
-    // If guest, it proceeds without req.user
-    next();
-}, initializePayment);
+router.post("/initialize", paymentInitLimiter, optionalAuthenticateToken, initializePayment);
 
 /**
  * @route   POST /api/v1/payment/verify
  * @desc    Verify a payment transaction from Paystack
- * @access  Public (Guest support needed for checkout)
+ * @access  Public / Optional Auth (Guest support needed for checkout)
  */
-router.post("/verify", paymentVerifyLimiter, verifyPayment);
+router.post("/verify", paymentVerifyLimiter, optionalAuthenticateToken, verifyPayment);
 
 /**
  * @route   POST /api/v1/payment/webhook

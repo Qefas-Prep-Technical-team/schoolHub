@@ -17,9 +17,9 @@ export class SubscriptionComplianceService {
 
     // 1. If Admin, we primarily check the School's subscription
     if (userType === UserRole.ADMIN && schoolId) {
-       await this.checkSchoolSubscription(schoolId, now);
-    } 
-    
+      await this.checkSchoolSubscription(schoolId, now);
+    }
+
     // 2. Also check the user's individual subscription (covers Teacher, Student, Parent, and Admin's personal sub if applicable)
     await this.checkUserSubscription(userId, userType, now);
   }
@@ -30,6 +30,57 @@ export class SubscriptionComplianceService {
     });
 
     if (sub && sub.status === SubscriptionStatus.ACTIVE && sub.expiresAt && sub.expiresAt < now) {
+      // 1. Check for any scheduled downgrade first
+      const pendingDowngrade = await prisma.transaction.findFirst({
+        where: {
+          schoolId,
+          status: "PENDING_DOWNGRADE",
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (pendingDowngrade && pendingDowngrade.planId) {
+        const newCycle = pendingDowngrade.billingCycle === "yearly" ? "yearly" : "monthly";
+        const newEnd = new Date(now);
+        newEnd.setMonth(newEnd.getMonth() + (newCycle === "yearly" ? 12 : 1));
+
+        const targetPlanId = pendingDowngrade.planId;
+        const targetPlanName = pendingDowngrade.plan || "Growth";
+
+        await prisma.$transaction(async (tx) => {
+          await tx.schoolSubscription.update({
+            where: { schoolId },
+            data: {
+              subscriptionPlanId: targetPlanId,
+              status: SubscriptionStatus.ACTIVE,
+              expiresAt: newEnd,
+              updatedAt: now,
+            },
+          });
+
+          await tx.school.update({
+            where: { id: schoolId },
+            data: {
+              plan: targetPlanName,
+              planId: targetPlanId,
+              subscriptionPlanId: targetPlanId,
+              subscriptionStatus: SubscriptionStatus.ACTIVE,
+              subscriptionEnd: newEnd,
+              billingCycle: newCycle,
+              isTrialActive: false,
+            },
+          });
+
+          await tx.transaction.update({
+            where: { id: pendingDowngrade.id },
+            data: { status: "SUCCESS" },
+          });
+        });
+
+        console.log(`[Subscription Compliance] School ${schoolId} applied scheduled downgrade to ${pendingDowngrade.plan}.`);
+        return;
+      }
+
       const freePlanId = process.env.SCHOOL_FREE_PLAN;
       if (!freePlanId) {
         console.warn(`[Subscription Compliance] SCHOOL_FREE_PLAN ENV missing. Skipping transition for school ${schoolId}.`);
@@ -46,8 +97,8 @@ export class SubscriptionComplianceService {
         // A. Mark previous history as EXPIRED
         await tx.subscriptionHistory.updateMany({
           where: { schoolId, endedAt: null },
-          data: { 
-            endedAt: now, 
+          data: {
+            endedAt: now,
             status: SubscriptionStatus.EXPIRED,
             note: "Automatically transitioned to FREE tier due to expiration."
           }
@@ -75,7 +126,7 @@ export class SubscriptionComplianceService {
             subscriptionStatus: SubscriptionStatus.EXPIRED, // The Flag
           }
         });
-        
+
         console.log(`[Subscription Compliance] School ${schoolId} transitioned to FREE tier (${freePlan.name}) due to expiration.`);
 
         // D. Trigger Notification
@@ -101,8 +152,8 @@ export class SubscriptionComplianceService {
       switch (userType) {
         case UserRole.TEACHER: freePlanId = process.env.TEACHER_FREE_PLAN; break;
         case UserRole.STUDENT: freePlanId = process.env.STUDENT_FREE_PLAN; break;
-        case UserRole.PARENT:  freePlanId = process.env.PARENT_FREE_PLAN; break;
-        case UserRole.ADMIN:   freePlanId = process.env.SCHOOL_FREE_PLAN; break; // Admin personal usually follows school free plan or similar
+        case UserRole.PARENT: freePlanId = process.env.PARENT_FREE_PLAN; break;
+        case UserRole.ADMIN: freePlanId = process.env.SCHOOL_FREE_PLAN; break; // Admin personal usually follows school free plan or similar
       }
 
       if (!freePlanId) return;
@@ -114,8 +165,8 @@ export class SubscriptionComplianceService {
         // A. Mark previous history as EXPIRED
         await tx.subscriptionHistory.updateMany({
           where: { userId, endedAt: null },
-          data: { 
-            endedAt: now, 
+          data: {
+            endedAt: now,
             status: SubscriptionStatus.EXPIRED,
             note: "Automatically transitioned to FREE tier due to expiration."
           }
@@ -136,17 +187,17 @@ export class SubscriptionComplianceService {
         // C. Update User main model with the "EXPIRED" status flag
         const modelName = userType.toLowerCase();
         const model = (tx as any)[modelName];
-        
+
         if (model) {
-            await model.update({
-              where: { id: userId },
-              data: {
-                plan: freePlan.name,
-                planId: freePlan.id,
-                subscriptionPlanId: freePlan.id,
-                subscriptionStatus: SubscriptionStatus.EXPIRED, // The Flag
-              }
-            });
+          await model.update({
+            where: { id: userId },
+            data: {
+              plan: freePlan.name,
+              planId: freePlan.id,
+              subscriptionPlanId: freePlan.id,
+              subscriptionStatus: SubscriptionStatus.EXPIRED, // The Flag
+            }
+          });
         }
 
         console.log(`[Subscription Compliance] User ${userId} (${userType}) transitioned to FREE tier (${freePlan.name}) due to expiration.`);

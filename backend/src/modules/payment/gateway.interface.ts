@@ -51,6 +51,9 @@ export interface VerifyResult {
     reset_cycle?: boolean;
     isTrial?: boolean;
     months?: number;
+    couponId?: string;
+    couponCode?: string;
+    couponDiscount?: number;
     [key: string]: unknown;
   };
   /** Which gateway processed this transaction */

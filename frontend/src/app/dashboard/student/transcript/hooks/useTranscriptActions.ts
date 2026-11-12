@@ -246,7 +246,7 @@ export function useTranscriptActions(p: UseTranscriptActionsParams) {
     }
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (p.requiresPayment && !p.isCurrentViewUnlocked) {
       toast.error(
         `Official transcript clearance required. Please complete payment of ₦${effectiveFee.toLocaleString()} to unlock.`,
@@ -260,6 +260,17 @@ export function useTranscriptActions(p: UseTranscriptActionsParams) {
       );
       openPaymentModalForCurrentScope();
       return;
+    }
+    const studentCode = String(p.studentProfile?.studentCode || "Scholar");
+    try {
+      await p.recordDownloadMutation.mutateAsync({
+        fileName: `${studentCode}_Academic_Transcript_Print.pdf`,
+        fileType: "TRANSCRIPT_DOWNLOAD",
+      });
+      p.setLocalTranscriptDownloads((prev) => prev + 1);
+      p.refetchAudit();
+    } catch {
+      // Allow print to proceed even if audit logging fails transiently
     }
     window.print();
   };
@@ -289,8 +300,32 @@ export function useTranscriptActions(p: UseTranscriptActionsParams) {
         name: String(p.studentProfile?.name || p.user?.name || "Student"),
       });
 
+      if (res?.accessPass && !res.checkoutUrl) {
+        p.setDirectAccessPass({
+          token: res.accessPass.token,
+          expiresAt: res.accessPass.expiresAt || "",
+          sessionId: res.accessPass.sessionId,
+          term: res.accessPass.term,
+        });
+        const targetKey = `${res.accessPass.sessionId || "ALL"}_${res.accessPass.term || "ALL"}`;
+        p.setUnlockedClearances((prev) => new Set(prev).add(targetKey));
+        if (p.studentId) {
+          localStorage.setItem(
+            `transcript_access_pass_${p.studentId}`,
+            res.accessPass.token,
+          );
+        }
+        p.setIsPaymentModalOpen(false);
+        p.setIsPayingOnline(false);
+        p.refetchAudit();
+        toast.success(
+          "Complimentary 30-day transcript pass activated! Official records unlocked.",
+        );
+        return;
+      }
+
       if (res?.checkoutUrl) {
-        toast.info("Connecting to Flutterwave secure checkout...");
+        toast.info("Connecting to secure payment checkout...");
         window.location.href = res.checkoutUrl;
       } else {
         toast.error("Unable to generate payment checkout link. Please try again.");
@@ -455,6 +490,20 @@ export function useTranscriptActions(p: UseTranscriptActionsParams) {
 
       const txRes = await financeService.verifyPayment(trimmed).catch(() => null);
       if (txRes && txRes.success) {
+        const verifiedStudentId = txRes.data?.payment?.studentId as string | undefined;
+        const verifiedPaymentType = txRes.data?.payment?.paymentType as string | undefined;
+        if (verifiedStudentId && p.studentId && verifiedStudentId !== p.studentId) {
+          toast.error("This payment reference belongs to a different scholar account.");
+          return;
+        }
+        if (
+          verifiedPaymentType &&
+          verifiedPaymentType !== "TRANSCRIPT" &&
+          verifiedPaymentType !== "PORTAL_ACCESS"
+        ) {
+          toast.error("This payment reference is not an official transcript clearance payment.");
+          return;
+        }
         if (txRes.data?.accessPass) {
           p.setDirectAccessPass(txRes.data.accessPass);
           const targetKey = `${txRes.data.accessPass.sessionId || "ALL"}_${txRes.data.accessPass.term || "ALL"}`;

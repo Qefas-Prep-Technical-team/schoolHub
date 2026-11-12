@@ -30,10 +30,11 @@ export interface StudentOfficialTranscriptExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   data: StudentTranscriptSpreadsheetData | null;
-  schoolProfile?: any;
+  schoolProfile?: Record<string, unknown> | null;
   schoolId?: string;
   onExportPdf: () => Promise<void>;
   isExportingPdf: boolean;
+  onRecordSpreadsheetExport?: (format: "excel" | "csv") => Promise<void>;
 }
 
 export function StudentOfficialTranscriptExportModal({
@@ -44,13 +45,15 @@ export function StudentOfficialTranscriptExportModal({
   schoolId,
   onExportPdf,
   isExportingPdf,
+  onRecordSpreadsheetExport,
 }: StudentOfficialTranscriptExportModalProps) {
   const [selectedFormat, setSelectedFormat] = useState<"pdf" | "excel" | "csv">("pdf");
   const [isExportingSpreadsheet, setIsExportingSpreadsheet] = useState(false);
 
+  const planStr = typeof schoolProfile?.plan === "string" ? schoolProfile.plan : "";
   const isPaying = Boolean(
     isSchoolOnPayingPlan(schoolProfile) ||
-      (schoolProfile?.plan && schoolProfile.plan.toUpperCase() !== "FREE")
+    (planStr && planStr.toUpperCase() !== "FREE")
   );
 
   const quotaContextId = schoolId || "student_transcript_export";
@@ -82,6 +85,7 @@ export function StudentOfficialTranscriptExportModal({
         }
         setIsExportingSpreadsheet(true);
         exportOfficialTranscriptToExcel(data);
+        await onRecordSpreadsheetExport?.("excel");
       } else if (selectedFormat === "csv") {
         if (!isPaying) {
           toast.error("CSV exports (.csv) are only available on institutional paid plans.");
@@ -89,6 +93,7 @@ export function StudentOfficialTranscriptExportModal({
         }
         setIsExportingSpreadsheet(true);
         exportOfficialTranscriptToCSV(data);
+        await onRecordSpreadsheetExport?.("csv");
       } else {
         await onExportPdf();
       }
@@ -154,17 +159,15 @@ export function StudentOfficialTranscriptExportModal({
               <button
                 type="button"
                 onClick={() => setSelectedFormat("pdf")}
-                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
-                  selectedFormat === "pdf"
+                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${selectedFormat === "pdf"
                     ? "border-pink-600 bg-pink-50/50 dark:bg-pink-950/20 ring-1 ring-pink-600"
                     : "border-border hover:border-slate-300 dark:hover:border-zinc-700 bg-card"
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between w-full mb-1.5">
                   <FileText
-                    className={`w-5 h-5 ${
-                      selectedFormat === "pdf" ? "text-pink-600" : "text-muted-foreground"
-                    }`}
+                    className={`w-5 h-5 ${selectedFormat === "pdf" ? "text-pink-600" : "text-muted-foreground"
+                      }`}
                   />
                   {selectedFormat === "pdf" && <CheckCircle2 className="w-4 h-4 text-pink-600" />}
                 </div>
@@ -181,19 +184,17 @@ export function StudentOfficialTranscriptExportModal({
                 type="button"
                 disabled={!isPaying}
                 onClick={() => setSelectedFormat("excel")}
-                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
-                  !isPaying
+                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${!isPaying
                     ? "opacity-50 cursor-not-allowed border-dashed bg-muted/30"
                     : selectedFormat === "excel"
-                    ? "border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 ring-1 ring-emerald-600"
-                    : "border-border hover:border-slate-300 dark:hover:border-zinc-700 bg-card"
-                }`}
+                      ? "border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 ring-1 ring-emerald-600"
+                      : "border-border hover:border-slate-300 dark:hover:border-zinc-700 bg-card"
+                  }`}
               >
                 <div className="flex items-center justify-between w-full mb-1.5">
                   <FileSpreadsheet
-                    className={`w-5 h-5 ${
-                      selectedFormat === "excel" ? "text-emerald-600" : "text-muted-foreground"
-                    }`}
+                    className={`w-5 h-5 ${selectedFormat === "excel" ? "text-emerald-600" : "text-muted-foreground"
+                      }`}
                   />
                   {selectedFormat === "excel" && (
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -212,19 +213,17 @@ export function StudentOfficialTranscriptExportModal({
                 type="button"
                 disabled={!isPaying}
                 onClick={() => setSelectedFormat("csv")}
-                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
-                  !isPaying
+                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${!isPaying
                     ? "opacity-50 cursor-not-allowed border-dashed bg-muted/30"
                     : selectedFormat === "csv"
-                    ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/20 ring-1 ring-blue-600"
-                    : "border-border hover:border-slate-300 dark:hover:border-zinc-700 bg-card"
-                }`}
+                      ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/20 ring-1 ring-blue-600"
+                      : "border-border hover:border-slate-300 dark:hover:border-zinc-700 bg-card"
+                  }`}
               >
                 <div className="flex items-center justify-between w-full mb-1.5">
                   <FileSpreadsheet
-                    className={`w-5 h-5 ${
-                      selectedFormat === "csv" ? "text-blue-600" : "text-muted-foreground"
-                    }`}
+                    className={`w-5 h-5 ${selectedFormat === "csv" ? "text-blue-600" : "text-muted-foreground"
+                      }`}
                   />
                   {selectedFormat === "csv" && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
                 </div>

@@ -9,12 +9,17 @@ import {
     ChevronRight,
     ArrowRight,
     Search,
-    Copy
+    Copy,
+    Clock,
+    XCircle,
+    CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Lottie from 'lottie-react';
 import SuccessLottie from '@/lotties/Success.json';
+import CancelLottie from '../../../public/lottie/cancel.json';
+import ProcessingLottie from '../../../public/lottie/processing.json';
 import { ShieldCheck } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -310,18 +315,38 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
                             {/* Top Section */}
                             <div className="p-6 sm:p-10 pb-4 sm:pb-6 flex flex-col items-center text-center">
-                                <Lottie 
-                                    animationData={SuccessLottie} 
-                                    loop={false}
-                                    style={{ height: '110px', width: '110px', marginBottom: '8px' }}
-                                />
+                                {selectedTxn.status === 'SUCCESS' ? (
+                                    <Lottie 
+                                        animationData={SuccessLottie} 
+                                        loop={false}
+                                        style={{ height: '110px', width: '110px', marginBottom: '8px' }}
+                                    />
+                                ) : selectedTxn.status === 'PENDING' || selectedTxn.status === 'INITIATED' || selectedTxn.status === 'PROCESSING' ? (
+                                    <Lottie 
+                                        animationData={ProcessingLottie} 
+                                        loop={true}
+                                        style={{ height: '110px', width: '110px', marginBottom: '8px' }}
+                                    />
+                                ) : (
+                                    <Lottie 
+                                        animationData={CancelLottie} 
+                                        loop={false}
+                                        style={{ height: '110px', width: '110px', marginBottom: '8px' }}
+                                    />
+                                )}
                                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-lexend mt-2">
-                                    {selectedTxn.status === 'SUCCESS' ? 'Thank you' : selectedTxn.status === 'PENDING' ? 'Pending' : 'Failed'}
+                                    {selectedTxn.status === 'SUCCESS' 
+                                        ? 'Thank you' 
+                                        : (selectedTxn.status === 'PENDING' || selectedTxn.status === 'INITIATED' || selectedTxn.status === 'PROCESSING') 
+                                            ? 'Pending' 
+                                            : 'Failed'}
                                 </h2>
                                 <p className="text-xs sm:text-sm text-slate-500 mt-1 sm:mt-2 font-medium">
                                     {selectedTxn.status === 'SUCCESS' 
                                         ? 'Your payment was processed successfully.' 
-                                        : `Transaction is currently ${selectedTxn.status.toLowerCase()}.`
+                                        : (selectedTxn.status === 'PENDING' || selectedTxn.status === 'INITIATED' || selectedTxn.status === 'PROCESSING')
+                                            ? 'Transaction is currently pending confirmation.'
+                                            : 'Transaction failed or was cancelled.'
                                     }
                                 </p>
                             </div>

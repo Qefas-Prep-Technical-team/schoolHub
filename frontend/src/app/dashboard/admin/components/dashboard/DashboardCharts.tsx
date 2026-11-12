@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
@@ -45,6 +46,7 @@ export default function DashboardCharts({
   hasPerformanceAccess,
   primaryColor = '#2563eb',
 }: DashboardChartsProps) {
+  const router = useRouter();
   const academicData = useMemo(() => {
     if (!analysis || !analysis.subjectBreakdown)
       return [
@@ -123,7 +125,9 @@ export default function DashboardCharts({
               analytics.
             </p>
             <button
-              className="px-5 py-2 text-white text-xs font-semibold rounded-full transition-colors mt-2"
+              type="button"
+              onClick={() => router.push('/dashboard/admin/billing/upgrade')}
+              className="px-5 py-2 text-white text-xs font-semibold rounded-full transition-colors mt-2 hover:opacity-90 active:scale-95 cursor-pointer shadow-sm"
               style={{ backgroundColor: primaryColor }}
             >
               Upgrade Plan

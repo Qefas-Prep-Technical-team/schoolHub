@@ -5,6 +5,7 @@ import { handleError } from "../../utils/error-handler";
 import { AiLimiterService } from "./ai-limiter.service";
 import { SchoolSubscriptionService } from "./school-subscription.service";
 import { UserSubscriptionService } from "./user-subscription.service";
+import { assertBillingAdmin } from "../payment/services/subscription-plan.helpers";
 export const getSubscriptionUsage = async (req: Request, res: Response) => {
   try {
     // Current schoolId is usually added to req by auth middleware or resolved from user token
@@ -106,13 +107,24 @@ export const activateFreePlan = async (req: Request, res: Response) => {
       });
     }
 
-    const schoolId = user.schoolId || user.tenantId; // Or however school is associated
-    if (!schoolId) {
-       return res.status(400).json({
-         success: false,
-         message: "No school associated with this admin.",
-       });
+    let link;
+    try {
+      link = await assertBillingAdmin(user.id);
+    } catch (authErr: any) {
+      return res.status(403).json({
+        success: false,
+        message: authErr?.message || "Unauthorized billing administrator role.",
+      });
     }
+
+    if (!link) {
+      return res.status(400).json({
+        success: false,
+        message: "No school associated with this administrator.",
+      });
+    }
+
+    const schoolId = link.schoolId;
 
     // Call the exact logic that used to be in registerSchool
     await SchoolSubscriptionService.initializeFreePlan(schoolId);

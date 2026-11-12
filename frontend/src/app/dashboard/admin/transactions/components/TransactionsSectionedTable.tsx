@@ -3,12 +3,14 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { CreditCard, ChevronLeft, ChevronRight, Search, Copy, Receipt, ArrowRight } from "lucide-react";
+import { CreditCard, ChevronLeft, ChevronRight, Search, Copy, Receipt, ArrowRight, Clock, XCircle } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import Lottie from "lottie-react";
 import SuccessLottie from "@/lotties/Success.json";
+import CancelLottie from "../../../../../../public/lottie/cancel.json";
+import ProcessingLottie from "../../../../../../public/lottie/processing.json";
 import { toast } from "react-toastify";
 import { DateGroup } from "@/utils/dateSectioning";
 
@@ -244,12 +246,26 @@ export function TransactionsSectionedTable({
               </button>
 
               <div className="flex flex-col items-center text-center pt-4 pb-2">
-                <Lottie animationData={SuccessLottie} loop={false} style={{ height: "90px", width: "90px" }} />
+                {selectedTxn.status?.toUpperCase() === "SUCCESS" || selectedTxn.status?.toLowerCase() === "completed" ? (
+                  <Lottie animationData={SuccessLottie} loop={false} style={{ height: "90px", width: "90px" }} />
+                ) : selectedTxn.status?.toUpperCase() === "PENDING" || selectedTxn.status?.toUpperCase() === "INITIATED" || selectedTxn.status?.toUpperCase() === "PROCESSING" ? (
+                  <Lottie animationData={ProcessingLottie} loop={true} style={{ height: "90px", width: "90px" }} />
+                ) : (
+                  <Lottie animationData={CancelLottie} loop={false} style={{ height: "90px", width: "90px" }} />
+                )}
                 <h3 className="text-lg font-black text-slate-900 dark:text-white mt-1">
-                  Payment Receipt
+                  {selectedTxn.status?.toUpperCase() === "SUCCESS" || selectedTxn.status?.toLowerCase() === "completed"
+                    ? "Payment Receipt"
+                    : selectedTxn.status?.toUpperCase() === "PENDING" || selectedTxn.status?.toUpperCase() === "INITIATED" || selectedTxn.status?.toUpperCase() === "PROCESSING"
+                    ? "Payment Pending"
+                    : "Payment Failed"}
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Institutional Billing Transaction
+                  {selectedTxn.status?.toUpperCase() === "SUCCESS" || selectedTxn.status?.toLowerCase() === "completed"
+                    ? "Institutional Billing Transaction"
+                    : selectedTxn.status?.toUpperCase() === "PENDING" || selectedTxn.status?.toUpperCase() === "INITIATED" || selectedTxn.status?.toUpperCase() === "PROCESSING"
+                    ? "Transaction awaiting confirmation"
+                    : "Transaction unsuccessful or cancelled"}
                 </p>
               </div>
 

@@ -150,6 +150,9 @@ export class FlutterwaveAdapter implements PaymentGateway {
         lowerMeta[k.toLowerCase()] = String(v);
       }
 
+      const parsedMonths = parseInt(lowerMeta['months'] || '1', 10);
+      const parsedCouponDiscount = parseFloat(lowerMeta['coupondiscount'] || lowerMeta['coupon_discount'] || '0');
+
       return {
         success: true,
         amountNaira: tx.charged_amount,
@@ -168,8 +171,13 @@ export class FlutterwaveAdapter implements PaymentGateway {
           paymentType: lowerMeta['paymenttype'] || lowerMeta['payment_type'] || "",
           plan: lowerMeta['plan'] || "",
           billing: lowerMeta['billing'] || "",
+          months: Number.isFinite(parsedMonths) && parsedMonths > 0 ? parsedMonths : 1,
           isUpgrade: lowerMeta['is_upgrade'] === 'true' || lowerMeta['isupgrade'] === 'true',
+          resetCycle: lowerMeta['reset_cycle'] === 'true' || lowerMeta['resetcycle'] === 'true',
           isTrial: lowerMeta['is_trial'] === 'true' || lowerMeta['istrial'] === 'true',
+          couponId: lowerMeta['couponid'] || lowerMeta['coupon_id'] || undefined,
+          couponCode: lowerMeta['couponcode'] || lowerMeta['coupon_code'] || undefined,
+          couponDiscount: Number.isFinite(parsedCouponDiscount) ? parsedCouponDiscount : 0,
         },
         gateway: 'FLUTTERWAVE',
       };

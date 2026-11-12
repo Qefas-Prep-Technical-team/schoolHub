@@ -25,7 +25,7 @@ const checkEditPermission = async (req: Request, classSubjectResultId?: string, 
 
   if (req.user?.userType === UserRole.ADMIN) {
     let adminRole = (req as any).adminRole || (req.user as any)?.adminRole || req.user?.schoolAdmins?.[0]?.role;
-    
+
     if (!adminRole && req.user?.id && (req.user as any)?.schoolId) {
       const schoolAdmin = await prisma.schoolAdmin.findFirst({
         where: { adminId: req.user.id, schoolId: (req.user as any)?.schoolId }
@@ -95,52 +95,7 @@ export const getClassSubjectResults = async (req: Request, res: Response, next: 
   }
 };
 
-export const getMyPublishedResults = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    let studentId = req.user?.id;
-    const isAdmin =
-      req.user?.userType === "ADMIN" ||
-      req.user?.userType === "TEACHER" ||
-      Boolean(req.query.studentId);
-    
-    if (req.query.studentId && (req.user?.userType === "ADMIN" || req.user?.userType === "TEACHER")) {
-      studentId = req.query.studentId as string;
-    }
-
-    // Students store school as an object in JWT: user.school.id
-    // Teachers/admins store it as a flat schoolId string
-    const schoolId =
-      (req.user as any)?.schoolId ||
-      (req.user as any)?.school?.id ||
-      (req.user as any)?.tenantId;
-
-    if (!studentId) {
-      return res.status(401).json({ success: false, message: "Authentication required" });
-    }
-
-    if (!schoolId) {
-      // Final fallback: look up the student's school from DB
-      const student = await prisma.student.findUnique({
-        where: { id: studentId },
-        select: { schoolId: true },
-      });
-      if (!student?.schoolId) {
-        return res.status(400).json({ success: false, message: "School not found for your account" });
-      }
-      const results = await recordsService.getMyPublishedResults(studentId, student.schoolId, isAdmin);
-      return res.status(200).json({ success: true, data: results });
-    }
-
-    const results = await recordsService.getMyPublishedResults(studentId, schoolId, isAdmin);
-
-    res.status(200).json({
-      success: true,
-      data: results,
-    });
-  } catch (error) {
-    handleError(res, error, "records.controller.ts -> getMyPublishedResults");
-  }
-};
+export { getMyPublishedResults } from "./controllers";
 
 export const getStudentTermResults = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -240,9 +195,9 @@ export const updateClassSubjectResult = async (req: Request, res: Response, next
       return res.status(400).json({ success: false, message: "School ID not found" });
     }
 
-    const { params, body } = recordsSchema.updateClassSubjectResultSchema.parse({ 
+    const { params, body } = recordsSchema.updateClassSubjectResultSchema.parse({
       params: req.params,
-      body: req.body 
+      body: req.body
     });
 
     if (!(await checkEditPermission(req, params.id))) {
@@ -386,7 +341,7 @@ export const publishClassSubjectResult = async (req: Request, res: Response, nex
       return res.status(400).json({ success: false, message: "School ID not found" });
     }
     const id = req.params.id as string;
-    
+
     if (!id) {
       return res.status(400).json({ success: false, message: "Result ID is required" });
     }
@@ -398,9 +353,9 @@ export const publishClassSubjectResult = async (req: Request, res: Response, nex
     if (req.user?.userType === "TEACHER") {
       const { signature } = req.body || {};
       await recordsService.requestPublishApproval(schoolId, id, req.user!.id, signature);
-      return res.status(200).json({ 
-        success: true, 
-        message: "A request has been sent to school administrators for approval with your official digital signature. For students and parents to see this result, it needs to be approved by an administrator." 
+      return res.status(200).json({
+        success: true,
+        message: "A request has been sent to school administrators for approval with your official digital signature. For students and parents to see this result, it needs to be approved by an administrator."
       });
     }
 
@@ -420,7 +375,7 @@ export const unpublishClassSubjectResult = async (req: Request, res: Response, n
       return res.status(400).json({ success: false, message: "School ID not found" });
     }
     const id = req.params.id as string;
-    
+
     if (!id) {
       return res.status(400).json({ success: false, message: "Result ID is required" });
     }
@@ -456,9 +411,9 @@ export const unpublishClassSubjectResult = async (req: Request, res: Response, n
       }
 
       await recordsService.requestUnpublishApproval(schoolId, id, req.user.id);
-      return res.status(200).json({ 
-        success: true, 
-        message: "A request has been sent to school administrators for approval to unpublish this result." 
+      return res.status(200).json({
+        success: true,
+        message: "A request has been sent to school administrators for approval to unpublish this result."
       });
     }
 

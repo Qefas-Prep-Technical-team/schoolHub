@@ -5,6 +5,7 @@ import { PRICING_PLANS, PRICING_FAQ } from "./plans.data";
 import { PricingService } from "../platform/billing/pricing.service";
 import { handleError } from "../../utils/error-handler";
 import prisma from "../../config/database";
+import { assertBillingAdmin } from "./services/subscription-plan.helpers";
 
 // ─── Zod Schemas ───────────────────────────────────────────────────────────────
 
@@ -43,7 +44,8 @@ export const initializePayment = async (req: Request, res: Response) => {
 
     const { amount, email, plan, planCode, metadata } = validation.data;
 
-    const resolvedUserId = userId || (metadata?.userId as string) || "";
+    const authUser = (req as Request & { user?: { id: string; userType?: string; email?: string } }).user;
+    const resolvedUserId = authUser?.id || userId || (metadata?.userId as string) || "";
 
     const data = await paymentService.initializePaymentService({
       userId: resolvedUserId,
@@ -52,6 +54,7 @@ export const initializePayment = async (req: Request, res: Response) => {
       plan,
       planCode,
       metadata,
+      authUser,
     });
 
     return res.status(200).json({
@@ -84,14 +87,14 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
     // If guest, we verify the transaction first to extract the metadata we sent from the frontend
     if (!userId || !userRole) {
-        console.log(`[PaymentController] Guest verification for ref: ${reference}`);
-        const { userId: metadataId, userRole: metadataRole } = await paymentService.getMetadataFromReference(reference, transaction_id);
-        userId = metadataId;
-        userRole = metadataRole;
+      console.log(`[PaymentController] Guest verification for ref: ${reference}`);
+      const { userId: metadataId, userRole: metadataRole } = await paymentService.getMetadataFromReference(reference, transaction_id);
+      userId = metadataId;
+      userRole = metadataRole;
     }
 
     if (!userId || !userRole) {
-        return res.status(400).json({ success: false, message: "Could not identify user for this transaction" });
+      return res.status(400).json({ success: false, message: "Could not identify user for this transaction" });
     }
 
     const data = await paymentService.verifyPaymentService(
@@ -153,11 +156,20 @@ export const cancelDowngrade = async (req: Request, res: Response) => {
     const user = (req as Request & { user?: { id: string; userType?: string } }).user;
     if (!user) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
-    // Mark the PENDING_DOWNGRADE transaction as CANCELLED
+    let schoolId: string | undefined;
+    if (user.userType === 'ADMIN') {
+      const link = await assertBillingAdmin(user.id);
+      schoolId = link?.schoolId;
+    }
+
+    // Mark the PENDING_DOWNGRADE transaction as CANCELLED for this user and/or school
     await prisma.transaction.updateMany({
       where: {
-        userId: user.id,
         status: 'PENDING_DOWNGRADE',
+        OR: [
+          { userId: user.id },
+          ...(schoolId ? [{ schoolId }] : [])
+        ]
       },
       data: { status: 'CANCELLED' }
     });
@@ -225,12 +237,12 @@ export const getPaymentHistory = async (req: Request, res: Response) => {
  * Get all pricing plans (Dynamic Resolver)
  */
 export const getPricingPlans = async (req: Request, res: Response) => {
-    try {
-        const plans = await PricingService.resolveAllPlans();
-        return res.status(200).json(plans);
-    } catch (error) {
-      return handleError(res, error, "payment.getPricingPlans");
-    }
+  try {
+    const plans = await PricingService.resolveAllPlans();
+    return res.status(200).json(plans);
+  } catch (error) {
+    return handleError(res, error, "payment.getPricingPlans");
+  }
 };
 
 /**
