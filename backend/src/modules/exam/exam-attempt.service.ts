@@ -122,7 +122,9 @@ export const startExamAttemptService = async ({
           subjectPaper: {
             include: {
               subject: true,
-              questions: true,
+              questions: {
+                orderBy: { order: "asc" },
+              },
             },
           },
           answers: true,
@@ -227,7 +229,9 @@ export const startExamAttemptService = async ({
           subjectPaper: {
             include: {
               subject: true,
-              questions: true,
+              questions: {
+                orderBy: { order: "asc" },
+              },
             },
           },
           answers: true,
@@ -334,7 +338,9 @@ export const getExamAttemptService = async ({
           subjectPaper: {
             include: {
               subject: true,
-              questions: true,
+              questions: {
+                orderBy: { order: "asc" },
+              },
             },
           },
           answers: true,
@@ -1298,7 +1304,9 @@ export const getExamReviewDataService = async ({
           subjectPaper: {
             include: {
               subject: true,
-              questions: true,
+              questions: {
+                orderBy: { order: "asc" },
+              },
             },
           },
           answers: {

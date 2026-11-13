@@ -1,9 +1,9 @@
 import { GradeStatus, StudentGrade } from "./types";
-import { 
-  MoreVertical, 
-  Edit, 
-  Trash2, 
-  Eye, 
+import {
+  MoreVertical,
+  Edit,
+  Trash2,
+  Eye,
   Send,
   Loader2
 } from "lucide-react";
@@ -56,7 +56,7 @@ const TableRow: React.FC<TableRowProps> = ({
     .slice(0, 2);
 
   return (
-    <tr 
+    <tr
       onClick={onViewDetails}
       className="group cursor-pointer border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all duration-300"
     >
@@ -78,7 +78,7 @@ const TableRow: React.FC<TableRowProps> = ({
           </div>
         </div>
       </td>
-      
+
       <td className="px-6 py-4">
         <div className="flex flex-col">
           <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{grade.subjectPaper}</span>
@@ -86,10 +86,10 @@ const TableRow: React.FC<TableRowProps> = ({
         </div>
       </td>
 
-      <td className="px-6 py-4 text-center">
-        <div className="inline-flex flex-col items-center">
-          <span className="text-sm font-black text-slate-900 dark:text-slate-100">{grade.score}</span>
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Score</span>
+      <td className="px-6 py-4 text-center" title="Click to view grade details & student answers">
+        <div className="inline-flex flex-col items-center group-hover:scale-105 transition-transform">
+          <span className="text-sm font-black text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{grade.score}</span>
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Review</span>
         </div>
       </td>
 
@@ -99,14 +99,14 @@ const TableRow: React.FC<TableRowProps> = ({
         </div>
       </td>
 
-      <td className="px-6 py-4 text-center">
+      <td className="px-6 py-4 text-center" title="Click to view grade details & student answers">
         <div className={cn(
-          "inline-flex min-h-9 min-w-9 px-2 py-1 items-center justify-center rounded-xl text-sm font-black shadow-sm",
+          "inline-flex min-h-9 min-w-9 px-2 py-1 items-center justify-center rounded-xl text-sm font-black shadow-sm group-hover:ring-2 group-hover:ring-emerald-400/50 transition-all",
           grade.grade.startsWith('A') ? "bg-emerald-500 text-white" :
-          grade.grade.startsWith('B') ? "bg-teal-500 text-white" :
-          grade.grade.startsWith('C') ? "bg-blue-500 text-white" :
-          grade.grade.startsWith('D') ? "bg-amber-500 text-white" :
-          "bg-rose-500 text-white"
+            grade.grade.startsWith('B') ? "bg-teal-500 text-white" :
+              grade.grade.startsWith('C') ? "bg-blue-500 text-white" :
+                grade.grade.startsWith('D') ? "bg-amber-500 text-white" :
+                  "bg-rose-500 text-white"
         )}>
           {grade.grade}
         </div>
@@ -139,7 +139,7 @@ const TableRow: React.FC<TableRowProps> = ({
               </DropdownMenuItem>
               {grade.status !== 'Graded' && (
                 <DropdownMenuItem className="rounded-xl font-bold text-xs py-3 cursor-pointer text-emerald-600 dark:text-emerald-400 gap-2" onClick={(e) => { e.stopPropagation(); e.preventDefault(); onPublish(); }} disabled={isPublishing}>
-                  {isPublishing ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} 
+                  {isPublishing ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                   {isPublishing ? 'Publishing...' : 'Publish Now'}
                 </DropdownMenuItem>
               )}

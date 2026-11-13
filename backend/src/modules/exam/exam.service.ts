@@ -1098,11 +1098,15 @@ export const getSubjectPaperByIdService = async (id: string, user?: any) => {
       },
       examAttempts: {
         include: {
+          answers: true,
           examAttempt: {
             include: {
               student: true
             }
           }
+        },
+        orderBy: {
+          createdAt: "desc"
         }
       },
       grades: {
@@ -1115,6 +1119,9 @@ export const getSubjectPaperByIdService = async (id: string, user?: any) => {
             orderBy: { createdAt: "desc" },
             take: 1
           }
+        },
+        orderBy: {
+          createdAt: "desc"
         }
       }
     },

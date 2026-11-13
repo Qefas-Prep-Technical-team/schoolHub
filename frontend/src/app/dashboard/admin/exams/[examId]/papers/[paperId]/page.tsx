@@ -31,6 +31,51 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
+import { computeGradePill } from "@/utils/gradingSystem";
+import GradeDetailsModal from "@/app/dashboard/teacher/grades/components/GradeDetailsModal";
+import type {
+  GradeStatus,
+  PaperQuestionReviewItem,
+  StudentAnswerRecord,
+  StudentGrade,
+} from "@/app/dashboard/teacher/grades/components/types";
+
+interface AdminPaperSubjectAttempt {
+  id?: string;
+  subjectPaperId: string;
+  score?: number;
+  totalMarks?: number;
+  submittedAt?: string | Date | null;
+  createdAt?: string | Date | null;
+  answers?: StudentAnswerRecord[];
+}
+
+interface AdminPaperAttemptItem {
+  id: string;
+  studentId: string;
+  status?: string;
+  totalScore?: number;
+  totalMarks?: number;
+  createdAt?: string | Date | null;
+  submittedAt?: string | Date | null;
+  student?: {
+    id?: string;
+    name?: string;
+    studentCode?: string;
+    profileImage?: string;
+    avatar?: string;
+  };
+  subjectExamAttempts?: AdminPaperSubjectAttempt[];
+  subjectAttempts?: AdminPaperSubjectAttempt[];
+  grades?: {
+    id?: string;
+    remarks?: string | null;
+    status?: string | null;
+    overriderName?: string | null;
+    teacher?: { name?: string } | null;
+  }[];
+}
 
 export default function PaperDetailPage() {
   const params = useParams();
@@ -60,6 +105,7 @@ export default function PaperDetailPage() {
   const queryClient = useQueryClient();
 
   const activeSchoolId = user?.schools?.[0]?.schoolId || (exam as any)?.schoolId;
+  const { data: schoolProfile } = useSchoolProfile(activeSchoolId);
 
   // Fetch Classes for the selector
   const { data: classesData } = useQuery({
@@ -194,12 +240,13 @@ export default function PaperDetailPage() {
     enabled: !!examId && examId !== "none",
   });
 
-  // Filter attempts specifically for this paper
-  const attempts = useMemo(() => {
+  // Filter attempts specifically for this paper and sort newest-first for clean date sectioning
+  const attempts = useMemo<AdminPaperAttemptItem[]>(() => {
+    let list: AdminPaperAttemptItem[] = [];
     if (!Array.isArray(rawAttempts) || rawAttempts.length === 0) {
       // Fallback to paper.examAttempts if rawAttempts from exam is empty
       if (paper?.examAttempts && Array.isArray(paper.examAttempts) && paper.examAttempts.length > 0) {
-        return paper.examAttempts.map((item: any) => {
+        list = paper.examAttempts.map((item: any) => {
           const parentAttempt = item.examAttempt || {};
           const student = parentAttempt.student || item.student || {};
           return {
@@ -216,12 +263,19 @@ export default function PaperDetailPage() {
           };
         });
       }
-      return [];
+    } else {
+      list = (rawAttempts as AdminPaperAttemptItem[]).filter((a) => {
+        const subAttempts = a.subjectExamAttempts || a.subjectAttempts || [];
+        return subAttempts.some((sa) => sa.subjectPaperId === paperId);
+      });
     }
 
-    return rawAttempts.filter((a: any) => {
-      const subAttempts = a.subjectExamAttempts || a.subjectAttempts || [];
-      return subAttempts.some((sa: any) => sa.subjectPaperId === paperId);
+    return [...list].sort((a, b) => {
+      const dateA = a.submittedAt || a.createdAt;
+      const dateB = b.submittedAt || b.createdAt;
+      const timeA = dateA ? new Date(dateA).getTime() : 0;
+      const timeB = dateB ? new Date(dateB).getTime() : 0;
+      return (Number.isNaN(timeB) ? 0 : timeB) - (Number.isNaN(timeA) ? 0 : timeA);
     });
   }, [rawAttempts, paper?.examAttempts, paper?.grades, paper?.totalMarks, paperId]);
 
@@ -230,6 +284,92 @@ export default function PaperDetailPage() {
   const ATTEMPTS_PER_PAGE = 10;
   const [isAttemptsSelectionMode, setIsAttemptsSelectionMode] = useState(false);
   const [selectedAttemptStudentIds, setSelectedAttemptStudentIds] = useState<string[]>([]);
+  const [selectedAttemptForModal, setSelectedAttemptForModal] = useState<AdminPaperAttemptItem | null>(null);
+
+  const selectedGradeModalData = useMemo<StudentGrade | null>(() => {
+    if (!selectedAttemptForModal) return null;
+    const attempt = selectedAttemptForModal;
+    const subAttempts = attempt.subjectExamAttempts || attempt.subjectAttempts || [];
+    const paperAttempt =
+      subAttempts.find((sa) => sa.subjectPaperId === paperId) || subAttempts[0];
+
+    const studentScore = paperAttempt?.score ?? attempt.totalScore ?? 0;
+    const maxMarks = paperAttempt?.totalMarks || paper?.totalMarks || 100;
+    const scorePercent = maxMarks > 0 ? Math.round((studentScore / maxMarks) * 100) : 0;
+    const pill = computeGradePill(scorePercent, schoolProfile?.gradingSystem);
+
+    const paperAttemptWithAnswers = (paper?.examAttempts || []).find(
+      (pa: { id?: string; studentId?: string; examAttempt?: { studentId?: string }; answers?: StudentAnswerRecord[] }) =>
+        (paperAttempt?.id && pa.id === paperAttempt.id) ||
+        pa.studentId === attempt.studentId ||
+        pa.examAttempt?.studentId === attempt.studentId
+    );
+    const attemptAnswers: StudentAnswerRecord[] =
+      paperAttempt?.answers || paperAttemptWithAnswers?.answers || [];
+
+    let preloadedQuestions: PaperQuestionReviewItem[] | undefined;
+    if (paper?.questions && paper.questions.length > 0 && attemptAnswers.length > 0) {
+      const answerMap = new Map<string, StudentAnswerRecord>();
+      attemptAnswers.forEach((ans) => answerMap.set(ans.questionId, ans));
+      preloadedQuestions = paper.questions.map((q) => {
+        const ans = answerMap.get(q.id);
+        return {
+          id: q.id,
+          question: q.question,
+          type: q.type,
+          images: q.images,
+          optionA: q.optionA,
+          optionB: q.optionB,
+          optionC: q.optionC,
+          optionD: q.optionD,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+          marks: q.marks,
+          studentAnswer: ans?.answer ?? null,
+          isCorrect: ans?.isCorrect ?? null,
+          scoreAwarded: ans?.scoreAwarded ?? null,
+          requiresManualReview: ans?.requiresManualReview,
+          manuallyReviewed: ans?.manuallyReviewed,
+          reviewNote: ans?.reviewNote ?? null,
+        };
+      });
+    }
+
+    const latestGrade = attempt.grades?.[0];
+
+    return {
+      id: attempt.id,
+      studentId: attempt.studentId,
+      name: attempt.student?.name || "Student",
+      studentCode: attempt.student?.studentCode || attempt.studentId.slice(0, 8),
+      subjectPaper: paper?.title || "Subject Paper",
+      assessmentType: paper?.subject?.name || exam?.category || "EXAM",
+      score: `${studentScore}/${maxMarks}`,
+      rawScore: studentScore,
+      maxMarks,
+      totalScore: `${scorePercent}%`,
+      grade: pill.label || "-",
+      status: (attempt.status === "SCORED" || attempt.status === "SUBMITTED"
+        ? "Graded"
+        : "Pending") as GradeStatus,
+      remarks: latestGrade?.remarks || undefined,
+      profilePicture:
+        attempt.student?.profileImage || attempt.student?.avatar || undefined,
+      examId,
+      subjectPaperId: paperId,
+      examAttemptId: attempt.id,
+      subjectExamAttemptId: paperAttempt?.id || null,
+      creatorName:
+        latestGrade?.overriderName ||
+        latestGrade?.teacher?.name ||
+        "System Auto-Grader",
+      submissionType:
+        latestGrade?.remarks === "MANUAL_OVERRIDE" ? "OVERRIDE" : "ONLINE",
+      submittedAt: attempt.submittedAt || attempt.createdAt || null,
+      createdAt: attempt.createdAt || null,
+      preloadedQuestions,
+    };
+  }, [selectedAttemptForModal, paper, paperId, examId, exam?.category, schoolProfile?.gradingSystem]);
 
   const filteredAttempts = useMemo(() => {
     if (!attemptsSearch.trim()) return attempts;
@@ -882,6 +1022,7 @@ export default function PaperDetailPage() {
                               };
                               const statusCls = statusMap[attempt.status] || statusMap.IN_PROGRESS;
                               const isSelected = selectedAttemptStudentIds.includes(attempt.studentId);
+                              const pill = computeGradePill(scorePercent, schoolProfile?.gradingSystem);
 
                               return (
                                 <tr
@@ -889,11 +1030,13 @@ export default function PaperDetailPage() {
                                   onClick={() => {
                                     if (isAttemptsSelectionMode && attempt.studentId) {
                                       handleToggleSelectAttempt(attempt.studentId);
+                                    } else {
+                                      setSelectedAttemptForModal(attempt);
                                     }
                                   }}
+                                  title={isAttemptsSelectionMode ? "Click to select student" : "Click to inspect grade details & student answers"}
                                   className={cn(
-                                    "group transition-colors",
-                                    isAttemptsSelectionMode && "cursor-pointer",
+                                    "group transition-colors cursor-pointer",
                                     isAttemptsSelectionMode && isSelected
                                       ? "bg-primary/5 dark:bg-primary/10 hover:bg-primary/10 dark:hover:bg-primary/15"
                                       : "hover:bg-slate-50/60 dark:hover:bg-slate-800/30"
@@ -957,19 +1100,32 @@ export default function PaperDetailPage() {
                                   {/* Paper Score Column */}
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-sm font-black text-primary">{studentScore}</span>
+                                      <span className="text-sm font-black text-primary group-hover:underline">{studentScore}</span>
                                       <span className="text-slate-300 dark:text-slate-700">/</span>
                                       <span className="text-xs font-bold text-slate-400">{maxMarks}</span>
                                       <span className="text-[10px] font-bold text-slate-400">({scorePercent}%)</span>
+                                      <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black border", pill.bg, pill.color)} title={pill.remark}>
+                                        {pill.label}
+                                      </span>
                                     </div>
                                   </td>
 
-                                  {/* Action: Clear Record */}
+                                  {/* Action: Review Answers & Clear Record */}
                                   <td
                                     className="px-6 sm:px-8 py-4 text-right"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <div className="flex items-center justify-end">
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setSelectedAttemptForModal(attempt)}
+                                        className="h-8 rounded-xl text-indigo-600 border-indigo-200 hover:bg-indigo-50 dark:text-indigo-300 dark:border-indigo-800 dark:hover:bg-indigo-950/30 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                                        title="View grade details & student answers"
+                                      >
+                                        <Eye size={13} />
+                                        <span>Review</span>
+                                      </Button>
                                       <Button
                                         variant="ghost"
                                         size="sm"
@@ -1083,6 +1239,14 @@ export default function PaperDetailPage() {
         departments={departmentsData}
         sessions={sessionsData}
         isLoadingData={isLoadingSubjects || isLoadingTeachers}
+      />
+
+      <GradeDetailsModal
+        isOpen={!!selectedAttemptForModal}
+        onClose={() => setSelectedAttemptForModal(null)}
+        grade={selectedGradeModalData}
+        gradingSystem={schoolProfile?.gradingSystem}
+        passMark={paper?.passMark || 40}
       />
     </div>
   );

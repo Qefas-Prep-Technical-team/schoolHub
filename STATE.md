@@ -1,3 +1,19 @@
+### Friday, November 13, 2026
+- [x] **Duplicate Close Button Fix (`GradeDetailsModal.tsx`)**: Passed `showCloseButton={false}` to `<DialogContent>` so Radix's built-in close icon no longer overlaps/duplicates the custom rounded close button in the modal header across Admin and Teacher assessment/paper grade review popups.
+- [x] **Admin Assessment Cohort & Paper Grade/Answer Review Popup + Date Sectioning Display**:
+  - **Backend (`backend/src/modules/exam/exam-attempt.service.ts`)**: Ordered `subjectPaper.questions` ascending by `order` in exam attempt/review queries so per-question answer reviews align with the official paper sequence.
+  - **Multi-Paper Support & Full Report Hook (`frontend/src/lib/api/services/examService.ts`, `frontend/src/app/dashboard/teacher/grades/components/types.tsx`, `GradeQuestionReviewSection.tsx`, `GradeDetailsModal.tsx`)**: Added optional `subjectExamAttempts` typing on `ExamAttempt`, `papers` list support in `StudentGrade` and `GradeQuestionReviewSection` with interactive paper-switcher pills for combined assessments, and optional `onViewFullReport` footer action on `GradeDetailsModal`.
+  - **Admin Assessment Cohort (`frontend/src/app/dashboard/admin/grades/assessments/[examId]/page.tsx`, `AssessmentCohortView.tsx`, `DedicatedDetailedStudentResult.tsx`)**: Normalized `subjectExamAttempts || subjectAttempts` lookup, sorted examinee attempts newest-first, applied `date_sectioning_display` (`groupByDate` with `bg-indigo-500` headers) to both mobile cards and desktop table, rendered dynamic `computeGradePill` badges, wired clicking examinee rows/cards/scores/`Answers` buttons to `GradeDetailsModal` (with `Full Analytics Report` drill-down), and added paper-scoped `Review Answers` triggers inside `DedicatedDetailedStudentResult`.
+  - **Admin Paper Graded Tab (`frontend/src/app/dashboard/admin/exams/[examId]/papers/[paperId]/page.tsx`)**: Sorted attempts newest-first to prevent `groupedAttempts` date section fragmentation, rendered dynamic `computeGradePill` badges in `Paper Score`, added an explicit `Review` button, and wired clicking any graded row (outside batch selection), score, or `Review` button to `GradeDetailsModal` with `preloadedQuestions` built from `paper.questions` + attempt `answers`.
+  - **Verification & Docs**: Ran `tsc -p backend/tsconfig.json --noEmit` (exit code 0) and `tsc -p frontend/tsconfig.json --noEmit` (exit code 0); updated `ASSESSMENT_DATA_MODEL.md`.
+- [x] **Teacher Grade & Student Answer Review Popup + Date Sectioning Display**:
+  - **Backend (`backend/src/modules/exam/exam.service.ts`)**: Updated `getSubjectPaperByIdService` to include `answers: true` inside `examAttempts` and order `examAttempts` and `grades` by `createdAt: 'desc'` so paper-level grade views include each student's question-by-question responses and timestamps.
+  - **Modular Question Review Component (`frontend/src/app/dashboard/teacher/grades/components/GradeQuestionReviewSection.tsx`, `types.tsx`)**: Extracted a reusable, strictly typed component rendering accuracy stats, `All` / `Correct` / `Incorrect` filters, LaTeX-formatted question prompts/images, highlighted student answers vs. official answer keys for MCQ/True-False, side-by-side short-answer comparisons, reviewer notes, and explanations—resolving from preloaded paper data, `examService.getPaperById`, or `examService.getExamReview`.
+  - **Upgraded Grade Details Popup (`frontend/src/app/dashboard/teacher/grades/components/GradeDetailsModal.tsx`)**: Expanded the popup to combine the score/percentage/letter grade/remark summary (`computeGradePill`), submission type (`ONLINE` / `MANUAL` / `OVERRIDE`), evaluator, timestamp, and remarks with `GradeQuestionReviewSection` and an `Edit / Override Score` action.
+  - **Teacher Paper Grades Tab (`frontend/src/app/dashboard/teacher/exams&quizzes/papers/[id]/page.tsx`)**: Preserved `answers`, `subjectExamAttemptId`, `examAttemptId`, and `submittedAt` across manual overrides; sorted results newest-first; applied the `date_sectioning_display` skill (`getDateGroupLabel` + `dateSections` with emerald dot headers and per-section counts) to both Grid and Table views; and wired clicking any grade row/card/score to the upgraded `GradeDetailsModal`.
+  - **Teacher Grades Hub (`frontend/src/app/dashboard/teacher/grades/components/GradesOverview.tsx`, `TableRow.tsx`, `GradeCard.tsx`)**: Mapped `examId`, `subjectPaperId`, `examAttemptId`, `subjectExamAttemptId`, `className`, `creatorName`, and `submissionType` onto `StudentGrade` records, added clear review click/hover cues on score/grade cells, and preserved existing `date_sectioning_display` grouping in `GradesTable.tsx`.
+  - **Verification & Docs**: Ran `tsc -p backend/tsconfig.json --noEmit` (exit code 0) and `tsc -p frontend/tsconfig.json --noEmit` (exit code 0); updated `ASSESSMENT_DATA_MODEL.md`.
+
 ### Wednesday, November 11, 2026
 - [x] Registration Checkboxes UI & UX Modernization (All User Roles):
   - Completely redesigned the checkboxes across all registration flows:
@@ -7116,40 +7132,40 @@ otification-enrich.service.ts (230).
     - [x] **Assignment Card Date Bug**: Swapped the data mapping from `endDate` to the correct `dueDate` property to resolve dynamic deadline dates rendering as "No Deadline".
     - [x] **SubmitBar Theme Glow**: Replaced high-glare stark white backgrounds on the Admin and Teacher "Publish" action buttons in dark mode with the premium indigo-violet gradient matching the new theme patterns.
 
-U p d a t e d   P a r e n t   D a s h b o a r d   w i t h   d y n a m i c   a s s i g n m e n t s ,   s k e l e t o n   l o a d e r s ,   a n d   a   s t u n n i n g   d y n a m i c   A s s i g n m e n t   D e t a i l s   p a g e . 
- 
- F i x e d   c h i l d   l i n k a g e   c h e c k   t o   u s e   ' a c t i v e '   i n s t e a d   o f   ' A C T I V E '   s o   t h e   a s s i g n m e n t   d e t a i l s   e n d p o i n t   w o r k s   p r o p e r l y . 
- 
- # # #   S a t u r d a y ,   S e p t e m b e r   1 9 ,   2 0 2 6 
- -   [ x ]   F i x e d   a u t h M i d d l e w a r e   b u g   i n c o r r e c t l y   l o o k i n g   f o r   ' a c t i v e S c h o o l I d '   a n d   ' p r i m a r y S c h o o l I d '   o n   t h e   T e a c h e r   m o d e l   i n s t e a d   o f   ' c u r r e n t S c h o o l I d '   a n d   ' s c h o o l I d ' 
- -   [ x ]   F i x e d   v a l i d a t i o n   e r r o r   i n   v a l i d a t e Z o d R e q u e s t . t s 
- -   [ x ]   F i x e d   t e a c h e r   s c h o o l   p r o f i l e   s c h o o l I d   r e s o l u t i o n   i n   u s e A u t h S t o r e   d a t a   b y   e x p a n d i n g   f a l l b a c k   t a r g e t s . 
- 
- -   [ x ]   A d d e d   e x c e p t i o n   t o   a u t h M i d d l e w a r e . t s   t o   a l l o w   i n d e p e n d e n t / u n l i n k e d   t e a c h e r s   t o   a c c e s s   t h e i r   s e s s i o n s ,   s e t t i n g s ,   a n d   p r o f i l e   r o u t e s   w i t h o u t   a   4 0 3   e r r o r 
- 
- -   [ x ]   A d d e d   G o v e r n a n c e   &   S o c i a l   s e c t i o n   t o   A d m i n   S c h o o l   P r o f i l e   v i e w   p a g e ,   m a t c h i n g   t h e   e d i t   p a g e   l a y o u t . 
- 
- -   [ x ]   F i x e d   t e a c h e r   s c h o o l   p r o f i l e   t o   s t r i c t l y   u s e   t h e   t e a c h e r   t h e m e   c o l o r   ( e m e r a l d )   i n s t e a d   o f   t h e   s c h o o l   s e t t i n g s   c o l o r 
- 
- -   [ x ]   A d d e d   G o v e r n a n c e   &   S o c i a l   s e c t i o n   t o   T e a c h e r   S c h o o l   P r o f i l e   v i e w   p a g e 
- 
- -   [ x ]   H o o k e d   u p   ' V i e w   I n s t i t u t i o n '   b u t t o n   o n   T e a c h e r   s e t t i n g s   p a g e   t o   r e d i r e c t   t o   t h e   s c h o o l   p r o f i l e   r o u t e 
- 
- -   [ x ]   F i x e d   R e f e r e n c e E r r o r   f o r   ' r o u t e r   i s   n o t   d e f i n e d '   o n   T e a c h e r   s e t t i n g s   p a g e 
- 
- -   [ x ]   U p d a t e d   A d m i n   C l a s s e s   p a g e   t o   f i t   9 5 %   o f   t h e   s c r e e n   w i d t h 
- 
- -   [ x ]   A d d e d   t h e m e   s u p p o r t   t o   P a g i n a t i o n   c o m p o n e n t   a n d   s e t   i t   t o   b l u e   f o r   t h e   A d m i n   C l a s s e s   p a g e 
- 
- -   [ x ]   F i x e d   T y p e S c r i p t   e r r o r   i n   A s s e s s m e n t I t e m . t s x   r e l a t e d   t o   p o s s i b l y   u n d e f i n e d   d u r a t i o n M i n u t e s 
- 
- -   [ x ]   F i x e d   T y p e S c r i p t   e r r o r   i n   m y - c l a s s e s / . . . / s u b j e c t s / p a g e . t s x   f o r   ' c o d e '   m i s s i n g   o n   s u b j e c t   t y p e 
- 
- -   [ x ]   F i x e d   T y p e S c r i p t   e r r o r   i n   s t u d e n t   s e t t i n g s   p a g e   f o r   ' i s T w o F a c t o r E n a b l e d '   m i s s i n g   o n   S t u d e n t P r o f i l e 
- 
- -   [ x ]   F r o n t e n d   s u c c e s s f u l l y   b u i l t   w i t h   z e r o   T y p e S c r i p t   o r   c o m p i l a t i o n   e r r o r s 
- 
- 
+Updated Parent Dashboard with dynamic assignments, skeleton loaders, and a stunning dynamic Assignment Details page.
+
+Fixed child linkage check to use 'active' instead of 'ACTIVE' so the assignment details endpoint works properly.
+
+### Saturday, September 19, 2026
+- [x] Fixed authMiddleware bug incorrectly looking for 'activeSchoolId' and 'primarySchoolId' on the Teacher model instead of 'currentSchoolId' and 'schoolId'
+- [x] Fixed validation error in validateZodRequest.ts
+- [x] Fixed teacher school profile schoolId resolution in useAuthStore data by expanding fallback targets.
+
+- [x] Added exception to authMiddleware.ts to allow independent/unlinked teachers to access their sessions, settings, and profile routes without a 403 error
+
+- [x] Added Governance & Social section to Admin School Profile view page, matching the edit page layout.
+
+- [x] Fixed teacher school profile to strictly use the teacher theme color (emerald) instead of the school settings color
+
+- [x] Added Governance & Social section to Teacher School Profile view page
+
+- [x] Hooked up 'View Institution' button on Teacher settings page to redirect to the school profile route
+
+- [x] Fixed ReferenceError for 'router is not defined' on Teacher settings page
+
+- [x] Updated Admin Classes page to fit 95% of the screen width
+
+- [x] Added theme support to Pagination component and set it to blue for the Admin Classes page
+
+- [x] Fixed TypeScript error in AssessmentItem.tsx related to possibly undefined durationMinutes
+
+- [x] Fixed TypeScript error in my-classes/.../subjects/page.tsx for 'code' missing on subject type
+
+- [x] Fixed TypeScript error in student settings page for 'isTwoFactorEnabled' missing on StudentProfile
+
+- [x] Frontend successfully built with zero TypeScript or compilation errors
+
+
 ### Tuesday, October 6, 2026
 - [x] Fixed class attendance save timeout (admin + teacher): parent notifications in attendance.service.ts were awaited sequentially per student (>60s). Now fire-and-forget with 2 batched queries.
 - [x] Added Zod validation to POST /classes/:id/attendance (attendance.controller.ts); installed zod in backend.
@@ -7942,7 +7958,7 @@ esolveDepartmentForUser & canManageDepartment)**:
 - [x] **Dynamic Time-of-Day Greetings on Admin & Teacher Dashboards**:
   - Updated rontend/src/app/dashboard/admin/page.tsx (/dashboard/admin) and rontend/src/app/dashboard/teacher/components/dashboard/TeacherHero.tsx (/dashboard/teacher) to dynamically compute "Good morning" (< 12:00), "Good afternoon" (12:00–16:59), or "Good evening" (>= 17:00) based on the user's real-time local clock, refreshing automatically every 60 seconds.
 - [x] **Added "Good night" Time-of-Day Greeting to Admin & Teacher Dashboards**:
-  - Updated rontend/src/app/dashboard/admin/page.tsx and rontend/src/app/dashboard/teacher/components/dashboard/TeacherHero.tsx to display "Good morning" ( 5:00–11:59), "Good afternoon" (12:00–16:59), "Good evening" (17:00–20:59), and "Good night" (21:00–04:59).
+  - Updated rontend/src/app/dashboard/admin/page.tsx and rontend/src/app/dashboard/teacher/components/dashboard/TeacherHero.tsx to display "Good morning" (5:00–11:59), "Good afternoon" (12:00–16:59), "Good evening" (17:00–20:59), and "Good night" (21:00–04:59).
 - [x] **Notification Sender Attribution & System Branding (Qefas Hub + Initiator Name & Position)**:
   - Updated system notification fallback name from School Hub / System to Qefas Hub across rontend/src/lib/utils/notificationSender.ts and ackend/src/modules/notification/services/notification-enrich.service.ts.
   - Decomposed teacher assignment handlers (ssignTeacherToClass, ssignTeacherToSubject, 

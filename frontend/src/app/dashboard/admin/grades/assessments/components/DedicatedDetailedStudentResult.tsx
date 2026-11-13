@@ -11,6 +11,7 @@ import {
   BarChart3,
   Percent,
   Zap,
+  Eye,
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
@@ -25,6 +26,9 @@ import Pagination from '../../components/Pagination';
 import ProgressCircle from '@/components/ui/ProgressCircle';
 import ExportResultScopeModal, { ExportScopeMode, ExportStudentOption } from '../../components/ExportResultScopeModal';
 import { downloadIndividualResultsAsZip, downloadSingleStudentPdf, downloadCombinedAssessmentPdf } from '../../utils/batchPDFDownloader';
+import GradeDetailsModal from '@/app/dashboard/teacher/grades/components/GradeDetailsModal';
+import type { GradeStatus, StudentGrade } from '@/app/dashboard/teacher/grades/components/types';
+import { computeGradePill } from '@/utils/gradingSystem';
 
 interface DedicatedDetailedStudentResultProps {
   examId: string;
@@ -57,6 +61,12 @@ export function DedicatedDetailedStudentResult({
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [reviewPaperTarget, setReviewPaperTarget] = useState<{
+    subjectPaperId?: string | null;
+    subjectName?: string;
+    score?: number;
+    totalMarks?: number;
+  } | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -179,6 +189,22 @@ export function DedicatedDetailedStudentResult({
               <ShieldCheck size={16} /> Verified Academic Record
             </div>
             <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                setReviewPaperTarget({
+                  subjectPaperId: result?.subjects?.[0]?.subjectPaperId || null,
+                  subjectName: result?.title || examTitle || 'Assessment',
+                  score: result?.totalScore,
+                  totalMarks: result?.totalMarks,
+                })
+              }
+              className="h-10 w-full sm:w-auto sm:px-4 rounded-xl font-bold text-xs gap-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950/30 cursor-pointer"
+            >
+              <Eye className="h-4 w-4" />
+              <span>Review Questions &amp; Answers</span>
+            </Button>
+            <Button
               onClick={() => setIsExportModalOpen(true)}
               disabled={isExporting}
               className="h-10 w-full sm:w-auto sm:px-4 rounded-xl text-white font-bold text-xs gap-2 shadow-sm border-0 cursor-pointer hover:opacity-95"
@@ -274,22 +300,47 @@ export function DedicatedDetailedStudentResult({
               <BarChart3 size={18} style={{ color: primaryColor }} /> Subject Papers Breakdown
             </h3>
             <div className="space-y-3">
-              {result.subjects?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((sub: any, i: number) => {
-                const percent = Math.round((sub.score / sub.totalMarks) * 100);
-                const subGrade = percent >= 75 ? 'A1' : percent >= 70 ? 'B2' : percent >= 65 ? 'B3' : percent >= 50 ? 'C6' : percent >= 40 ? 'D7' : 'F9';
+              {result.subjects?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((sub: {
+                subjectPaperId?: string;
+                subjectName: string;
+                score: number;
+                totalMarks: number;
+              }, i: number) => {
+                const percent = sub.totalMarks ? Math.round((sub.score / sub.totalMarks) * 100) : 0;
+                const pill = computeGradePill(percent, school?.gradingSystem);
 
                 return (
-                  <div key={i} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-4 shadow-xs">
+                  <div
+                    key={sub.subjectPaperId || i}
+                    onClick={() =>
+                      setReviewPaperTarget({
+                        subjectPaperId: sub.subjectPaperId || null,
+                        subjectName: sub.subjectName,
+                        score: sub.score,
+                        totalMarks: sub.totalMarks,
+                      })
+                    }
+                    title="Click to inspect student answers & question review"
+                    className="group p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700 flex items-center justify-between gap-4 shadow-xs cursor-pointer transition-all"
+                  >
                     <div className="flex items-center gap-4">
                       <div className={cn(
                         "size-12 rounded-xl flex items-center justify-center font-black text-lg border",
-                        percent >= 75 ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/20" : percent >= 40 ? "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20" : "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/20"
+                        pill.bg,
+                        pill.color
                       )}>
-                        {subGrade}
+                        {pill.label}
                       </div>
                       <div>
-                        <p className="text-base font-bold text-slate-900 dark:text-white leading-tight">{sub.subjectName}</p>
-                        <p className="text-[11px] font-semibold text-slate-400 mt-0.5">{sub.score} / {sub.totalMarks} Questions</p>
+                        <p className="text-base font-bold text-slate-900 dark:text-white leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                          {sub.subjectName}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-[11px] font-semibold text-slate-400">{sub.score} / {sub.totalMarks} Marks</p>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md">
+                            <Eye size={10} /> Review Answers
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">
@@ -373,6 +424,58 @@ export function DedicatedDetailedStudentResult({
             (school as any)?.currentSession?.name ||
             (school as any)?.session?.name ||
             `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`
+          }
+        />
+
+        <GradeDetailsModal
+          isOpen={!!reviewPaperTarget}
+          onClose={() => setReviewPaperTarget(null)}
+          gradingSystem={school?.gradingSystem}
+          grade={
+            reviewPaperTarget
+              ? ({
+                id: `${examId}-${studentId}`,
+                studentId,
+                name: result.student?.name || 'Student',
+                studentCode: result.student?.studentCode || 'UID-UNSET',
+                subjectPaper: reviewPaperTarget.subjectName || result.title || 'Assessment',
+                assessmentType: 'ASSESSMENT',
+                score: `${reviewPaperTarget.score ?? result.totalScore ?? 0}/${reviewPaperTarget.totalMarks ?? result.totalMarks ?? 100}`,
+                rawScore: reviewPaperTarget.score ?? result.totalScore ?? 0,
+                maxMarks: reviewPaperTarget.totalMarks ?? result.totalMarks ?? 100,
+                totalScore: `${(reviewPaperTarget.totalMarks ?? result.totalMarks)
+                    ? Math.round(
+                      ((reviewPaperTarget.score ?? result.totalScore ?? 0) /
+                        (reviewPaperTarget.totalMarks ?? result.totalMarks ?? 100)) *
+                      100
+                    )
+                    : 0
+                  }%`,
+                grade: computeGradePill(
+                  (reviewPaperTarget.totalMarks ?? result.totalMarks)
+                    ? Math.round(
+                      ((reviewPaperTarget.score ?? result.totalScore ?? 0) /
+                        (reviewPaperTarget.totalMarks ?? result.totalMarks ?? 100)) *
+                      100
+                    )
+                    : 0,
+                  school?.gradingSystem
+                ).label,
+                status: 'Graded' as GradeStatus,
+                examId,
+                subjectPaperId: reviewPaperTarget.subjectPaperId || null,
+                className: result.className || null,
+                creatorName: 'System Auto-Grader',
+                submissionType: 'ONLINE',
+                submittedAt: result.submittedAt || null,
+                papers: Array.isArray(result.subjects)
+                  ? result.subjects.map((s: { subjectPaperId: string; subjectName: string }) => ({
+                    id: s.subjectPaperId,
+                    name: s.subjectName,
+                  }))
+                  : undefined,
+              } satisfies StudentGrade)
+              : null
           }
         />
       </div>

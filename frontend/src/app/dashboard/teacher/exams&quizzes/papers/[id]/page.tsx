@@ -8,7 +8,6 @@ import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, FileText, Loader2, Check, Globe, BookOpen, Eye, Settings as SettingsIcon, Trash2, Edit2, Save, X, Info, List, LayoutGrid, Users, Clock, GraduationCap, Download, FileSpreadsheet, ChevronDown } from "lucide-react";
 import { toast } from "react-toastify";
 import QuestionManager from "@/app/dashboard/admin/exams/[examId]/papers/[paperId]/components/QuestionManager";
@@ -16,6 +15,13 @@ import ConfirmationModal from "@/app/dashboard/admin/exams/components/ui/Confirm
 import ReadingContentModal from "@/app/dashboard/admin/exams/[examId]/papers/[paperId]/components/ReadingContentModal";
 import PaperPreviewModal from "@/app/dashboard/admin/exams/[examId]/papers/[paperId]/components/PaperPreviewModal";
 import EditPaperModal from "@/app/dashboard/admin/exams/[examId]/papers/[paperId]/components/EditPaperModal";
+import GradeDetailsModal from "@/app/dashboard/teacher/grades/components/GradeDetailsModal";
+import type {
+  GradeStatus,
+  PaperQuestionReviewItem,
+  StudentAnswerRecord,
+  StudentGrade,
+} from "@/app/dashboard/teacher/grades/components/types";
 import React, { useState, useEffect, useMemo } from "react";
 import { AxiosError } from "axios";
 import { useSchoolProfile } from "@/lib/api/hooks/useSchool";
@@ -28,6 +34,115 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { cn } from "@/lib/utils";
+
+interface RawPaperExamAttempt {
+  id: string;
+  studentId?: string;
+  score?: number;
+  totalMarks?: number;
+  examAttemptId?: string;
+  submittedAt?: string | Date | null;
+  createdAt?: string | Date | null;
+  updatedAt?: string | Date | null;
+  answers?: StudentAnswerRecord[];
+  examAttempt?: {
+    id?: string;
+    examId?: string;
+    studentId?: string;
+    submittedAt?: string | Date | null;
+    student?: {
+      id?: string;
+      name?: string;
+      studentCode?: string;
+      profileImage?: string;
+      avatar?: string;
+    };
+  };
+}
+
+interface RawPaperGrade {
+  id: string;
+  studentId?: string;
+  score?: number;
+  maxMarks?: number;
+  examId?: string | null;
+  examAttemptId?: string | null;
+  subjectExamAttemptId?: string | null;
+  remarks?: string | null;
+  status?: string | null;
+  overriderName?: string | null;
+  createdAt?: string | Date | null;
+  updatedAt?: string | Date | null;
+  teacher?: { id?: string; name?: string } | null;
+  student?: {
+    id?: string;
+    name?: string;
+    studentCode?: string;
+    profileImage?: string;
+    avatar?: string;
+  };
+}
+
+interface RawPaperQuestion {
+  id: string;
+  question: string;
+  type: string;
+  images?: string[];
+  optionA?: string | null;
+  optionB?: string | null;
+  optionC?: string | null;
+  optionD?: string | null;
+  correctAnswer: string;
+  explanation?: string | null;
+  marks: number;
+}
+
+interface PaperStudentResult {
+  id: string;
+  studentId: string;
+  studentName?: string;
+  studentCode?: string;
+  studentAvatar?: string;
+  score: number;
+  maxMarks: number;
+  type: "ONLINE" | "MANUAL";
+  examId?: string | null;
+  examAttemptId?: string | null;
+  subjectExamAttemptId?: string | null;
+  gradeId?: string;
+  overriderName?: string | null;
+  remarks?: string | null;
+  status?: string | null;
+  submittedAt?: string | Date | null;
+  createdAt?: string | Date | null;
+  updatedAt?: string | Date | null;
+  answers?: StudentAnswerRecord[];
+}
+
+function getDateGroupLabel(dateVal?: string | Date | null): string {
+  if (!dateVal) return "Undated & Previous Records";
+  const d = new Date(dateVal);
+  if (Number.isNaN(d.getTime())) return "Undated & Previous Records";
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const itemDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+  const diffTime = today.getTime() - itemDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays > 1 && diffDays <= 7) {
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+  }
+
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
 
 export interface Paper {
   id: string;
@@ -53,12 +168,12 @@ export interface Paper {
       themeColor?: string;
     };
   };
-  examAttempts?: any[];
-  grades?: any[];
-  exams?: any[];
+  examAttempts?: RawPaperExamAttempt[];
+  grades?: RawPaperGrade[];
+  exams?: { examId: string; exam?: { id?: string; title?: string; category?: string; status?: string; mode?: string } }[];
   images?: string[];
   imageLabels?: string[];
-  questions?: any[];
+  questions?: RawPaperQuestion[];
 }
 
 export default function TeacherPaperDetailPage() {
@@ -80,12 +195,12 @@ export default function TeacherPaperDetailPage() {
 
   const paper = paperData as Paper;
   const [isMounted, setIsMounted] = useState(false);
-  
+
   // Grades Tab State
   const [gradesPage, setGradesPage] = useState(1);
   const [editingGradeId, setEditingGradeId] = useState<string | null>(null);
   const [editScore, setEditScore] = useState<string>("");
-  const [selectedGradeDetail, setSelectedGradeDetail] = useState<any | null>(null);
+  const [selectedGradeDetail, setSelectedGradeDetail] = useState<PaperStudentResult | null>(null);
 
   const [gradesViewMode, setGradesViewMode] = useState<'table' | 'grid'>('grid');
 
@@ -171,7 +286,7 @@ export default function TeacherPaperDetailPage() {
   });
 
   const updateGradeMutation = useMutation({
-    mutationFn: ({ gradeId, score }: { gradeId: string; score: number }) => 
+    mutationFn: ({ gradeId, score }: { gradeId: string; score: number }) =>
       apiClient.patch(`/grades/${gradeId}`, { score, status: "PUBLISHED", remarks: "MANUAL_OVERRIDE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
@@ -189,7 +304,7 @@ export default function TeacherPaperDetailPage() {
   const { data: schoolProfile } = useSchoolProfile(paperSchoolId || fallbackSchoolId);
 
   const createOverrideGradeMutation = useMutation({
-    mutationFn: (data: { studentId: string; score: number; maxMarks: number; examAttemptId?: string; subjectExamAttemptId?: string }) => 
+    mutationFn: (data: { studentId: string; score: number; maxMarks: number; examAttemptId?: string; subjectExamAttemptId?: string }) =>
       apiClient.post("/grades", {
         studentId: data.studentId,
         ...(examId !== "none" && { examId }),
@@ -226,7 +341,7 @@ export default function TeacherPaperDetailPage() {
     isOpen: false,
     title: "",
     description: "",
-    onConfirm: () => {},
+    onConfirm: () => { },
     variant: "danger",
     confirmText: "Confirm",
   });
@@ -245,7 +360,7 @@ export default function TeacherPaperDetailPage() {
 
   // Fetch subjects and teachers for the edit modal
   const { data: school } = useSchoolProfile(paperSchoolId || fallbackSchoolId);
-  
+
   const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery({
     queryKey: ["subjects", paperSchoolId],
     queryFn: async () => {
@@ -268,7 +383,7 @@ export default function TeacherPaperDetailPage() {
   const isAdmin = user?.userType === "ADMIN";
   // The backend API strictly guards access to the paper. If the paper successfully loaded, 
   // the user has permission to view/manage it based on their assigned subjects and classes.
-  const canAccess = true; 
+  const canAccess = true;
 
   const linkedExams = paper?.exams?.filter((e: any) => e.exam?.category === 'EXAM') || [];
   const isLinkedToExam = linkedExams.length > 0;
@@ -299,8 +414,8 @@ export default function TeacherPaperDetailPage() {
   const isSinglePaperType: boolean = isMultiPaper
     ? false
     : urlExamId
-    ? true
-    : !!(
+      ? true
+      : !!(
         (paper as any)?.category &&
         SINGLE_PAPER_TYPES.includes((paper as any).category)
       ) ||
@@ -309,8 +424,8 @@ export default function TeacherPaperDetailPage() {
         (
           SINGLE_PAPER_TYPES.includes(
             (mainExam as any).category ||
-              (mainExam as any).type ||
-              ''
+            (mainExam as any).type ||
+            ''
           ) ||
           (mainExam as any).mode === 'SINGLE_SUBJECT'
         )
@@ -349,66 +464,202 @@ export default function TeacherPaperDetailPage() {
   });
 
   // Normalize and merge results from online attempts and manual grades
-  const onlineResults = useMemo(() => (paper?.examAttempts || []).map((a: any) => ({
-    id: a.id,
-    studentId: a.studentId || a.examAttempt?.studentId || a.examAttempt?.student?.id,
-    studentName: a.examAttempt?.student?.name,
-    studentCode: a.examAttempt?.student?.studentCode,
-    score: (a.score as number) || 0,
-    maxMarks: a.totalMarks || paper?.totalMarks,
-    type: 'ONLINE',
-    examAttemptId: a.examAttemptId,
-    subjectExamAttemptId: a.id
-  })), [paper?.examAttempts, paper?.totalMarks]);
+  const defaultExamId = urlExamId || paper?.exams?.[0]?.examId || null;
 
-  const gradesResults = useMemo(() => (paper?.grades || []).map((g: any) => ({
-    id: g.id,
-    studentId: g.studentId || g.student?.id,
-    studentName: g.student?.name,
-    studentCode: g.student?.studentCode,
-    score: (g.score as number) || 0,
-    maxMarks: g.maxMarks || paper?.totalMarks,
-    type: (g.examAttemptId && g.remarks !== 'MANUAL_OVERRIDE') ? 'ONLINE' : 'MANUAL',
-    examAttemptId: g.examAttemptId,
-    gradeId: g.id,
-    overriderName: g.overriderName || g.teacher?.name || null,
-  })), [paper?.grades, paper?.totalMarks]);
+  const onlineResults = useMemo<PaperStudentResult[]>(
+    () =>
+      (paper?.examAttempts || []).map((a) => ({
+        id: a.id,
+        studentId: a.studentId || a.examAttempt?.studentId || a.examAttempt?.student?.id || "",
+        studentName: a.examAttempt?.student?.name,
+        studentCode: a.examAttempt?.student?.studentCode,
+        studentAvatar:
+          a.examAttempt?.student?.profileImage || a.examAttempt?.student?.avatar || "",
+        score: a.score || 0,
+        maxMarks: a.totalMarks || paper?.totalMarks || 100,
+        type: "ONLINE",
+        examId: a.examAttempt?.examId || defaultExamId,
+        examAttemptId: a.examAttemptId || a.examAttempt?.id || null,
+        subjectExamAttemptId: a.id,
+        submittedAt: a.submittedAt || a.examAttempt?.submittedAt || a.createdAt || null,
+        createdAt: a.createdAt || null,
+        updatedAt: a.updatedAt || null,
+        status: "PUBLISHED",
+        answers: a.answers || [],
+      })),
+    [paper?.examAttempts, paper?.totalMarks, defaultExamId]
+  );
 
-  const allResults = useMemo(() => {
-    const allResultsMap = new Map();
-    onlineResults.forEach((r: any) => {
-      if (r.studentCode || r.studentName) {
-        allResultsMap.set(r.studentCode || r.studentName, r);
+  const gradesResults = useMemo<PaperStudentResult[]>(
+    () =>
+      (paper?.grades || []).map((g) => ({
+        id: g.id,
+        studentId: g.studentId || g.student?.id || "",
+        studentName: g.student?.name,
+        studentCode: g.student?.studentCode,
+        studentAvatar: g.student?.profileImage || g.student?.avatar || "",
+        score: g.score || 0,
+        maxMarks: g.maxMarks || paper?.totalMarks || 100,
+        type: g.examAttemptId && g.remarks !== "MANUAL_OVERRIDE" ? "ONLINE" : "MANUAL",
+        examId: g.examId || defaultExamId,
+        examAttemptId: g.examAttemptId || null,
+        subjectExamAttemptId: g.subjectExamAttemptId || null,
+        gradeId: g.id,
+        overriderName: g.overriderName || g.teacher?.name || null,
+        remarks: g.remarks || null,
+        status: g.status || "PUBLISHED",
+        createdAt: g.createdAt || null,
+        updatedAt: g.updatedAt || null,
+      })),
+    [paper?.grades, paper?.totalMarks, defaultExamId]
+  );
+
+  const allResults = useMemo<PaperStudentResult[]>(() => {
+    const allResultsMap = new Map<string, PaperStudentResult>();
+    onlineResults.forEach((r) => {
+      const key = r.studentId || r.studentCode || r.studentName;
+      if (key) {
+        allResultsMap.set(key, r);
       }
     });
-    gradesResults.forEach((r: any) => {
-      if (r.studentCode || r.studentName) {
-        allResultsMap.set(r.studentCode || r.studentName, r);
+    gradesResults.forEach((r) => {
+      const key = r.studentId || r.studentCode || r.studentName;
+      if (key) {
+        const existing = allResultsMap.get(key);
+        allResultsMap.set(key, existing ? {
+          ...r,
+          examId: r.examId || existing.examId,
+          examAttemptId: r.examAttemptId || existing.examAttemptId,
+          subjectExamAttemptId: r.subjectExamAttemptId || existing.subjectExamAttemptId,
+          submittedAt: existing.submittedAt || r.createdAt || r.updatedAt || null,
+          studentAvatar: r.studentAvatar || existing.studentAvatar,
+          answers: existing.answers,
+        } : r);
       }
     });
-    return Array.from(allResultsMap.values());
+
+    return Array.from(allResultsMap.values()).sort((a, b) => {
+      const dateA = a.submittedAt || a.createdAt || a.updatedAt;
+      const dateB = b.submittedAt || b.createdAt || b.updatedAt;
+      const timeA = dateA ? new Date(dateA).getTime() : 0;
+      const timeB = dateB ? new Date(dateB).getTime() : 0;
+      return (Number.isNaN(timeB) ? 0 : timeB) - (Number.isNaN(timeA) ? 0 : timeA);
+    });
   }, [onlineResults, gradesResults]);
 
   const hasResults = allResults.length > 0;
   const itemsPerPage = 10;
   const totalPages = Math.ceil(allResults.length / itemsPerPage);
-  const paginatedResults = useMemo(() => 
-    allResults.slice((gradesPage - 1) * itemsPerPage, gradesPage * itemsPerPage),
+  const paginatedResults = useMemo(
+    () => allResults.slice((gradesPage - 1) * itemsPerPage, gradesPage * itemsPerPage),
     [allResults, gradesPage, itemsPerPage]
   );
 
+  const dateSections = useMemo(() => {
+    const map = new Map<string, { item: PaperStudentResult; globalIndex: number }[]>();
+    const order: string[] = [];
+
+    paginatedResults.forEach((result, index) => {
+      const globalIndex = (gradesPage - 1) * itemsPerPage + index + 1;
+      const label = getDateGroupLabel(
+        result.submittedAt || result.createdAt || result.updatedAt
+      );
+      if (!map.has(label)) {
+        map.set(label, []);
+        order.push(label);
+      }
+      map.get(label)!.push({ item: result, globalIndex });
+    });
+
+    return order.map((label) => ({ label, items: map.get(label)! }));
+  }, [paginatedResults, gradesPage, itemsPerPage]);
+
+  const selectedGradeModalData = useMemo<StudentGrade | null>(() => {
+    if (!selectedGradeDetail) return null;
+    const maxMarks = selectedGradeDetail.maxMarks || paper?.totalMarks || 100;
+    const score = selectedGradeDetail.score || 0;
+    const pct = maxMarks > 0 ? (score / maxMarks) * 100 : 0;
+    const pill = computeGradePill(pct, school?.gradingSystem);
+
+    let preloadedQuestions: PaperQuestionReviewItem[] | undefined;
+    if (
+      paper?.questions &&
+      paper.questions.length > 0 &&
+      (selectedGradeDetail.answers && selectedGradeDetail.answers.length > 0 ||
+        selectedGradeDetail.type === "ONLINE" ||
+        selectedGradeDetail.subjectExamAttemptId)
+    ) {
+      const answerMap = new Map<string, StudentAnswerRecord>();
+      (selectedGradeDetail.answers || []).forEach((ans) => {
+        answerMap.set(ans.questionId, ans);
+      });
+      preloadedQuestions = paper.questions.map((q) => {
+        const ans = answerMap.get(q.id);
+        return {
+          id: q.id,
+          question: q.question,
+          type: q.type,
+          images: q.images,
+          optionA: q.optionA,
+          optionB: q.optionB,
+          optionC: q.optionC,
+          optionD: q.optionD,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+          marks: q.marks,
+          studentAnswer: ans?.answer ?? null,
+          isCorrect: ans?.isCorrect ?? null,
+          scoreAwarded: ans?.scoreAwarded ?? null,
+          requiresManualReview: ans?.requiresManualReview,
+          manuallyReviewed: ans?.manuallyReviewed,
+          reviewNote: ans?.reviewNote ?? null,
+        };
+      });
+    }
+
+    const isOverride =
+      selectedGradeDetail.type === "MANUAL" && Boolean(selectedGradeDetail.examAttemptId);
+
+    return {
+      id: selectedGradeDetail.id,
+      studentId: selectedGradeDetail.studentId,
+      name: selectedGradeDetail.studentName || "Unknown Student",
+      studentCode: selectedGradeDetail.studentCode || "No Code",
+      subjectPaper: paper?.title || "Subject Paper",
+      assessmentType: paper?.subject?.name || "Subject Paper",
+      score: `${score}/${maxMarks}`,
+      rawScore: score,
+      maxMarks,
+      totalScore: `${pct.toFixed(1)}%`,
+      grade: pill.label || "-",
+      status: (selectedGradeDetail.status || "Graded") as GradeStatus,
+      remarks: selectedGradeDetail.remarks || undefined,
+      profilePicture: selectedGradeDetail.studentAvatar || undefined,
+      examId: selectedGradeDetail.examId || defaultExamId,
+      subjectPaperId: paper?.id || paperId,
+      examAttemptId: selectedGradeDetail.examAttemptId || null,
+      subjectExamAttemptId: selectedGradeDetail.subjectExamAttemptId || null,
+      creatorName: selectedGradeDetail.overriderName || "System Auto-Grader",
+      submissionType: isOverride ? "OVERRIDE" : selectedGradeDetail.type,
+      submittedAt: selectedGradeDetail.submittedAt || null,
+      createdAt: selectedGradeDetail.createdAt || null,
+      updatedAt: selectedGradeDetail.updatedAt || null,
+      preloadedQuestions,
+    };
+  }, [selectedGradeDetail, paper, paperId, school?.gradingSystem, defaultExamId]);
+
   // Statistics
-  const avgScore = useMemo(() => 
-    hasResults 
+  const avgScore = useMemo(() =>
+    hasResults
       ? (allResults.reduce((sum: number, r: any) => sum + (r.score as number), 0) / allResults.length).toFixed(1)
       : '0.0',
     [hasResults, allResults]
   );
-  const highBox = useMemo(() => 
+  const highBox = useMemo(() =>
     hasResults ? Math.max(...allResults.map((r: any) => r.score as number)).toFixed(1) : '0.0',
     [hasResults, allResults]
   );
-  const lowBox = useMemo(() => 
+  const lowBox = useMemo(() =>
     hasResults ? Math.min(...allResults.map((r: any) => r.score as number)).toFixed(1) : '0.0',
     [hasResults, allResults]
   );
@@ -573,7 +824,7 @@ export default function TeacherPaperDetailPage() {
               <Skeleton className="h-14 w-full md:w-96 rounded-xl" />
               <Skeleton className="h-[500px] w-full rounded-2xl" />
             </div>
-            
+
             {/* Sidebar Area */}
             <div className="space-y-6">
               <Skeleton className="h-64 w-full rounded-2xl" />
@@ -609,10 +860,10 @@ export default function TeacherPaperDetailPage() {
     <div className="min-h-screen bg-transparent">
       {isMainExamPublished && (
         <div className="bg-amber-50 dark:bg-amber-500/10 border-b border-amber-200 dark:border-amber-500/20 px-4 py-2 flex items-center justify-center text-center">
-            <p className="text-xs font-bold text-amber-700 dark:text-amber-500 flex items-center gap-2">
-                <Info size={14} className="shrink-0" />
-                <span>The parent exam is currently active. To make edits, please inform the admin to unpublish the main exam first.</span>
-            </p>
+          <p className="text-xs font-bold text-amber-700 dark:text-amber-500 flex items-center gap-2">
+            <Info size={14} className="shrink-0" />
+            <span>The parent exam is currently active. To make edits, please inform the admin to unpublish the main exam first.</span>
+          </p>
         </div>
       )}
 
@@ -621,11 +872,11 @@ export default function TeacherPaperDetailPage() {
         {/* Desktop Single-Row Header */}
         <div className="hidden md:flex max-w-[106rem] mx-auto px-4 sm:px-6 lg:px-8 h-16 items-center justify-between">
           <div className="flex items-center gap-4 truncate">
-            <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => router.back()}
-                className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+              className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
@@ -639,16 +890,16 @@ export default function TeacherPaperDetailPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {paper.status === "PUBLISHED" ? (
               <div className="flex items-center gap-2">
                 <div className="flex bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full text-[10px] font-bold border border-emerald-100 dark:border-emerald-500/20 items-center gap-1.5 shadow-sm">
                   <Check size={12} /> Published
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="h-8 rounded-lg text-amber-600 border-amber-200 hover:bg-amber-50 text-xs px-3 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={() => openConfirmDialog({
                     title: "Unpublish Paper",
@@ -665,8 +916,8 @@ export default function TeacherPaperDetailPage() {
                 </Button>
               </div>
             ) : (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 className="h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 dark:shadow-none px-4 text-xs font-bold"
                 onClick={() => publishPaperMutation.mutate()}
                 disabled={publishPaperMutation.isPending}
@@ -679,10 +930,10 @@ export default function TeacherPaperDetailPage() {
                 Publish
               </Button>
             )}
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
+
+            <Button
+              variant="outline"
+              size="sm"
               className="h-8 rounded-lg text-red-600 border-red-200 hover:bg-red-50 text-xs px-3 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => {
                 const targetExam = mainExam;
@@ -724,15 +975,15 @@ export default function TeacherPaperDetailPage() {
               {paper.readingContent ? "Edit Reading Content" : "Add Reading Content"}
             </Button>
 
-            <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 rounded-lg text-slate-600 border-slate-200 hover:bg-slate-50 text-xs px-3 font-bold flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => setIsEditModalOpen(true)}
-                disabled={isMainExamPublished}
-                title={isMainExamPublished ? "Cannot edit settings because the parent exam is published." : ""}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-lg text-slate-600 border-slate-200 hover:bg-slate-50 text-xs px-3 font-bold flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => setIsEditModalOpen(true)}
+              disabled={isMainExamPublished}
+              title={isMainExamPublished ? "Cannot edit settings because the parent exam is published." : ""}
             >
-                <SettingsIcon size={14} /> Settings
+              <SettingsIcon size={14} /> Settings
             </Button>
 
             <Button
@@ -744,7 +995,7 @@ export default function TeacherPaperDetailPage() {
               <Eye size={12} />
               Preview Mode
             </Button>
-      
+
             <div className="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 hidden sm:block mx-1"></div>
             <div className="flex flex-col items-end">
               <span className="text-xs font-black text-slate-900 dark:text-white leading-none">
@@ -762,8 +1013,8 @@ export default function TeacherPaperDetailPage() {
           {/* Top Row: Back button, Title, Status & Quick Metrics */}
           <div className="flex items-center justify-between gap-2.5">
             <div className="flex items-center gap-2 min-w-0">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={() => router.back()}
                 className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0 -ml-1"
@@ -807,9 +1058,9 @@ export default function TeacherPaperDetailPage() {
           {/* Bottom Row: Horizontally scrollable action pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 -mx-1 px-1">
             {paper.status === "PUBLISHED" ? (
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="h-7 rounded-lg text-amber-600 border-amber-200 hover:bg-amber-50 text-[11px] px-2.5 font-bold shrink-0 disabled:opacity-50"
                 onClick={() => openConfirmDialog({
                   title: "Unpublish Paper",
@@ -824,8 +1075,8 @@ export default function TeacherPaperDetailPage() {
                 Unpublish
               </Button>
             ) : (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 className="h-7 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] px-3 font-bold shrink-0 gap-1"
                 onClick={() => publishPaperMutation.mutate()}
                 disabled={publishPaperMutation.isPending}
@@ -845,9 +1096,9 @@ export default function TeacherPaperDetailPage() {
               Preview
             </Button>
 
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="h-7 rounded-lg text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 text-[11px] px-2.5 font-bold shrink-0 gap-1 disabled:opacity-50"
               onClick={() => setIsEditModalOpen(true)}
               disabled={isMainExamPublished}
@@ -867,9 +1118,9 @@ export default function TeacherPaperDetailPage() {
               Reading
             </Button>
 
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="h-7 rounded-lg text-rose-600 border-rose-200 hover:bg-rose-50 text-[11px] px-2.5 font-bold shrink-0 gap-1 disabled:opacity-50"
               onClick={() => {
                 const targetExam = mainExam;
@@ -904,8 +1155,8 @@ export default function TeacherPaperDetailPage() {
       <main className="max-w-[106rem] mx-auto px-3.5 sm:px-6 lg:px-8 py-5 md:py-8">
         <Tabs defaultValue="questions" className="w-full">
           <TabsList className="mb-6 md:mb-8 p-1 bg-slate-100/70 dark:bg-slate-800/60 rounded-2xl w-full sm:max-w-md border border-slate-200/50 dark:border-slate-800/50 grid grid-cols-2">
-            <TabsTrigger 
-              value="questions" 
+            <TabsTrigger
+              value="questions"
               className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm py-2.5 font-bold text-xs uppercase tracking-wider transition-all"
             >
               <div className="flex items-center justify-center gap-2">
@@ -916,8 +1167,8 @@ export default function TeacherPaperDetailPage() {
                 </span>
               </div>
             </TabsTrigger>
-            <TabsTrigger 
-              value="grades" 
+            <TabsTrigger
+              value="grades"
               className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm py-2.5 font-bold text-xs uppercase tracking-wider transition-all"
             >
               <div className="flex items-center justify-center gap-2">
@@ -931,10 +1182,10 @@ export default function TeacherPaperDetailPage() {
           </TabsList>
 
           <TabsContent value="questions">
-            <QuestionManager 
-                paperId={paperId} 
-                examId={examId}
-                paper={paper}
+            <QuestionManager
+              paperId={paperId}
+              examId={examId}
+              paper={paper}
             />
           </TabsContent>
 
@@ -983,10 +1234,10 @@ export default function TeacherPaperDetailPage() {
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button 
+                      <Button
                         disabled={!hasResults || isExporting}
                         className="text-white font-black px-4 sm:px-6 rounded-2xl shadow-lg transition-all gap-2 uppercase tracking-widest text-[10px] h-9 cursor-pointer disabled:opacity-50"
-                        style={{ 
+                        style={{
                           backgroundColor: paper.school?.settings?.themeColor || 'var(--primary)',
                           boxShadow: paper.school?.settings?.themeColor ? `0 10px 15px -3px ${paper.school.settings.themeColor}33` : undefined
                         }}
@@ -1029,294 +1280,122 @@ export default function TeacherPaperDetailPage() {
               {/* Grid Mode View: Always rendered on mobile, and on desktop when gradesViewMode === 'grid' */}
               {hasResults && (
                 <div className={cn(
-                  "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4",
-                  gradesViewMode === 'grid' ? "grid" : "grid md:hidden"
+                  "flex flex-col gap-6",
+                  gradesViewMode === 'grid' ? "flex" : "flex md:hidden"
                 )}>
-                  {paginatedResults.map((result: any, idx: number) => {
-                    const percentage = (result.score / result.maxMarks) * 100;
-                    const isPass = percentage >= (paper.passMark || 40);
-                    const isEditing = editingGradeId === result.id;
-                    const actualIndex = (gradesPage - 1) * itemsPerPage + idx + 1;
-
-                    return (
-                      <div 
-                        key={result.id}
-                        onClick={() => !isEditing && setSelectedGradeDetail(result)}
-                        className={cn(
-                          "bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-all cursor-pointer relative group flex flex-col justify-between border-l-4",
-                          isPass ? "border-l-emerald-500" : "border-l-rose-500"
-                        )}
-                      >
-                        <div>
-                          {/* Card Top: Index, Name, Student Code */}
-                          <div className="flex items-start justify-between gap-2 mb-3">
-                            <div className="flex items-center gap-2.5 truncate">
-                              <span className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-500/20">
-                                {String(actualIndex).padStart(2, '0')}
-                              </span>
-                              <div className="truncate">
-                                <h4 className="font-black text-slate-900 dark:text-white capitalize text-sm truncate">
-                                  {result.studentName || 'Unknown Student'}
-                                </h4>
-                                <p className="text-[11px] font-mono font-bold text-slate-400">
-                                  {result.studentCode || 'No Code'}
-                                </p>
-                              </div>
-                            </div>
-
-                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black tracking-wider uppercase shrink-0 ${
-                              result.type === 'MANUAL' 
-                                ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
-                                : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400'
-                            }`}>
-                              {result.type === 'MANUAL' && result.examAttemptId ? 'OVERRIDE' : result.type}
-                            </span>
-                          </div>
-
-                          {/* Score & Progress */}
-                          <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-3 mb-3 border border-slate-100 dark:border-slate-800">
-                            <div className="flex items-baseline justify-between mb-2">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Score</span>
-                              {isEditing ? (
-                                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                                  <input
-                                    type="number"
-                                    className="w-16 h-7 text-center border border-emerald-300 dark:border-emerald-600 rounded-lg text-sm font-black bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                    value={editScore}
-                                    onChange={(e) => setEditScore(e.target.value)}
-                                    autoFocus
-                                  />
-                                  <span className="text-slate-400 text-xs font-bold">/ {result.maxMarks}</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-baseline gap-1.5 flex-wrap">
-                                  <span className="text-lg font-black text-slate-900 dark:text-white">{result.score}</span>
-                                  <span className="text-xs font-bold text-slate-400">/ {result.maxMarks}</span>
-                                  <span className={`text-xs font-black ${isPass ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}`}>
-                                    ({percentage.toFixed(0)}%)
-                                  </span>
-                                  {(() => {
-                                    const pill = computeGradePill(percentage, school?.gradingSystem);
-                                    return (
-                                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`} title={pill.remark}>
-                                        {pill.label}
-                                      </span>
-                                    );
-                                  })()}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Progress Bar */}
-                            <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full rounded-full ${isPass ? 'bg-emerald-500' : 'bg-rose-500'}`}
-                                style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
-                              />
-                            </div>
-                          </div>
+                  {dateSections.map((section) => (
+                    <div key={`grid-section-${section.label}`} className="space-y-3">
+                      <div className="flex items-center gap-3 px-1">
+                        <div className="flex items-center gap-2">
+                          <div className="size-2 rounded-full bg-emerald-500" />
+                          <h3 className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                            {section.label}
+                          </h3>
                         </div>
-
-                        {/* Card Footer Actions */}
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/60 mt-auto" onClick={(e) => e.stopPropagation()}>
-                          <div className="text-[10px] font-bold text-slate-400 truncate max-w-[140px]">
-                            {result.overriderName ? `By: ${result.overriderName}` : 'Submitted Online'}
-                          </div>
-
-                          <div className="flex items-center gap-1.5">
-                            {isEditing ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (!result.studentId) {
-                                      toast.error("Student ID is missing. Cannot override.");
-                                      return;
-                                    }
-                                    if (result.type === 'ONLINE') {
-                                      createOverrideGradeMutation.mutate({
-                                        studentId: result.studentId,
-                                        score: Number(editScore),
-                                        maxMarks: result.maxMarks,
-                                        examAttemptId: result.examAttemptId,
-                                        subjectExamAttemptId: result.subjectExamAttemptId
-                                      });
-                                    } else {
-                                      if (!result.gradeId) {
-                                        toast.error("Grade ID is missing.");
-                                        return;
-                                      }
-                                      updateGradeMutation.mutate({ gradeId: result.gradeId, score: Number(editScore) });
-                                    }
-                                  }}
-                                  disabled={updateGradeMutation.isPending || createOverrideGradeMutation.isPending}
-                                  className="h-7 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1"
-                                >
-                                  {updateGradeMutation.isPending || createOverrideGradeMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-                                  Save
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingGradeId(null);
-                                  }}
-                                  className="h-7 px-2 rounded-lg text-slate-500 text-xs"
-                                >
-                                  <X size={12} />
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingGradeId(result.id);
-                                    setEditScore(result.score.toString());
-                                  }}
-                                  className="h-7 px-2.5 rounded-lg text-xs font-bold text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-500/10 gap-1"
-                                >
-                                  <Edit2 size={12} />
-                                  <span>Edit</span>
-                                </Button>
-
-                                {result.type === 'MANUAL' && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openConfirmDialog({
-                                        title: "Delete Manual Grade",
-                                        description: `Are you sure you want to delete the manual grade for ${result.studentName}?`,
-                                        variant: "danger",
-                                        confirmText: "Delete",
-                                        onConfirm: () => {
-                                          deleteGradeMutation.mutate(result.gradeId);
-                                          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-                                        }
-                                      });
-                                    }}
-                                    disabled={deleteGradeMutation.isPending}
-                                    className="h-7 w-7 p-0 rounded-lg text-red-500 border-red-200 hover:bg-red-50 dark:hover:bg-red-500/10"
-                                    title="Delete manual grade"
-                                  >
-                                    {deleteGradeMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                                  </Button>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </div>
+                        <span className="text-[11px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                          {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                        </span>
+                        <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
                       </div>
-                    );
-                  })}
-                </div>
-              )}
 
-              {/* Table Mode View: shown on desktop (md+) when gradesViewMode === 'table' */}
-              {hasResults && gradesViewMode === 'table' && (
-                <div className="hidden md:block bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 rounded-[2rem] overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-emerald-100/50 dark:bg-emerald-900/30 border-b border-emerald-200/50 dark:border-emerald-800/50">
-                          <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">#</th>
-                          <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
-                          <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Code</th>
-                          <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</th>
-                          <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Percentage</th>
-                          <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Editor</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {paginatedResults.map((result: any, idx: number) => {
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+                        {section.items.map(({ item: result, globalIndex: actualIndex }) => {
                           const percentage = (result.score / result.maxMarks) * 100;
                           const isPass = percentage >= (paper.passMark || 40);
                           const isEditing = editingGradeId === result.id;
-                          const actualIndex = (gradesPage - 1) * itemsPerPage + idx + 1;
-                          
+
                           return (
-                            <tr 
-                              key={result.id} 
-                              className="hover:bg-emerald-100/30 dark:hover:bg-emerald-900/20 transition-colors cursor-pointer"
+                            <div
+                              key={result.id}
                               onClick={() => !isEditing && setSelectedGradeDetail(result)}
+                              className={cn(
+                                "bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-all cursor-pointer relative group flex flex-col justify-between border-l-4",
+                                isPass ? "border-l-emerald-500" : "border-l-rose-500"
+                              )}
                             >
-                              <td className="px-6 py-4 text-[11px] font-black text-slate-400">
-                                {String(actualIndex).padStart(2, '0')}
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="font-black text-slate-900 dark:text-white capitalize text-sm">
-                                  {result.studentName}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 font-bold text-slate-500 font-mono text-xs">
-                                {result.studentCode}
-                              </td>
-                              <td className="px-6 py-4 text-center">
-                                {isEditing ? (
-                                  <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <input
-                                      type="number"
-                                      className="w-16 h-8 text-center border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-black bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                      value={editScore}
-                                      onChange={(e) => setEditScore(e.target.value)}
-                                      autoFocus
-                                    />
-                                    <span className="text-slate-400 font-bold">/ {result.maxMarks}</span>
+                              <div>
+                                {/* Card Top: Index, Name, Student Code */}
+                                <div className="flex items-start justify-between gap-2 mb-3">
+                                  <div className="flex items-center gap-2.5 truncate">
+                                    <span className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black text-xs flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-500/20">
+                                      {String(actualIndex).padStart(2, '0')}
+                                    </span>
+                                    <div className="truncate">
+                                      <h4 className="font-black text-slate-900 dark:text-white capitalize text-sm truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                        {result.studentName || 'Unknown Student'}
+                                      </h4>
+                                      <p className="text-[11px] font-mono font-bold text-slate-400">
+                                        {result.studentCode || 'No Code'}
+                                      </p>
+                                    </div>
                                   </div>
-                                ) : (
-                                  <>
-                                    <span className="font-black text-slate-900 dark:text-white">
-                                      {result.score}
-                                    </span>
-                                    <span className="text-slate-400 ml-1 font-bold">
-                                      / {result.maxMarks}
-                                    </span>
-                                  </>
-                                )}
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="flex items-center justify-center gap-3">
-                                  <div className="w-20 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div 
-                                      className={`h-full rounded-full ${isPass ? 'bg-emerald-500' : 'bg-red-500'}`}
+
+                                  <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black tracking-wider uppercase shrink-0 ${result.type === 'MANUAL'
+                                      ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'
+                                      : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400'
+                                    }`}>
+                                    {result.type === 'MANUAL' && result.examAttemptId ? 'OVERRIDE' : result.type}
+                                  </span>
+                                </div>
+
+                                {/* Score & Progress */}
+                                <div
+                                  className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-3 mb-3 border border-slate-100 dark:border-slate-800 group-hover:border-emerald-200 dark:group-hover:border-emerald-800/60 transition-colors"
+                                  title="Click to view detailed grades & student answers"
+                                >
+                                  <div className="flex items-baseline justify-between mb-2">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Score &bull; Review</span>
+                                    {isEditing ? (
+                                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                        <input
+                                          type="number"
+                                          className="w-16 h-7 text-center border border-emerald-300 dark:border-emerald-600 rounded-lg text-sm font-black bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                          value={editScore}
+                                          onChange={(e) => setEditScore(e.target.value)}
+                                          autoFocus
+                                        />
+                                        <span className="text-slate-400 text-xs font-bold">/ {result.maxMarks}</span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                                        <span className="text-lg font-black text-slate-900 dark:text-white">{result.score}</span>
+                                        <span className="text-xs font-bold text-slate-400">/ {result.maxMarks}</span>
+                                        <span className={`text-xs font-black ${isPass ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}`}>
+                                          ({percentage.toFixed(0)}%)
+                                        </span>
+                                        {(() => {
+                                          const pill = computeGradePill(percentage, school?.gradingSystem);
+                                          return (
+                                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`} title={pill.remark}>
+                                              {pill.label}
+                                            </span>
+                                          );
+                                        })()}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Progress Bar */}
+                                  <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full ${isPass ? 'bg-emerald-500' : 'bg-rose-500'}`}
                                       style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
                                     />
                                   </div>
-                                  <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">
-                                    {percentage.toFixed(0)}%
-                                  </span>
-                                  {(() => {
-                                    const pill = computeGradePill(percentage, school?.gradingSystem);
-                                    return (
-                                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`} title={pill.remark}>
-                                        {pill.label}
-                                      </span>
-                                    );
-                                  })()}
                                 </div>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <div className="flex items-center justify-end gap-3" onClick={(e) => e.stopPropagation()}>
-                                  <div className="flex flex-col items-end gap-1">
-                                    <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase ${
-                                      result.type === 'MANUAL' 
-                                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
-                                        : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400'
-                                    }`}>
-                                      {result.type === 'MANUAL' && result.examAttemptId ? 'MANUAL OVERRIDE' : result.type}
-                                    </span>
-                                  </div>
-                                  
+                              </div>
+
+                              {/* Card Footer Actions */}
+                              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/60 mt-auto" onClick={(e) => e.stopPropagation()}>
+                                <div className="text-[10px] font-bold text-slate-400 truncate max-w-[140px]">
+                                  {result.overriderName ? `By: ${result.overriderName}` : 'Submitted Online'}
+                                </div>
+
+                                <div className="flex items-center gap-1.5">
                                   {isEditing ? (
-                                    <div className="flex items-center gap-1">
-                                      <button
-                                        type="button"
+                                    <>
+                                      <Button
+                                        size="sm"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (!result.studentId) {
@@ -1328,8 +1407,8 @@ export default function TeacherPaperDetailPage() {
                                               studentId: result.studentId,
                                               score: Number(editScore),
                                               maxMarks: result.maxMarks,
-                                              examAttemptId: result.examAttemptId,
-                                              subjectExamAttemptId: result.subjectExamAttemptId
+                                              examAttemptId: result.examAttemptId || undefined,
+                                              subjectExamAttemptId: result.subjectExamAttemptId || undefined
                                             });
                                           } else {
                                             if (!result.gradeId) {
@@ -1340,74 +1419,308 @@ export default function TeacherPaperDetailPage() {
                                           }
                                         }}
                                         disabled={updateGradeMutation.isPending || createOverrideGradeMutation.isPending}
-                                        className="text-emerald-500 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 p-2 rounded-xl transition-all disabled:opacity-50"
-                                        title="Save grade"
+                                        className="h-7 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1"
                                       >
-                                        {updateGradeMutation.isPending || createOverrideGradeMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                                      </button>
-                                      <button
-                                        type="button"
+                                        {updateGradeMutation.isPending || createOverrideGradeMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+                                        Save
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setEditingGradeId(null);
                                         }}
-                                        className="text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 p-2 rounded-xl transition-all"
-                                        title="Cancel edit"
+                                        className="h-7 px-2 rounded-lg text-slate-500 text-xs"
                                       >
-                                        <X size={16} />
-                                      </button>
-                                    </div>
+                                        <X size={12} />
+                                      </Button>
+                                    </>
                                   ) : (
-                                    <div className="flex items-center gap-1">
-                                      <button
-                                        type="button"
+                                    <>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedGradeDetail(result);
+                                        }}
+                                        className="h-7 px-2 rounded-lg text-xs font-bold text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 gap-1"
+                                        title="View Grade & Answers Review"
+                                      >
+                                        <Eye size={12} />
+                                      </Button>
+
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setEditingGradeId(result.id);
                                           setEditScore(result.score.toString());
                                         }}
-                                        className="text-amber-500 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 p-2 rounded-xl transition-all"
-                                        title="Edit / Override score"
+                                        className="h-7 px-2.5 rounded-lg text-xs font-bold text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-500/10 gap-1"
                                       >
-                                        <Edit2 size={16} />
-                                      </button>
-                                      {result.type === 'MANUAL' && (
-                                        <button
-                                          type="button"
+                                        <Edit2 size={12} />
+                                        <span>Edit</span>
+                                      </Button>
+
+                                      {result.type === 'MANUAL' && result.gradeId && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
                                           onClick={(e) => {
                                             e.stopPropagation();
+                                            const targetGradeId = result.gradeId as string;
                                             openConfirmDialog({
                                               title: "Delete Manual Grade",
                                               description: `Are you sure you want to delete the manual grade for ${result.studentName}?`,
                                               variant: "danger",
                                               confirmText: "Delete",
                                               onConfirm: () => {
-                                                deleteGradeMutation.mutate(result.gradeId);
+                                                deleteGradeMutation.mutate(targetGradeId);
                                                 setConfirmDialog(prev => ({ ...prev, isOpen: false }));
                                               }
                                             });
                                           }}
                                           disabled={deleteGradeMutation.isPending}
-                                          className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 p-2 rounded-xl transition-all disabled:opacity-50"
+                                          className="h-7 w-7 p-0 rounded-lg text-red-500 border-red-200 hover:bg-red-50 dark:hover:bg-red-500/10"
                                           title="Delete manual grade"
                                         >
-                                          {deleteGradeMutation.isPending ? (
-                                            <Loader2 size={16} className="animate-spin" />
-                                          ) : (
-                                            <Trash2 size={16} />
-                                          )}
-                                        </button>
+                                          {deleteGradeMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                                        </Button>
                                       )}
-                                    </div>
+                                    </>
                                   )}
                                 </div>
-                              </td>
-                            </tr>
+                              </div>
+                            </div>
                           );
                         })}
-                      </tbody>
-                    </table>
-                  </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Table Mode View: shown on desktop (md+) when gradesViewMode === 'table' */}
+              {hasResults && gradesViewMode === 'table' && (
+                <div className="hidden md:flex flex-col gap-6">
+                  {dateSections.map((section) => (
+                    <div key={`table-section-${section.label}`} className="space-y-3">
+                      <div className="flex items-center gap-3 px-1">
+                        <div className="flex items-center gap-2">
+                          <div className="size-2 rounded-full bg-emerald-500" />
+                          <h3 className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                            {section.label}
+                          </h3>
+                        </div>
+                        <span className="text-[11px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                          {section.items.length} {section.items.length === 1 ? 'record' : 'records'}
+                        </span>
+                        <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
+                      </div>
+
+                      <div className="bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 rounded-[2rem] overflow-hidden shadow-sm">
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="bg-emerald-100/50 dark:bg-emerald-900/30 border-b border-emerald-200/50 dark:border-emerald-800/50">
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">#</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Code</th>
+                                <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</th>
+                                <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Percentage &amp; Grade</th>
+                                <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                              {section.items.map(({ item: result, globalIndex: actualIndex }) => {
+                                const percentage = (result.score / result.maxMarks) * 100;
+                                const isPass = percentage >= (paper.passMark || 40);
+                                const isEditing = editingGradeId === result.id;
+
+                                return (
+                                  <tr
+                                    key={result.id}
+                                    className="group hover:bg-emerald-100/30 dark:hover:bg-emerald-900/20 transition-colors cursor-pointer"
+                                    onClick={() => !isEditing && setSelectedGradeDetail(result)}
+                                    title="Click row or grade to view student answers & detailed review"
+                                  >
+                                    <td className="px-6 py-4 text-[11px] font-black text-slate-400">
+                                      {String(actualIndex).padStart(2, '0')}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <div className="font-black text-slate-900 dark:text-white capitalize text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                        {result.studentName}
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 font-bold text-slate-500 font-mono text-xs">
+                                      {result.studentCode}
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                      {isEditing ? (
+                                        <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                          <input
+                                            type="number"
+                                            className="w-16 h-8 text-center border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-black bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                            value={editScore}
+                                            onChange={(e) => setEditScore(e.target.value)}
+                                            autoFocus
+                                          />
+                                          <span className="text-slate-400 font-bold">/ {result.maxMarks}</span>
+                                        </div>
+                                      ) : (
+                                        <div className="inline-flex items-baseline gap-1">
+                                          <span className="font-black text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                            {result.score}
+                                          </span>
+                                          <span className="text-slate-400 font-bold">
+                                            / {result.maxMarks}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <div className="flex items-center justify-center gap-3">
+                                        <div className="w-20 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                          <div
+                                            className={`h-full rounded-full ${isPass ? 'bg-emerald-500' : 'bg-red-500'}`}
+                                            style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+                                          />
+                                        </div>
+                                        <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">
+                                          {percentage.toFixed(0)}%
+                                        </span>
+                                        {(() => {
+                                          const pill = computeGradePill(percentage, school?.gradingSystem);
+                                          return (
+                                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${pill.bg} ${pill.color}`} title={pill.remark}>
+                                              {pill.label}
+                                            </span>
+                                          );
+                                        })()}
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                        <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase ${result.type === 'MANUAL'
+                                            ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'
+                                            : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400'
+                                          }`}>
+                                          {result.type === 'MANUAL' && result.examAttemptId ? 'MANUAL OVERRIDE' : result.type}
+                                        </span>
+
+                                        {isEditing ? (
+                                          <div className="flex items-center gap-1">
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (!result.studentId) {
+                                                  toast.error("Student ID is missing. Cannot override.");
+                                                  return;
+                                                }
+                                                if (result.type === 'ONLINE') {
+                                                  createOverrideGradeMutation.mutate({
+                                                    studentId: result.studentId,
+                                                    score: Number(editScore),
+                                                    maxMarks: result.maxMarks,
+                                                    examAttemptId: result.examAttemptId || undefined,
+                                                    subjectExamAttemptId: result.subjectExamAttemptId || undefined
+                                                  });
+                                                } else {
+                                                  if (!result.gradeId) {
+                                                    toast.error("Grade ID is missing.");
+                                                    return;
+                                                  }
+                                                  updateGradeMutation.mutate({ gradeId: result.gradeId, score: Number(editScore) });
+                                                }
+                                              }}
+                                              disabled={updateGradeMutation.isPending || createOverrideGradeMutation.isPending}
+                                              className="text-emerald-500 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 p-2 rounded-xl transition-all disabled:opacity-50"
+                                              title="Save grade"
+                                            >
+                                              {updateGradeMutation.isPending || createOverrideGradeMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingGradeId(null);
+                                              }}
+                                              className="text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 p-2 rounded-xl transition-all"
+                                              title="Cancel edit"
+                                            >
+                                              <X size={16} />
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center gap-1">
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedGradeDetail(result);
+                                              }}
+                                              className="text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 p-2 rounded-xl transition-all"
+                                              title="View grade & answers review"
+                                            >
+                                              <Eye size={16} />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingGradeId(result.id);
+                                                setEditScore(result.score.toString());
+                                              }}
+                                              className="text-amber-500 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 p-2 rounded-xl transition-all"
+                                              title="Edit / Override score"
+                                            >
+                                              <Edit2 size={16} />
+                                            </button>
+                                            {result.type === 'MANUAL' && result.gradeId && (
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  const targetGradeId = result.gradeId as string;
+                                                  openConfirmDialog({
+                                                    title: "Delete Manual Grade",
+                                                    description: `Are you sure you want to delete the manual grade for ${result.studentName}?`,
+                                                    variant: "danger",
+                                                    confirmText: "Delete",
+                                                    onConfirm: () => {
+                                                      deleteGradeMutation.mutate(targetGradeId);
+                                                      setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                                                    }
+                                                  });
+                                                }}
+                                                disabled={deleteGradeMutation.isPending}
+                                                className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 p-2 rounded-xl transition-all disabled:opacity-50"
+                                                title="Delete manual grade"
+                                              >
+                                                {deleteGradeMutation.isPending ? (
+                                                  <Loader2 size={16} className="animate-spin" />
+                                                ) : (
+                                                  <Trash2 size={16} />
+                                                )}
+                                              </button>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -1497,67 +1810,21 @@ export default function TeacherPaperDetailPage() {
         isLoadingData={isLoadingSubjects || isLoadingTeachers}
       />
 
-      <Dialog open={!!selectedGradeDetail} onOpenChange={(open) => !open && setSelectedGradeDetail(null)}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md border-0 bg-white dark:bg-slate-900 shadow-2xl rounded-3xl overflow-hidden p-0 gap-0">
-          <div className="bg-emerald-500 p-6 text-white text-center">
-            <DialogTitle className="text-xl font-black mb-1">Grade Details</DialogTitle>
-            <p className="text-emerald-100 text-sm font-medium">Detailed view of the student's performance</p>
-          </div>
-          
-          {selectedGradeDetail && (
-            <div className="flex flex-col p-6 gap-4">
-              <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Student</span>
-                <span className="text-sm font-black text-slate-800 dark:text-white capitalize">{selectedGradeDetail.studentName}</span>
-              </div>
-              
-              <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Student Code</span>
-                <span className="text-sm font-bold text-slate-500 font-mono">{selectedGradeDetail.studentCode}</span>
-              </div>
-              
-              <div className="flex justify-between items-center bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-2xl">
-                <span className="text-xs font-bold text-emerald-600/70 dark:text-emerald-400/70 uppercase tracking-widest">Score</span>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{selectedGradeDetail.score}</span>
-                    <span className="text-sm font-bold text-emerald-600/50 dark:text-emerald-400/50">/ {selectedGradeDetail.maxMarks}</span>
-                  </div>
-                  {(() => {
-                    const max = selectedGradeDetail.maxMarks || 100;
-                    const pct = max > 0 ? (selectedGradeDetail.score / max) * 100 : 0;
-                    const pill = computeGradePill(pct, school?.gradingSystem);
-                    return (
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${pill.bg} ${pill.color}`}>
-                        <span>{pill.label}</span>
-                        {pill.remark && <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">({pill.remark})</span>}
-                      </span>
-                    );
-                  })()}
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Submission Type</span>
-                <span className={`px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase ${
-                  selectedGradeDetail.type === 'MANUAL' 
-                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
-                    : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400'
-                }`}>
-                  {selectedGradeDetail.type === 'MANUAL' && selectedGradeDetail.examAttemptId ? 'MANUAL OVERRIDE' : selectedGradeDetail.type}
-                </span>
-              </div>
-              
-              <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Editor</span>
-                <span className="text-sm font-black text-slate-700 dark:text-slate-300">
-                  {selectedGradeDetail.overriderName || 'System'}
-                </span>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <GradeDetailsModal
+        isOpen={!!selectedGradeDetail}
+        onClose={() => setSelectedGradeDetail(null)}
+        grade={selectedGradeModalData}
+        gradingSystem={school?.gradingSystem}
+        passMark={paper?.passMark || 40}
+        onEdit={() => {
+          if (!selectedGradeDetail) return;
+          const targetId = selectedGradeDetail.id;
+          const targetScore = selectedGradeDetail.score.toString();
+          setSelectedGradeDetail(null);
+          setEditingGradeId(targetId);
+          setEditScore(targetScore);
+        }}
+      />
     </div>
   );
 }

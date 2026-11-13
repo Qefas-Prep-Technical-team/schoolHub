@@ -277,26 +277,46 @@ const GradesOverview: React.FC = () => {
   const mappedGrades: StudentGrade[] = useMemo(() => {
     if (!rawData || !Array.isArray(rawData)) return [];
 
-    const grades = rawData.map((item: {
+    interface HubGradeItem {
       id?: string | number;
       score?: number;
       maxMarks?: number;
-      student?: { name?: string; studentCode?: string; profileImage?: string; avatar?: string };
+      student?: {
+        id?: string;
+        name?: string;
+        studentCode?: string;
+        profileImage?: string;
+        avatar?: string;
+      };
       name?: string;
       studentId?: string;
-      subjectPaper?: { title?: string };
+      subjectPaper?: { id?: string; title?: string };
+      subjectPaperId?: string | null;
+      exam?: { id?: string; title?: string } | null;
+      examId?: string | null;
+      examAttemptId?: string | null;
+      subjectExamAttemptId?: string | null;
+      class?: { id?: string; name?: string; section?: string | null } | null;
+      creatorName?: string | null;
+      teacher?: { id: string; name: string } | null;
       subject?: string;
       category?: string;
       status?: string;
       remarks?: string;
-    }) => {
+      createdAt?: string | Date | null;
+      updatedAt?: string | Date | null;
+    }
+
+    const grades = (rawData as HubGradeItem[]).map((item): StudentGrade => {
       const score = item.score || 0;
       const maxMarks = item.maxMarks || 100;
       const percentage = (score / maxMarks) * 100;
+      const isOnline = Boolean(item.examAttemptId || item.subjectExamAttemptId);
+      const isOverride = isOnline && item.remarks === 'MANUAL_OVERRIDE';
 
       return {
         id: String(item.id || Math.random()),
-        studentId: item.studentId || (item.student as any)?.id || '',
+        studentId: item.studentId || item.student?.id || '',
         name: item.student?.name || item.name || 'Unknown Student',
         studentCode: item.student?.studentCode || item.studentId || 'S-0000',
         subjectPaper: item.subjectPaper?.title || item.subject || '-',
@@ -307,9 +327,19 @@ const GradesOverview: React.FC = () => {
         totalScore: `${percentage.toFixed(1)}%`,
         grade: calculateGrade(score, maxMarks, activeGradingScale) as GradeLetter,
         status: (item.status || 'Graded') as GradeStatus,
+        remarks: item.remarks,
         profilePicture: item.student?.profileImage || item.student?.avatar || '',
-        createdAt: (item as any)?.createdAt,
-        updatedAt: (item as any)?.updatedAt
+        examId: item.examId || item.exam?.id || null,
+        subjectPaperId: item.subjectPaperId || item.subjectPaper?.id || null,
+        examAttemptId: item.examAttemptId || null,
+        subjectExamAttemptId: item.subjectExamAttemptId || null,
+        className: item.class
+          ? `${item.class.name}${item.class.section ? ` (${item.class.section})` : ''}`
+          : null,
+        creatorName: item.creatorName || item.teacher?.name || null,
+        submissionType: isOverride ? 'OVERRIDE' : isOnline ? 'ONLINE' : 'MANUAL',
+        createdAt: item.createdAt || null,
+        updatedAt: item.updatedAt || null,
       };
     });
 
@@ -852,6 +882,10 @@ const GradesOverview: React.FC = () => {
         onClose={() => setSelectedGradeForDetails(null)}
         grade={selectedGradeForDetails}
         gradingSystem={activeGradingScale}
+        onEdit={(student) => {
+          setSelectedGradeForDetails(null);
+          setEditingGrade(student);
+        }}
       />
     </div>
   );

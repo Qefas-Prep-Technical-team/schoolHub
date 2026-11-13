@@ -1,5 +1,36 @@
-export type GradeStatus = 'Graded' | 'Pending' | 'Missing' | 'Excused';
+export type GradeStatus = 'Graded' | 'Pending' | 'Missing' | 'Excused' | 'PUBLISHED' | 'DRAFT';
 export type GradeLetter = 'A+' | 'A' | 'B+' | 'B' | 'C+' | 'C' | 'D' | 'F' | 'F9' | '-' | string;
+
+export interface PaperQuestionReviewItem {
+  id: string;
+  question: string;
+  type: string;
+  images?: string[];
+  optionA?: string | null;
+  optionB?: string | null;
+  optionC?: string | null;
+  optionD?: string | null;
+  correctAnswer: string;
+  explanation?: string | null;
+  marks: number;
+  studentAnswer?: string | null;
+  isCorrect?: boolean | null;
+  scoreAwarded?: number | null;
+  requiresManualReview?: boolean;
+  manuallyReviewed?: boolean;
+  reviewNote?: string | null;
+}
+
+export interface StudentAnswerRecord {
+  id?: string;
+  questionId: string;
+  answer?: string | null;
+  isCorrect?: boolean | null;
+  scoreAwarded?: number | null;
+  requiresManualReview?: boolean;
+  manuallyReviewed?: boolean;
+  reviewNote?: string | null;
+}
 
 export interface StudentGrade {
   id: string;
@@ -16,8 +47,18 @@ export interface StudentGrade {
   status: GradeStatus;
   remarks?: string;
   profilePicture?: string;
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
+  createdAt?: string | Date | null;
+  updatedAt?: string | Date | null;
+  examId?: string | null;
+  subjectPaperId?: string | null;
+  examAttemptId?: string | null;
+  subjectExamAttemptId?: string | null;
+  className?: string | null;
+  creatorName?: string | null;
+  submissionType?: 'ONLINE' | 'MANUAL' | 'OVERRIDE' | string;
+  submittedAt?: string | Date | null;
+  preloadedQuestions?: PaperQuestionReviewItem[];
+  papers?: { id: string; name: string }[];
 }
 
 export interface FilterOption {

@@ -93,14 +93,28 @@ export default function AssessmentGradesDedicatedPage() {
   }, [attempts, exam]);
 
   const papers = useMemo(() => {
-    if (!attempts || attempts.length === 0) return [];
-    const firstAttempt = attempts.find((a: any) => a.subjectAttempts?.length > 0);
-    if (!firstAttempt) return [];
-    return firstAttempt.subjectAttempts.map((sa: any) => ({
-      id: sa.subjectPaperId,
-      name: sa.subjectPaper?.subject?.name || 'Unknown Paper'
-    }));
-  }, [attempts]);
+    if (attempts && attempts.length > 0) {
+      const firstAttempt = attempts.find((a) => {
+        const subs = a.subjectExamAttempts || a.subjectAttempts || [];
+        return subs.length > 0;
+      });
+      if (firstAttempt) {
+        const subs = firstAttempt.subjectExamAttempts || firstAttempt.subjectAttempts || [];
+        return subs.map((sa) => ({
+          id: sa.subjectPaperId,
+          name: sa.subjectPaper?.subject?.name || sa.subjectPaper?.title || 'Unknown Paper',
+        }));
+      }
+    }
+    const examPapersList = exam?.subjectPapers || [];
+    if (Array.isArray(examPapersList) && examPapersList.length > 0) {
+      return examPapersList.map((sp) => ({
+        id: sp.id,
+        name: sp.subject?.name || sp.title || 'Unknown Paper',
+      }));
+    }
+    return [];
+  }, [attempts, exam]);
 
   const handleExportScope = async (mode: ExportScopeMode, selectedList: ExportStudentOption[]) => {
     if (!selectedList.length) return;
@@ -218,6 +232,7 @@ export default function AssessmentGradesDedicatedPage() {
             setIsExportModalOpen(true);
           }}
           primaryColor={primaryColor}
+          school={school}
         />
 
         {/* Scope Export Modal */}

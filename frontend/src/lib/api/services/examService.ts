@@ -79,6 +79,7 @@ export interface ExamAttempt {
   submittedAt?: string;
   remainingSeconds?: number;
   subjectAttempts: SubjectAttempt[];
+  subjectExamAttempts?: SubjectAttempt[];
   answers?: QuestionAnswer[]; // Legacy flat structure support
 }
 

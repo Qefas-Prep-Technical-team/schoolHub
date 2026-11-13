@@ -82,18 +82,26 @@ const GradeCard: React.FC<GradeCardProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-          {/* Big Letter Grade Pill */}
-          <div className={cn(
-            "inline-flex min-h-10 min-w-10 sm:min-h-11 sm:min-w-11 px-2.5 py-1 items-center justify-center rounded-xl sm:rounded-2xl text-sm sm:text-base font-black shadow-sm",
-            grade.grade.startsWith('A') ? "bg-emerald-500 text-white shadow-emerald-500/20" :
-            grade.grade.startsWith('B') ? "bg-teal-500 text-white shadow-teal-500/20" :
-            grade.grade.startsWith('C') ? "bg-blue-500 text-white shadow-blue-500/20" :
-            grade.grade.startsWith('D') ? "bg-amber-500 text-white shadow-amber-500/20" :
-            "bg-rose-500 text-white shadow-rose-500/20"
-          )}>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Big Letter Grade Pill (clickable to open grade & answer review) */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetails();
+            }}
+            title="View grade details & student answers"
+            className={cn(
+              "inline-flex min-h-10 min-w-10 sm:min-h-11 sm:min-w-11 px-2.5 py-1 items-center justify-center rounded-xl sm:rounded-2xl text-sm sm:text-base font-black shadow-sm hover:scale-105 transition-transform cursor-pointer",
+              grade.grade.startsWith('A') ? "bg-emerald-500 text-white shadow-emerald-500/20" :
+              grade.grade.startsWith('B') ? "bg-teal-500 text-white shadow-teal-500/20" :
+              grade.grade.startsWith('C') ? "bg-blue-500 text-white shadow-blue-500/20" :
+              grade.grade.startsWith('D') ? "bg-amber-500 text-white shadow-amber-500/20" :
+              "bg-rose-500 text-white shadow-rose-500/20"
+            )}
+          >
             {grade.grade}
-          </div>
+          </button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -110,7 +118,7 @@ const GradeCard: React.FC<GradeCardProps> = ({
                 <Edit size={14} /> Edit Grade
               </DropdownMenuItem>
               <DropdownMenuItem className="rounded-xl font-bold text-xs py-2.5 cursor-pointer gap-2" onClick={(e) => { e.stopPropagation(); onViewDetails(); }}>
-                <Eye size={14} /> View Details
+                <Eye size={14} /> View Review & Answers
               </DropdownMenuItem>
               {grade.status !== 'Graded' && (
                 <DropdownMenuItem className="rounded-xl font-bold text-xs py-2.5 cursor-pointer text-emerald-600 dark:text-emerald-400 gap-2" onClick={(e) => { e.stopPropagation(); e.preventDefault(); onPublish(); }} disabled={isPublishing}>
