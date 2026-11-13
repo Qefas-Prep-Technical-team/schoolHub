@@ -51,7 +51,7 @@ export function StudentMobileDrawer() {
         return !!dynamicFeatures[item.featureKey];
       }
       // Core academic tools are always enabled for students by default
-      if (item.featureKey === "assignments" || item.featureKey === "dashboard" || item.featureKey === "offlineGrades" || item.featureKey === "transcript") return true;
+      if (item.featureKey === "assignments" || item.featureKey === "dashboard" || item.featureKey === "offlineGrades" || item.featureKey === "transcript" || item.featureKey === "schoolProfile") return true;
       // Map 'results' to 'grades' for consistency with schema/seed
       const key = item.featureKey === "results" ? "grades" : item.featureKey;
       return currentFeatures[key] !== undefined
@@ -70,8 +70,8 @@ export function StudentMobileDrawer() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           aria-label="Open mobile navigation menu"
           className="size-11 sm:size-12 rounded-2xl md:hidden flex items-center justify-center border-slate-200/90 dark:border-white/10 bg-white/80 dark:bg-slate-800/80 hover:bg-pink-50 dark:hover:bg-pink-950/30 hover:border-pink-500/40 text-slate-700 dark:text-slate-200 hover:text-pink-600 dark:hover:text-pink-400 transition-all shadow-xs active:scale-95 shrink-0"
         >
@@ -118,8 +118,8 @@ export function StudentMobileDrawer() {
                         onClick={() => setOpen(false)}
                         className={cn(
                           "flex items-center gap-4 rounded-xl px-4 py-4 transition-all duration-200 border border-transparent",
-                          isActive 
-                            ? "bg-pink-600/10 text-pink-600 dark:text-pink-400 border-pink-500/20 shadow-sm shadow-pink-600/5" 
+                          isActive
+                            ? "bg-pink-600/10 text-pink-600 dark:text-pink-400 border-pink-500/20 shadow-sm shadow-pink-600/5"
                             : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5"
                         )}
                       >
@@ -139,7 +139,7 @@ export function StudentMobileDrawer() {
         <div className="px-6 py-6 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-950/50">
           <div className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/5 shadow-sm">
             <div className="h-10 w-10 rounded-xl bg-pink-600/10 dark:bg-pink-600/20 flex items-center justify-center border border-pink-500/20 overflow-hidden shrink-0">
-               <User2 className="h-6 w-6 text-pink-500/60" />
+              <User2 className="h-6 w-6 text-pink-500/60" />
             </div>
             <div className="flex-1 flex flex-col min-w-0">
               <span className="text-sm font-black text-slate-900 dark:text-white truncate uppercase tracking-tight">Student Hub</span>

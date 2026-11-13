@@ -9,6 +9,7 @@ export interface RolePageManifestItem {
 // TEACHER DASHBOARD PAGES
 export const TEACHER_PAGES_MANIFEST: RolePageManifestItem[] = [
   { featureKey: "dashboard", label: "Dashboard", href: "/dashboard/teacher", section: "Primary", description: "Teacher home portal with attendance stats, recent activity, and timetable" },
+  { featureKey: "schoolProfile", label: "School Profile", href: "/dashboard/teacher/school-profile", section: "Primary", description: "Institutional profile, leadership, and grading system of the currently selected school" },
   { featureKey: "students", label: "Students", href: "/dashboard/teacher/students", section: "Primary", description: "List of students enrolled across assigned classes and cohorts" },
   { featureKey: "parents", label: "Parents", href: "/dashboard/teacher/parents", section: "Primary", description: "Parent directory with contact info and linkage status for enrolled students" },
   { featureKey: "classes", label: "My Classes", href: "/dashboard/teacher/my-classes", section: "Primary", description: "Assigned class arms, subjects, and classroom roster controls" },
@@ -39,6 +40,7 @@ export const TEACHER_PAGES_MANIFEST: RolePageManifestItem[] = [
 // STUDENT DASHBOARD PAGES
 export const STUDENT_PAGES_MANIFEST: RolePageManifestItem[] = [
   { featureKey: "dashboard", label: "Dashboard", href: "/dashboard/student", section: "Learning", description: "Student overview with upcoming exams, GPA summary, and assignments" },
+  { featureKey: "schoolProfile", label: "School Profile", href: "/dashboard/student/school-profile", section: "Learning", description: "Institutional profile, leadership, and academic configuration of your connected school" },
   { featureKey: "classes", label: "Classes", href: "/dashboard/student/my-classes", section: "Learning", description: "Enrolled class subjects, assigned teachers, and lesson topics" },
   { featureKey: "assignments", label: "Assignments", href: "/dashboard/student/assignments", section: "Learning", description: "Assigned homework, due dates, project instructions, and submissions" },
   { featureKey: "results", label: "Grades & Results", href: "/dashboard/student/grades", section: "Learning", description: "Assessment marks, continuous evaluation scores, and term report cards" },
@@ -61,6 +63,7 @@ export const STUDENT_PAGES_MANIFEST: RolePageManifestItem[] = [
 export const PARENT_PAGES_MANIFEST: RolePageManifestItem[] = [
   { featureKey: "dashboard", label: "Dashboard", href: "/dashboard/parent", section: "Children's Progress", description: "Aggregated overview of linked children, school announcements, and fees" },
   { featureKey: "children", label: "My Children", href: "/dashboard/parent/my-children", section: "Children's Progress", description: "Linked children profiles, class cohorts, and linked status" },
+  { featureKey: "schoolProfile", label: "School Profile", href: "/dashboard/parent/school-profile", section: "Children's Progress", description: "Institutional profile, leadership, and contact details of your selected child's school" },
   { featureKey: "classes", label: "Class", href: "/dashboard/parent/class", section: "Children's Progress", description: "Children's teachers, class schedule, and curriculum subjects" },
   { featureKey: "assignments", label: "Assignments", href: "/dashboard/parent/assignments", section: "Children's Progress", description: "Homework status, submission deadlines, and teacher comments" },
   { featureKey: "results", label: "Exams & Results", href: "/dashboard/parent/exams&results", section: "Children's Progress", description: "Termly report cards, exam scores, and academic evaluations" },

@@ -198,23 +198,27 @@ export const useActualLogoutMutation = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const setLogoutModalOpen = useAuthStore((state) => state.setLogoutModalOpen);
   const authToast = useAuthToast();
-  const errorToast = useErrorToast();
+
+  const finalizeClientLogout = () => {
+    setLogoutModalOpen(false);
+    queryClient.clear(); // Clear all cached data (admin, parent, etc)
+    clearAuth();
+    authToast.logoutSuccess();
+    router.replace("/login");
+    setTimeout(() => {
+      useAuthStore.getState().setLoggingOut(false);
+    }, 600);
+  };
 
   return useMutation({
     mutationFn: authAPI.logout,
     onSuccess: () => {
-      queryClient.clear(); // Clear all cached data (admin, parent, etc)
-      clearAuth();
-      authToast.logoutSuccess();
-      router.push("/login");
+      finalizeClientLogout();
     },
-    onError: (error: any) => {
-      const errorMessage = error.response?.data?.message || "Logout failed";
-      errorToast.show(errorMessage);
-      queryClient.clear();
-      clearAuth();
-      router.push("/login");
+    onError: () => {
+      finalizeClientLogout();
     },
   });
 };

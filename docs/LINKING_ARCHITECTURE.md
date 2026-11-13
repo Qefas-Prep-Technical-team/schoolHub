@@ -53,10 +53,14 @@ When a student joins a class using a Class Join Code:
    - *Why*: Without the `SCHOOL_STUDENT` link, `authMiddleware.ts` detects `schoolId = undefined` and throws `403 SCHOOL_LINK_REQUIRED` when accessing school assessments, grades, or timetable.
 
 ### 3.2 Self-Healing `activeSchoolId`
-In `authMiddleware.ts` and `getMe`:
-- If `teacher.activeSchoolId` or `student.schoolId` is null in the database:
-- The backend checks for any `status: "ACTIVE"` relationship link in `RelationshipLink`, `TeacherSubject`, or `ClassTeacher`.
-- If an active school link is found, it automatically writes it back to `activeSchoolId` / `schoolId` to heal the account without user intervention.
+In `authMiddleware.ts`, `link.manage.service.ts`, and `school-member-filters.service.ts`:
+- For **Teachers**: School context MUST be backed by an `ACTIVE` `RelationshipLink` of `linkType: "SCHOOL_TEACHER"` (never `TEACHER_STUDENT` or `PENDING` requests). If a claimed teacher has stale `activeSchoolId` / `primarySchoolId` / `currentSchoolId` / `schoolId` pointers without an active `SCHOOL_TEACHER` link, `authMiddleware.ts` and `getActiveSchoolTeacherFilter` clear those stale pointers. When revoking an active `SCHOOL_TEACHER` link, `removeDomainSideEffects` clears school-scoped `teacherSubject` and `classTeacher` records and resets the teacher's school pointers to a remaining active school (or `null`).
+- For **Students**: If `student.schoolId` is null in the database, the backend checks for any `status: "ACTIVE"` school link and writes it back cleanly.
+
+### 3.4 Teacher Directory & Profile Isolation
+- `getActiveSchoolTeacherFilter` only matches claimed teachers with an `ACTIVE` `SCHOOL_TEACHER` `RelationshipLink` (and excludes `PENDING`/`REJECTED`/`CANCELLED`/`EXPIRED` `linkRequest` teachers); unclaimed pre-registered placeholders (`isClaimed: false`) created by the school remain scoped by `primarySchoolId` / `schoolId`.
+- `getTeacherById`, `updateTeacher`, `getTeacherTimetable`, `createTimetablePeriod`, `getTeacherAttendance`, and `markTeacherAttendance` enforce `verifyAdminHasAccessToTeacher` and scope returned `teacherSubjects` and `classTeachers` to the admin's authorized school(s).
+- `getActiveLinksService` restricts admin-visible `schoolId`-scoped `RelationshipLink` queries to institutional/classroom link types (`SCHOOL_TEACHER`, `SCHOOL_STUDENT`, `SCHOOL_ADMIN`, `TEACHER_CLASS`, `STUDENT_CLASS`).
 
 ### 3.3 Link Request Approval & Quota Check
 - Before approving a `SCHOOL_STUDENT` link, the backend **MUST** execute `enforceStudentLimit(schoolId)` in `quota.helpers.ts`.

@@ -17,7 +17,7 @@ export const getSchoolTeachersService = async (schoolId: string) => {
 
   const teacherWhere = await getActiveSchoolTeacherFilter(resolvedId);
 
-  return withRetry(
+  const teachers = await withRetry(
     () =>
       prisma.teacher.findMany({
         where: teacherWhere,
@@ -50,6 +50,12 @@ export const getSchoolTeachersService = async (schoolId: string) => {
       }),
     "school.getSchoolTeachersService",
   );
+
+  return teachers.map((t) => ({
+    ...t,
+    schoolId: resolvedId,
+    isLinkedToSchool: true,
+  }));
 };
 
 export interface SchoolStudentFilters {

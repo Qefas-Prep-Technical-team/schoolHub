@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { CreditCard, ChevronLeft, ChevronRight, Search, Copy, Receipt, ArrowRight, Clock, XCircle } from "lucide-react";
@@ -9,8 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import Lottie from "lottie-react";
 import SuccessLottie from "@/lotties/Success.json";
-import CancelLottie from "../../../../../../public/lottie/cancel.json";
-import ProcessingLottie from "../../../../../../public/lottie/processing.json";
+import CancelLottie from "@/lotties/Cancel.json";
+import ProcessingLottie from "@/lotties/Processing.json";
 import { toast } from "react-toastify";
 import { DateGroup } from "@/utils/dateSectioning";
 
@@ -35,6 +35,17 @@ interface TransactionsSectionedTableProps {
   onPageChange: (page: number) => void;
 }
 
+const getTxnStatusCategory = (status?: string | null): "SUCCESS" | "PENDING" | "FAILED" => {
+  const normalized = (status || "").trim().toUpperCase();
+  if (normalized === "SUCCESS" || normalized === "COMPLETED" || normalized === "PAID") {
+    return "SUCCESS";
+  }
+  if (normalized === "PENDING" || normalized === "INITIATED" || normalized === "PROCESSING") {
+    return "PENDING";
+  }
+  return "FAILED";
+};
+
 export function TransactionsSectionedTable({
   dateGroups,
   totalCount,
@@ -43,6 +54,18 @@ export function TransactionsSectionedTable({
   onPageChange,
 }: TransactionsSectionedTableProps) {
   const [selectedTxn, setSelectedTxn] = useState<TransactionItem | null>(null);
+  const selectedStatusCategory = selectedTxn ? getTxnStatusCategory(selectedTxn.status) : null;
+
+  const activeLottieData = useMemo(() => {
+    if (!selectedTxn || !selectedStatusCategory) return null;
+    const source =
+      selectedStatusCategory === "SUCCESS"
+        ? SuccessLottie
+        : selectedStatusCategory === "PENDING"
+        ? ProcessingLottie
+        : CancelLottie;
+    return JSON.parse(JSON.stringify(source)) as Record<string, unknown>;
+  }, [selectedTxn, selectedStatusCategory]);
 
   if (totalCount === 0) {
     return (
@@ -174,9 +197,11 @@ export function TransactionsSectionedTable({
                   </span>
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                      txn.status?.toUpperCase() === "SUCCESS"
+                      getTxnStatusCategory(txn.status) === "SUCCESS"
                         ? "bg-emerald-500/10 text-emerald-600"
-                        : "bg-amber-500/10 text-amber-600"
+                        : getTxnStatusCategory(txn.status) === "PENDING"
+                        ? "bg-amber-500/10 text-amber-600"
+                        : "bg-rose-500/10 text-rose-600"
                     }`}
                   >
                     {txn.status}
@@ -246,24 +271,25 @@ export function TransactionsSectionedTable({
               </button>
 
               <div className="flex flex-col items-center text-center pt-4 pb-2">
-                {selectedTxn.status?.toUpperCase() === "SUCCESS" || selectedTxn.status?.toLowerCase() === "completed" ? (
-                  <Lottie animationData={SuccessLottie} loop={false} style={{ height: "90px", width: "90px" }} />
-                ) : selectedTxn.status?.toUpperCase() === "PENDING" || selectedTxn.status?.toUpperCase() === "INITIATED" || selectedTxn.status?.toUpperCase() === "PROCESSING" ? (
-                  <Lottie animationData={ProcessingLottie} loop={true} style={{ height: "90px", width: "90px" }} />
-                ) : (
-                  <Lottie animationData={CancelLottie} loop={false} style={{ height: "90px", width: "90px" }} />
+                {activeLottieData && selectedStatusCategory && (
+                  <Lottie
+                    key={`${selectedTxn.id}-${selectedStatusCategory}`}
+                    animationData={activeLottieData}
+                    loop={selectedStatusCategory === "PENDING"}
+                    style={{ height: "90px", width: "90px" }}
+                  />
                 )}
                 <h3 className="text-lg font-black text-slate-900 dark:text-white mt-1">
-                  {selectedTxn.status?.toUpperCase() === "SUCCESS" || selectedTxn.status?.toLowerCase() === "completed"
+                  {selectedStatusCategory === "SUCCESS"
                     ? "Payment Receipt"
-                    : selectedTxn.status?.toUpperCase() === "PENDING" || selectedTxn.status?.toUpperCase() === "INITIATED" || selectedTxn.status?.toUpperCase() === "PROCESSING"
+                    : selectedStatusCategory === "PENDING"
                     ? "Payment Pending"
                     : "Payment Failed"}
                 </h3>
                 <p className="text-xs text-slate-500">
-                  {selectedTxn.status?.toUpperCase() === "SUCCESS" || selectedTxn.status?.toLowerCase() === "completed"
+                  {selectedStatusCategory === "SUCCESS"
                     ? "Institutional Billing Transaction"
-                    : selectedTxn.status?.toUpperCase() === "PENDING" || selectedTxn.status?.toUpperCase() === "INITIATED" || selectedTxn.status?.toUpperCase() === "PROCESSING"
+                    : selectedStatusCategory === "PENDING"
                     ? "Transaction awaiting confirmation"
                     : "Transaction unsuccessful or cancelled"}
                 </p>

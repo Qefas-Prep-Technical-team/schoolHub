@@ -89,3 +89,170 @@ export const validateAdminSubRoleAccess = (
   return allowedSubRoles.includes(subRole);
 };
 
+/**
+ * Verify read-only access to a school's profile/settings/stats for:
+ * - School admins / users already authorized via session (`validateSchoolAccess`)
+ * - Connected TEACHERS (via Teacher.schoolId, active SCHOOL_TEACHER RelationshipLink, TeacherSubject, or ClassTeacher)
+ * - Connected STUDENTS (via Student.schoolId, active SCHOOL_STUDENT RelationshipLink, or ClassEnrollment)
+ * - PARENTS whose linked active child belongs to the requested school
+ */
+export const validateMemberOrParentSchoolAccess = async (
+  req: Request,
+  schoolId: string,
+): Promise<boolean> => {
+  const user = req.user;
+  if (!user || !schoolId) return false;
+
+  if (validateSchoolAccess(req, schoolId)) return true;
+
+  const resolvedId = await resolveSchoolId(schoolId);
+  if (!resolvedId) return false;
+
+  if (validateSchoolAccess(req, resolvedId)) return true;
+
+  if (user.userType === "TEACHER") {
+    const [directTeacher, activeLink, subjectAssign, classTeacher] = await withRetry(
+      () =>
+        Promise.all([
+          prisma.teacher.findFirst({
+            where: { id: user.id, schoolId: resolvedId },
+            select: { id: true },
+          }),
+          prisma.relationshipLink.findFirst({
+            where: {
+              linkType: "SCHOOL_TEACHER",
+              status: "ACTIVE",
+              OR: [
+                { leftEntityId: resolvedId, rightEntityId: user.id },
+                { leftEntityId: user.id, rightEntityId: resolvedId },
+              ],
+            },
+            select: { id: true },
+          }),
+          prisma.teacherSubject.findFirst({
+            where: {
+              teacherId: user.id,
+              schoolId: resolvedId,
+            },
+            select: { id: true },
+          }),
+          prisma.classTeacher.findFirst({
+            where: {
+              teacherId: user.id,
+              class: { schoolId: resolvedId },
+            },
+            select: { id: true },
+          }),
+        ]),
+      "school.validateTeacherProfileAccess",
+    );
+    return Boolean(directTeacher || activeLink || subjectAssign || classTeacher);
+  }
+
+  if (user.userType === "STUDENT") {
+    const [directStudent, activeLink, enrollment] = await withRetry(
+      () =>
+        Promise.all([
+          prisma.student.findFirst({
+            where: { id: user.id, schoolId: resolvedId },
+            select: { id: true },
+          }),
+          prisma.relationshipLink.findFirst({
+            where: {
+              linkType: "SCHOOL_STUDENT",
+              status: "ACTIVE",
+              OR: [
+                { leftEntityId: resolvedId, rightEntityId: user.id },
+                { leftEntityId: user.id, rightEntityId: resolvedId },
+              ],
+            },
+            select: { id: true },
+          }),
+          prisma.classEnrollment.findFirst({
+            where: {
+              studentId: user.id,
+              class: { schoolId: resolvedId },
+            },
+            select: { id: true },
+          }),
+        ]),
+      "school.validateStudentProfileAccess",
+    );
+    return Boolean(directStudent || activeLink || enrollment);
+  }
+
+  if (user.userType === "PARENT") {
+    const [legacyLinks, relationshipLinks] = await withRetry(
+      () =>
+        Promise.all([
+          prisma.parentChildLink.findMany({
+            where: {
+              parentId: user.id,
+              status: { in: ["active", "ACCEPTED", "Active"] },
+            },
+            select: { studentId: true },
+          }),
+          prisma.relationshipLink.findMany({
+            where: {
+              linkType: "PARENT_STUDENT",
+              status: "ACTIVE",
+              OR: [{ leftEntityId: user.id }, { rightEntityId: user.id }],
+            },
+            select: {
+              leftEntityId: true,
+              leftEntityType: true,
+              rightEntityId: true,
+              rightEntityType: true,
+            },
+          }),
+        ]),
+      "school.validateParentChildrenLinks",
+    );
+
+    const childIds = new Set<string>();
+    for (const l of legacyLinks) {
+      if (l.studentId) childIds.add(l.studentId);
+    }
+    for (const r of relationshipLinks) {
+      if (r.leftEntityType === "STUDENT" && r.leftEntityId) childIds.add(r.leftEntityId);
+      if (r.rightEntityType === "STUDENT" && r.rightEntityId) childIds.add(r.rightEntityId);
+    }
+
+    if (childIds.size === 0) return false;
+    const studentIdList = Array.from(childIds);
+
+    const [childInSchool, childSchoolLink, childEnrollment] = await withRetry(
+      () =>
+        Promise.all([
+          prisma.student.findFirst({
+            where: { id: { in: studentIdList }, schoolId: resolvedId },
+            select: { id: true },
+          }),
+          prisma.relationshipLink.findFirst({
+            where: {
+              linkType: "SCHOOL_STUDENT",
+              status: "ACTIVE",
+              OR: [
+                { leftEntityId: resolvedId, rightEntityId: { in: studentIdList } },
+                { rightEntityId: resolvedId, leftEntityId: { in: studentIdList } },
+              ],
+            },
+            select: { id: true },
+          }),
+          prisma.classEnrollment.findFirst({
+            where: {
+              studentId: { in: studentIdList },
+              class: { schoolId: resolvedId },
+            },
+            select: { id: true },
+          }),
+        ]),
+      "school.validateParentChildSchoolMatch",
+    );
+
+    return Boolean(childInSchool || childSchoolLink || childEnrollment);
+  }
+
+  return false;
+};
+

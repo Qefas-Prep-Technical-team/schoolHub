@@ -3,6 +3,7 @@ import { handleError } from "../../../utils/error-handler";
 import {
   validateSchoolAccess,
   validateAdminSchoolAccess,
+  validateMemberOrParentSchoolAccess,
 } from "../services/school-access.service";
 import {
   getSchoolTeachersService,
@@ -108,7 +109,7 @@ export const getSchoolStats = async (req: Request, res: Response) => {
         .json({ success: false, message: "schoolId is required" });
     }
 
-    if (!validateSchoolAccess(req, schoolId as string)) {
+    if (!(await validateMemberOrParentSchoolAccess(req, schoolId as string))) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
 

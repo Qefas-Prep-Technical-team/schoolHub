@@ -152,20 +152,23 @@ export const schoolService = {
 
     if (!Array.isArray(teachers)) return [];
 
-    return teachers.filter((teacher: any) => {
+    return teachers.filter((teacher: Record<string, unknown>) => {
+      if (teacher.isLinkedToSchool !== undefined) {
+        return Boolean(teacher.isLinkedToSchool);
+      }
       const schoolMatch = [
         teacher?.primarySchoolId,
         teacher?.activeSchoolId,
         teacher?.currentSchoolId,
         teacher?.schoolId,
-        teacher?.school?.id,
-        teacher?.currentSchool?.id,
-        teacher?.primarySchool?.id,
-        ...(teacher?.teacherSubjects ?? [])
-          .map((ts: any) => ts?.schoolId)
+        (teacher?.school as { id?: string } | undefined)?.id,
+        (teacher?.currentSchool as { id?: string } | undefined)?.id,
+        (teacher?.primarySchool as { id?: string } | undefined)?.id,
+        ...((teacher?.teacherSubjects as Array<{ schoolId?: string }> | undefined) ?? [])
+          .map((ts) => ts?.schoolId)
           .filter(Boolean),
-        ...(teacher?.classTeachers ?? [])
-          .map((ct: any) => ct?.class?.schoolId)
+        ...((teacher?.classTeachers as Array<{ class?: { schoolId?: string } }> | undefined) ?? [])
+          .map((ct) => ct?.class?.schoolId)
           .filter(Boolean),
       ].filter(Boolean);
 

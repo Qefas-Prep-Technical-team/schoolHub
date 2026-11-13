@@ -43,6 +43,8 @@ import { enforceStudentLimit, enforceTeacherLimit } from "../subscription/quota.
 import { getSchoolUsageService } from "../subscription/quota.service";
 import { handleError } from "../../utils/error-handler";
 import { PlatformAlertRecipientService } from "../platform/notifications/recipient.service";
+import { clearAuthCookies } from "./services/logout.service";
+import { invalidateSessionCache } from "../../middleware/authMiddleware";
 
 // Simple slugify helper (no extra package)
 const slugify = (value: string) =>
@@ -2102,21 +2104,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 };
 
 
-export const logout = async (req: Request, res: Response) => {
-  try {
-    const token = req.cookies.refreshToken;
-    if (token) {
-      await prisma.refreshToken.deleteMany({ where: { token } });
-      res.clearCookie("refreshToken");
-    }
-    return res.status(200).json({
-      success: true,
-      message: "Logged out",
-    });
-  } catch (error) {
-    return handleError(res, error, "auth.logout");
-  }
-};
+export { logout } from "./controllers";
 
 // ====================
 // reset password
@@ -3188,9 +3176,9 @@ export const revokeUserSession = async (req: Request, res: Response) => {
 
     const currentToken = req.cookies.refreshToken;
     if (currentToken === session.token) {
-      res.clearCookie("token", { path: "/" });
-      res.clearCookie("refreshToken", { path: "/" });
+      clearAuthCookies(res);
       clearDeviceVerifiedCookie(res);
+      invalidateSessionCache(userId, req.user?.userType);
     }
 
     return res
@@ -4139,9 +4127,9 @@ export const deactivateAccount = async (req: Request, res: Response) => {
       }
     }
 
-    // 8. Clear auth cookies on response
-    res.clearCookie("token", { path: "/" });
-    res.clearCookie("refreshToken", { path: "/" });
+    // 8. Clear auth cookies and in-memory session cache on response
+    clearAuthCookies(res);
+    invalidateSessionCache(userId, userType);
 
     return res.status(200).json({
       success: true,

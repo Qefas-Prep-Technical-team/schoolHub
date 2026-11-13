@@ -12,107 +12,10 @@ import crypto from "crypto";
 import { enforceTeacherLimit } from "../subscription/quota.helpers";
 import { handleError } from "../../utils/error-handler";
 import { createNotification } from "../notification/notification.service";
+import { verifyAdminHasAccessToTeacher } from "./services/teacher-profile.service";
+import { extractAuthorizedSchoolIds } from "./controllers/teacher-profile.controller";
 
-/**
- * Get detailed teacher information by ID
- */
-export const getTeacherById = async (req: Request, res: Response) => {
-  try {
-    const id = getSingleString(req.params.id as string | string[] | undefined);
-
-    const teacher = await prisma.teacher.findFirst({
-      where: {
-        OR: [{ id }, { teacherCode: id }],
-      },
-      include: {
-        school: true,
-        currentSchool: true,
-        teacherSubjects: {
-          include: {
-            subject: {
-              include: {
-                departments: {
-                  include: {
-                    department: true
-                  }
-                }
-              }
-            },
-          },
-        },
-        classTeachers: {
-          include: {
-            class: true,
-          },
-        },
-      },
-    });
-
-    if (!teacher) {
-      return res.status(404).json({
-        success: false,
-        message: "Teacher not found",
-      });
-    }
-
-    let resolvedSchoolId =
-      teacher.activeSchoolId || teacher.primarySchoolId || teacher.schoolId;
-    if (!resolvedSchoolId && teacher.teacherSubjects.length > 0) {
-      resolvedSchoolId = teacher.teacherSubjects[0].subject.schoolId;
-    }
-
-    // Format data for frontend
-    const formattedData = {
-      ...teacher,
-      activeSchoolId: teacher.activeSchoolId,
-      primarySchoolId: teacher.primarySchoolId,
-      schoolId: teacher.schoolId,
-      resolvedSchoolId,
-      name: teacher.name,
-      email: teacher.email,
-      teacherCode: teacher.teacherCode,
-      avatar: teacher.profileImage,
-      status: teacher.verified ? "active" : "inactive",
-      verified: teacher.verified,
-      isClaimed: teacher.isClaimed,
-      personalInfo: {
-        fullName: teacher.name,
-        gender: teacher.gender,
-        email: teacher.email,
-        phone: "Not provided",
-        address: "Not provided",
-        highestQualification: "Not provided",
-        yearsOfExperience: "Not provided",
-      },
-      professionalInfo: {
-        department: teacher.department || "General",
-        subjects: teacher.teacherSubjects.map((ts: any) => ({
-          id: ts.subject.id,
-          name: ts.subject.name,
-          departments: ts.subject.departments?.map((ds: any) => ds.department?.name).filter(Boolean) || []
-        })),
-        assignedClasses: teacher.classTeachers.map((ct: any) => ({ id: ct.class.id, name: ct.class.name })),
-      },
-      statistics: {
-        classPerformance: "85%", // Placeholder
-        attendanceRate: "95%", // Placeholder
-        upcomingClasses: teacher.classTeachers.length.toString(),
-        studentsTaught: "0", // Placeholder
-      },
-    };
-
-    return res.status(200).json({
-      success: true,
-      data: formattedData,
-    });
-  } catch (error: any) {
-    console.error("getTeacherById error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Server error",
-    });
-  }
-};
+export { getTeacherById } from "./controllers/teacher-profile.controller";
 
 export {
   assignTeacherToClass,
@@ -131,24 +34,32 @@ export const updateTeacher = async (req: Request, res: Response) => {
     );
     const { department, name, gender } = req.body;
 
-    // Resolve real teacher ID if inputId is a teacherCode
-    const teacher = await prisma.teacher.findFirst({
-      where: {
-        OR: [{ id: inputId }, { teacherCode: inputId }],
-      },
-      select: { id: true },
-    });
+    // Verify requesting admin is authorized to manage this teacher
+    const authCheck = await verifyAdminHasAccessToTeacher(
+      req.user?.id,
+      req.user?.userType,
+      inputId,
+      extractAuthorizedSchoolIds(req),
+      req.user?.role,
+    );
 
-    if (!teacher) {
+    if (!authCheck.exists || !authCheck.teacherId) {
       return res.status(404).json({
         success: false,
         message: "Teacher not found",
       });
     }
 
+    if (!authCheck.allowed) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: This teacher is not linked to your school.",
+      });
+    }
+
     // Update teacher record
     const updatedTeacher = await prisma.teacher.update({
-      where: { id: teacher.id },
+      where: { id: authCheck.teacherId },
       data: {
         ...(department && { department }),
         ...(name && { name }),
@@ -179,25 +90,33 @@ export const getTeacherTimetable = async (req: Request, res: Response) => {
       req.params.id as string | string[] | undefined,
     );
 
-    // Resolve real teacher ID if inputId is a teacherCode
-    const teacher = await prisma.teacher.findFirst({
-      where: {
-        OR: [{ id: inputId }, { teacherCode: inputId }],
-      },
-      select: { id: true },
-    });
+    // Verify requesting admin is authorized for this teacher
+    const authCheck = await verifyAdminHasAccessToTeacher(
+      req.user?.id,
+      req.user?.userType,
+      inputId,
+      extractAuthorizedSchoolIds(req),
+      req.user?.role,
+    );
 
-    if (!teacher) {
+    if (!authCheck.exists || !authCheck.teacherId) {
       return res.status(404).json({
         success: false,
         message: "Teacher not found",
       });
     }
 
+    if (!authCheck.allowed) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: This teacher is not linked to your school.",
+      });
+    }
+
     const termPeriodId = req.query.termPeriodId as string | undefined;
     const schoolId = req.query.schoolId as string | undefined;
     const timetable = await getTeacherTimetableService(
-      teacher.id,
+      authCheck.teacherId,
       termPeriodId,
       schoolId,
     );
@@ -225,25 +144,33 @@ export const createTimetablePeriod = async (req: Request, res: Response) => {
     );
     const { classId, day, startTime, endTime, subjectId, room } = req.body;
 
-    // Resolve real teacher ID if inputId is a teacherCode
-    const teacher = await prisma.teacher.findFirst({
-      where: {
-        OR: [{ id: inputId }, { teacherCode: inputId }],
-      },
-      select: { id: true },
-    });
+    // Verify requesting admin is authorized for this teacher
+    const authCheck = await verifyAdminHasAccessToTeacher(
+      req.user?.id,
+      req.user?.userType,
+      inputId,
+      extractAuthorizedSchoolIds(req),
+      req.user?.role,
+    );
 
-    if (!teacher) {
+    if (!authCheck.exists || !authCheck.teacherId) {
       return res.status(404).json({
         success: false,
         message: "Teacher not found",
       });
     }
 
+    if (!authCheck.allowed) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: This teacher is not linked to your school.",
+      });
+    }
+
     // Use existing upsert logic from class timetable
     const data = await upsertTimetablePeriodService({
       ...req.body,
-      teacherId: teacher.id,
+      teacherId: authCheck.teacherId,
       classId, // classId must be provided in body
     });
 
@@ -660,6 +587,33 @@ export const getTeacherAttendance = async (req: Request, res: Response) => {
         });
     }
 
+    const authCheck = await verifyAdminHasAccessToTeacher(
+      req.user?.id,
+      req.user?.userType,
+      teacherId,
+      extractAuthorizedSchoolIds(req),
+      req.user?.role,
+    );
+
+    if (!authCheck.exists || !authCheck.teacherId) {
+      return res.status(404).json({
+        success: false,
+        message: "Teacher not found",
+      });
+    }
+
+    const isSuperAdmin =
+      req.user?.userType === "SUPER_ADMIN" || req.user?.role === "SUPER_ADMIN";
+    if (
+      !authCheck.allowed ||
+      (!isSuperAdmin && !authCheck.authorizedSchoolIds.includes(schoolId))
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: This teacher is not linked to your school.",
+      });
+    }
+
     let startDate, endDate;
     if (month) {
       startDate = new Date(`${month}-01T00:00:00.000Z`);
@@ -674,7 +628,7 @@ export const getTeacherAttendance = async (req: Request, res: Response) => {
       );
     }
 
-    const whereClause: any = { teacherId, schoolId };
+    const whereClause: any = { teacherId: authCheck.teacherId, schoolId };
     if (startDate && endDate) {
       whereClause.date = { gte: startDate, lte: endDate };
     }
@@ -708,6 +662,33 @@ export const markTeacherAttendance = async (req: Request, res: Response) => {
         .json({ success: false, message: "Missing required fields" });
     }
 
+    const authCheck = await verifyAdminHasAccessToTeacher(
+      req.user?.id,
+      req.user?.userType,
+      teacherId,
+      extractAuthorizedSchoolIds(req),
+      req.user?.role,
+    );
+
+    if (!authCheck.exists || !authCheck.teacherId) {
+      return res.status(404).json({
+        success: false,
+        message: "Teacher not found",
+      });
+    }
+
+    const isSuperAdmin =
+      req.user?.userType === "SUPER_ADMIN" || req.user?.role === "SUPER_ADMIN";
+    if (
+      !authCheck.allowed ||
+      (!isSuperAdmin && !authCheck.authorizedSchoolIds.includes(schoolId))
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: This teacher is not linked to your school.",
+      });
+    }
+
     const parsedDate = new Date(date);
 
     // Check if record exists for this date
@@ -718,7 +699,7 @@ export const markTeacherAttendance = async (req: Request, res: Response) => {
     const record = await prisma.teacherAttendance.upsert({
       where: {
         teacherId_date: {
-          teacherId,
+          teacherId: authCheck.teacherId,
           date: startOfDay,
         },
       },
@@ -727,7 +708,7 @@ export const markTeacherAttendance = async (req: Request, res: Response) => {
         note,
       },
       create: {
-        teacherId,
+        teacherId: authCheck.teacherId,
         schoolId,
         date: startOfDay,
         status,

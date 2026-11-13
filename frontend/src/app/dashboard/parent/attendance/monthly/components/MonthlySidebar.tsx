@@ -13,6 +13,7 @@ import {
     ChevronDown
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { useLogoutMutation } from '@/app/(auth)/login/services/use-auth-mutations';
 
 interface MonthlySidebarProps {
     isMobileOpen?: boolean;
@@ -21,6 +22,7 @@ interface MonthlySidebarProps {
 
 export default function MonthlySidebar({ isMobileOpen, onClose }: MonthlySidebarProps) {
     const pathname = usePathname();
+    const { mutate: triggerLogout } = useLogoutMutation();
     const [showChildren, setShowChildren] = useState(false);
 
     const navItems = [
@@ -164,7 +166,14 @@ export default function MonthlySidebar({ isMobileOpen, onClose }: MonthlySidebar
 
                     {/* Logout Button */}
                     <div className="p-4 border-t border-slate-200 dark:border-slate-800">
-                        <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onClose?.();
+                                triggerLogout();
+                            }}
+                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                        >
                             <LogOut className="h-5 w-5" />
                             Log Out
                         </button>

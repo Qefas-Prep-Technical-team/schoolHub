@@ -6,7 +6,9 @@ import { useActualLogoutMutation } from "@/app/(auth)/login/services/use-auth-mu
 import { LogoutModal } from "./LogoutModal";
 
 export function GlobalLogoutModal() {
-  const { user, isLogoutModalOpen, setLogoutModalOpen } = useAuthStore() as any;
+  const user = useAuthStore((state) => state.user);
+  const isLogoutModalOpen = useAuthStore((state) => state.isLogoutModalOpen);
+  const setLogoutModalOpen = useAuthStore((state) => state.setLogoutModalOpen);
   const { mutateAsync: logout } = useActualLogoutMutation();
 
   const handleConfirm = async () => {

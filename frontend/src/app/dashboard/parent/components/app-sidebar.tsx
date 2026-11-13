@@ -38,6 +38,7 @@ import {
     CalendarClock,
     Award,
     School,
+    Building2,
     User2,
     ChevronUp,
     ChevronDown,
@@ -70,6 +71,7 @@ export const parentMenuItems: ParentMenuItem[] = [
     // === CORE FEATURES ===
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard/parent", featureKey: "dashboard", section: "core" },
     { icon: Users, label: "My Children", href: "/dashboard/parent/my-children", featureKey: "children", section: "core" },
+    { icon: Building2, label: "School Profile", href: "/dashboard/parent/school-profile", featureKey: "schoolProfile", section: "core" },
     { icon: School, label: "Class", href: "/dashboard/parent/class", featureKey: "classes" as ParentFeatureFlagKey, section: "core" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/parent/assignments", featureKey: "assignments", section: "core" },
     { icon: FileCheck2, label: "Exams & Results", href: "/dashboard/parent/exams&results", featureKey: "results", section: "core" },
@@ -134,7 +136,7 @@ export function ParentSidebar() {
             if (dynamicFeatures && dynamicFeatures[item.featureKey] !== undefined) {
                 return !!dynamicFeatures[item.featureKey];
             }
-            if (item.featureKey === 'offlineGrades') return true;
+            if (item.featureKey === 'offlineGrades' || item.featureKey === 'schoolProfile') return true;
             // Map 'results' to 'grades' for consistency with schema/seed
             const key = item.featureKey === 'results' ? 'grades' : item.featureKey;
             return !!(currentFeatures as any)[key];
@@ -202,73 +204,73 @@ export function ParentSidebar() {
                     ) : (
                         /* Render each section */
                         menuSections && Object.entries(menuSections).map(([sectionKey, items]) => {
-                        if (items.length === 0) return null;
+                            if (items.length === 0) return null;
 
-                        return (
-                            <div key={sectionKey} className="flex flex-col gap-1.5">
-                                {/* Section Header (only show when not collapsed) */}
-                                {!isCollapsed && (
-                                    <div className="px-3 mb-1">
-                                        <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
-                                            {PARENT_SECTION_TITLES[sectionKey as keyof typeof PARENT_SECTION_TITLES]}
-                                        </span>
-                                    </div>
-                                )}
+                            return (
+                                <div key={sectionKey} className="flex flex-col gap-1.5">
+                                    {/* Section Header (only show when not collapsed) */}
+                                    {!isCollapsed && (
+                                        <div className="px-3 mb-1">
+                                            <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">
+                                                {PARENT_SECTION_TITLES[sectionKey as keyof typeof PARENT_SECTION_TITLES]}
+                                            </span>
+                                        </div>
+                                    )}
 
-                                {/* Section Items */}
-                                {items.map(({ icon: Icon, label, href, featureKey }) => {
-                                    const isActive = pathname === href;
-                                    // Map 'results' to 'grades' for consistency
-                                    const key = (featureKey === 'results' ? 'grades' : featureKey) as ParentFeatureFlagKey;
-                                    const isDisabled = !(dynamicFeatures || PARENT_FEATURE_FLAGS)[key];
+                                    {/* Section Items */}
+                                    {items.map(({ icon: Icon, label, href, featureKey }) => {
+                                        const isActive = pathname === href;
+                                        // Map 'results' to 'grades' for consistency
+                                        const key = (featureKey === 'results' ? 'grades' : featureKey) as ParentFeatureFlagKey;
+                                        const isDisabled = !(dynamicFeatures || PARENT_FEATURE_FLAGS)[key];
 
-                                    return (
-                                        <SidebarMenuItem key={label}>
-                                            <SidebarMenuButton
-                                                asChild
-                                                isActive={isActive}
-                                                className={cn(
-                                                    "relative flex items-center h-11 rounded-xl transition-all duration-200 group overflow-hidden cursor-pointer",
-                                                    isCollapsed ? "justify-center px-0 !w-full" : "px-3 gap-3 w-full",
-                                                    isDisabled
-                                                        ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-50"
-                                                        : isActive
-                                                            ? "bg-orange-600/10 text-orange-600 dark:text-orange-400 font-bold shadow-[0_4px_12px_rgba(234,113,10,0.1)]"
-                                                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
-                                                )}
-                                                disabled={isDisabled}
-                                            >
-                                                <Link href={isDisabled ? "#" : href}>
-                                                    {isActive && !isDisabled && (
-                                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-orange-600 rounded-r-full shadow-[2px_0_8px_rgba(234,113,10,0.6)]" />
+                                        return (
+                                            <SidebarMenuItem key={label}>
+                                                <SidebarMenuButton
+                                                    asChild
+                                                    isActive={isActive}
+                                                    className={cn(
+                                                        "relative flex items-center h-11 rounded-xl transition-all duration-200 group overflow-hidden cursor-pointer",
+                                                        isCollapsed ? "justify-center px-0 !w-full" : "px-3 gap-3 w-full",
+                                                        isDisabled
+                                                            ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-50"
+                                                            : isActive
+                                                                ? "bg-orange-600/10 text-orange-600 dark:text-orange-400 font-bold shadow-[0_4px_12px_rgba(234,113,10,0.1)]"
+                                                                : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
                                                     )}
-                                                    <Icon className={cn(
-                                                        "h-5 w-5 transition-all duration-300 group-hover:scale-110",
-                                                        isActive && !isDisabled ? "text-orange-600 dark:text-orange-400" : "group-hover:text-amber-500"
-                                                    )} />
-                                                    {!isCollapsed && (
-                                                        <span className="text-[13.5px] tracking-tight truncate">{label}</span>
-                                                    )}
-                                                    
-                                                    {isDisabled && !isCollapsed && (
-                                                        <span className="ml-auto text-[8px] font-black uppercase tracking-widest bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded text-slate-400">
-                                                            Soon
-                                                        </span>
-                                                    )}
+                                                    disabled={isDisabled}
+                                                >
+                                                    <Link href={isDisabled ? "#" : href}>
+                                                        {isActive && !isDisabled && (
+                                                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-orange-600 rounded-r-full shadow-[2px_0_8px_rgba(234,113,10,0.6)]" />
+                                                        )}
+                                                        <Icon className={cn(
+                                                            "h-5 w-5 transition-all duration-300 group-hover:scale-110",
+                                                            isActive && !isDisabled ? "text-orange-600 dark:text-orange-400" : "group-hover:text-amber-500"
+                                                        )} />
+                                                        {!isCollapsed && (
+                                                            <span className="text-[13.5px] tracking-tight truncate">{label}</span>
+                                                        )}
 
-                                                    {!isCollapsed && !isActive && !isDisabled && (
-                                                        <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
-                                                            <ChevronRight className="h-3.5 w-3.5 text-amber-500/50" />
-                                                        </div>
-                                                    )}
-                                                </Link>
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                    );
-                                })}
-                            </div>
-                        );
-                    }))}
+                                                        {isDisabled && !isCollapsed && (
+                                                            <span className="ml-auto text-[8px] font-black uppercase tracking-widest bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded text-slate-400">
+                                                                Soon
+                                                            </span>
+                                                        )}
+
+                                                        {!isCollapsed && !isActive && !isDisabled && (
+                                                            <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
+                                                                <ChevronRight className="h-3.5 w-3.5 text-amber-500/50" />
+                                                            </div>
+                                                        )}
+                                                    </Link>
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        }))}
                 </SidebarMenu>
             </SidebarContent>
 
@@ -276,7 +278,7 @@ export function ParentSidebar() {
             <SidebarFooter className="p-3 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton 
+                        <SidebarMenuButton
                             onClick={() => logout()}
                             className={cn(
                                 "flex items-center h-14 rounded-2xl transition-all duration-300 py-2 group cursor-pointer hover:bg-rose-50 dark:hover:bg-rose-950/20 shadow-sm border border-transparent hover:border-rose-200 dark:hover:border-rose-900/50",

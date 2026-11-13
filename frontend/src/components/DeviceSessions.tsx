@@ -144,12 +144,14 @@ export default function DeviceSessions() {
 
             return { previousSessions };
         },
-        onSuccess: (data, variables) => {
+        onSuccess: (_data, variables) => {
             toast.success("Device session revoked");
-            // If we revoked the current device, we should redirect to login
+            // If we revoked the current device, clear client auth state and redirect to login
             const revokedSession = sessions?.find(s => s.id === variables);
             if (revokedSession?.isCurrentDevice) {
-                window.location.href = '/login';
+                queryClient.clear();
+                useAuthStore.getState().clearAuth();
+                window.location.replace('/login');
             }
         },
         onError: (error: unknown, variables, context) => {

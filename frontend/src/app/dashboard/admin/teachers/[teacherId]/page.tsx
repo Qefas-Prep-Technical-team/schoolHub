@@ -147,9 +147,37 @@ export default function TeacherProfilePage() {
     }
 
     if (error || !teacher) {
+        const axiosError = error as { response?: { status?: number; data?: { message?: string } } } | null
+        const statusCode = axiosError?.response?.status
+        const errorMessage =
+            axiosError?.response?.data?.message ||
+            (statusCode === 403
+                ? 'Access denied: This teacher is not actively linked to your school.'
+                : 'Teacher not found or is not linked to your school.')
+
         return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-4">
-                <p className="text-sm font-bold text-red-500">Failed to load teacher profile.</p>
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+                <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center space-y-4 shadow-sm">
+                    <div className="mx-auto size-12 rounded-2xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center justify-center">
+                        <ShieldCheck size={22} />
+                    </div>
+                    <div className="space-y-1.5">
+                        <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                            {statusCode === 403 ? 'Teacher Not Linked to School' : 'Teacher Profile Unavailable'}
+                        </h2>
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                            {errorMessage}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => router.push('/dashboard/admin/teachers')}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black uppercase tracking-wider hover:opacity-90 transition-opacity"
+                    >
+                        <ArrowLeft size={14} />
+                        Back to Teachers
+                    </button>
+                </div>
             </div>
         )
     }

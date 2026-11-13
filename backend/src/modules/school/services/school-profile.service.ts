@@ -119,6 +119,7 @@ export const getSchoolProfileService = async (
           id: sa.admin.id,
           name: sa.admin.name,
           role: sa.admin.role,
+          profileImage: sa.admin.profileImage,
           verified: sa.admin.verified,
         },
       })),

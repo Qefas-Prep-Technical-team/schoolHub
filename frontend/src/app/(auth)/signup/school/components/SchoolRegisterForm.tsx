@@ -141,13 +141,22 @@ export default function SchoolRegisterForm({
                 : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 group-hover:border-blue-400 dark:group-hover:border-blue-600 scale-95 group-hover:scale-100'
             }`}
           >
-            <span
-              className={`material-symbols-outlined text-[14px] font-black transition-transform duration-200 ${
+            <svg
+              viewBox="0 0 12 12"
+              fill="none"
+              aria-hidden="true"
+              className={`w-3 h-3 transition-transform duration-200 ${
                 isChecked ? 'scale-100 text-white' : 'scale-0 text-transparent'
               }`}
             >
-              check
-            </span>
+              <path
+                d="M2.5 6.2L5 8.7L9.5 3.5"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </div>
         </div>
         <span className="text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed font-normal pt-0.5">

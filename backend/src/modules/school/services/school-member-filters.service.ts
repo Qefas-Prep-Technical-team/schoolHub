@@ -15,6 +15,7 @@ export const getActiveSchoolTeacherFilter = async (
           where: {
             linkType: LinkType.SCHOOL_TEACHER,
             OR: [
+              { schoolId: resolvedSchoolId },
               {
                 leftEntityType: LinkEntityType.SCHOOL,
                 leftEntityId: resolvedSchoolId,
@@ -31,6 +32,7 @@ export const getActiveSchoolTeacherFilter = async (
             status: true,
             leftEntityType: true,
             leftEntityId: true,
+            rightEntityType: true,
             rightEntityId: true,
           },
         }),
@@ -43,11 +45,18 @@ export const getActiveSchoolTeacherFilter = async (
             linkType: LinkType.SCHOOL_TEACHER,
             status: { in: ["PENDING", "REJECTED", "CANCELLED", "EXPIRED"] },
             OR: [
+              { schoolId: resolvedSchoolId },
               { requesterSchoolId: resolvedSchoolId },
               { targetSchoolId: resolvedSchoolId },
+              { requesterType: LinkEntityType.SCHOOL, requesterId: resolvedSchoolId },
+              { targetType: LinkEntityType.SCHOOL, targetId: resolvedSchoolId },
             ],
           },
           select: {
+            requesterType: true,
+            requesterId: true,
+            targetType: true,
+            targetId: true,
             requesterTeacherId: true,
             targetTeacherId: true,
           },
@@ -63,7 +72,10 @@ export const getActiveSchoolTeacherFilter = async (
     const teacherId =
       link.leftEntityType === LinkEntityType.TEACHER
         ? link.leftEntityId
-        : link.rightEntityId;
+        : link.rightEntityType === LinkEntityType.TEACHER
+          ? link.rightEntityId
+          : null;
+    if (!teacherId) continue;
     if (link.status === LinkStatus.ACTIVE) {
       activeTeacherIds.add(teacherId);
     } else {
@@ -72,25 +84,60 @@ export const getActiveSchoolTeacherFilter = async (
   }
 
   for (const req of pendingRequests) {
-    const tId = req.requesterTeacherId || req.targetTeacherId;
+    const tId =
+      req.requesterTeacherId ||
+      req.targetTeacherId ||
+      (req.requesterType === LinkEntityType.TEACHER
+        ? req.requesterId
+        : req.targetType === LinkEntityType.TEACHER
+          ? req.targetId
+          : null);
     if (tId && !activeTeacherIds.has(tId)) {
       inactiveTeacherIds.add(tId);
     }
   }
 
+  const activeIdList = Array.from(activeTeacherIds);
   const excludedIds = Array.from(inactiveTeacherIds).filter(
     (id) => !activeTeacherIds.has(id),
   );
+
+  // Fire-and-forget cleanup of stale school pointers on claimed teachers who lack an ACTIVE SCHOOL_TEACHER link
+  const staleFilterBase: Prisma.TeacherWhereInput =
+    activeIdList.length > 0 ? { id: { notIn: activeIdList } } : {};
+  Promise.all([
+    prisma.teacher.updateMany({
+      where: { isClaimed: true, ...staleFilterBase, activeSchoolId: resolvedSchoolId },
+      data: { activeSchoolId: null },
+    }),
+    prisma.teacher.updateMany({
+      where: { isClaimed: true, ...staleFilterBase, primarySchoolId: resolvedSchoolId },
+      data: { primarySchoolId: null },
+    }),
+    prisma.teacher.updateMany({
+      where: { isClaimed: true, ...staleFilterBase, currentSchoolId: resolvedSchoolId },
+      data: { currentSchoolId: null },
+    }),
+    prisma.teacher.updateMany({
+      where: { isClaimed: true, ...staleFilterBase, schoolId: resolvedSchoolId },
+      data: { schoolId: null },
+    }),
+  ]).catch((err) => {
+    console.error("[school.getActiveSchoolTeacherFilter] Failed to heal stale teacher school pointers:", err);
+  });
 
   return {
     AND: [
       {
         OR: [
-          { id: { in: Array.from(activeTeacherIds) } },
-          { schoolId: resolvedSchoolId },
-          { currentSchoolId: resolvedSchoolId },
-          { activeSchoolId: resolvedSchoolId },
-          { primarySchoolId: resolvedSchoolId },
+          { id: { in: activeIdList } },
+          {
+            isClaimed: false,
+            OR: [
+              { primarySchoolId: resolvedSchoolId },
+              { schoolId: resolvedSchoolId },
+            ],
+          },
         ],
       },
       ...(excludedIds.length > 0 ? [{ id: { notIn: excludedIds } }] : []),

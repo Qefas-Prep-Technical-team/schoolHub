@@ -338,12 +338,23 @@ export const getActiveLinksService = async (
       OR: [
         { leftEntityType: currentUserType, leftEntityId: currentUserId },
         { rightEntityType: currentUserType, rightEntityId: currentUserId },
-        { schoolId: { in: schoolIds } },
+        {
+          schoolId: { in: schoolIds },
+          linkType: {
+            in: [
+              LinkType.SCHOOL_TEACHER,
+              LinkType.SCHOOL_STUDENT,
+              LinkType.SCHOOL_ADMIN,
+              LinkType.TEACHER_CLASS,
+              LinkType.STUDENT_CLASS,
+            ],
+          },
+        },
         ...(schoolIds.length
           ? [
-              { leftEntityType: LinkEntityType.SCHOOL, leftEntityId: { in: schoolIds } },
-              { rightEntityType: LinkEntityType.SCHOOL, rightEntityId: { in: schoolIds } },
-            ]
+            { leftEntityType: LinkEntityType.SCHOOL, leftEntityId: { in: schoolIds } },
+            { rightEntityType: LinkEntityType.SCHOOL, rightEntityId: { in: schoolIds } },
+          ]
           : []),
       ],
     };
@@ -415,8 +426,8 @@ export const getActiveLinksService = async (
         item.leftEntityType === LinkEntityType.STUDENT
           ? studentMap.get(item.leftEntityId)
           : item.rightEntityType === LinkEntityType.STUDENT
-          ? studentMap.get(item.rightEntityId)
-          : undefined;
+            ? studentMap.get(item.rightEntityId)
+            : undefined;
 
       return {
         ...item,
@@ -432,8 +443,8 @@ export const getActiveLinksService = async (
       item.leftEntityType === LinkEntityType.STUDENT || item.leftEntityType === LinkEntityType.TEACHER
         ? item.leftEntityId
         : item.rightEntityType === LinkEntityType.STUDENT || item.rightEntityType === LinkEntityType.TEACHER
-        ? item.rightEntityId
-        : `${item.leftEntityId}_${item.rightEntityId}`;
+          ? item.rightEntityId
+          : `${item.leftEntityId}_${item.rightEntityId}`;
     const contextKey = `${item.linkType}_${peerId}_${item.classId || item.schoolId || 'none'}`;
     if (seenActiveKeys.has(contextKey)) {
       return false;

@@ -78,6 +78,7 @@ export const menuGroups: { label: string; items: MenuItem[] }[] = [
         label: "Primary",
         items: [
             { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard/teacher", featureKey: "dashboard" },
+            { icon: School, label: "School Profile", href: "/dashboard/teacher/school-profile", featureKey: "schoolProfile" },
             { icon: Users, label: "Students", href: "/dashboard/teacher/students", featureKey: "students" },
             { icon: User2, label: "Parents", href: "/dashboard/teacher/parents", featureKey: "parents" },
             { icon: BookOpenCheck, label: "My Classes", href: "/dashboard/teacher/my-classes", featureKey: "classes" },
@@ -142,7 +143,7 @@ export function AppSidebar() {
     // Get the current features configuration
     const currentFeatures = useMemo(() => {
         if (isFeaturesLoading) return null;
-        return { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}), offlineGrades: true };
+        return { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}), offlineGrades: true, schoolProfile: true };
     }, [dynamicFeatures, isFeaturesLoading]);
 
     // Active menu groups without disabled / soon items
@@ -155,7 +156,7 @@ export function AppSidebar() {
                     if (dynamicFeatures && dynamicFeatures[item.featureKey] !== undefined) {
                         return !!dynamicFeatures[item.featureKey];
                     }
-                    if (item.featureKey === 'offlineGrades') return true;
+                    if (item.featureKey === 'offlineGrades' || item.featureKey === 'schoolProfile') return true;
                     return !!(currentFeatures as any)[item.featureKey];
                 }),
             }))
@@ -222,8 +223,8 @@ export function AppSidebar() {
 
                                     return (
                                         <SidebarMenuItem key={label}>
-                                            <Link 
-                                                href={href} 
+                                            <Link
+                                                href={href}
                                                 className="w-full"
                                             >
                                                 <SidebarMenuButton
@@ -245,7 +246,7 @@ export function AppSidebar() {
                                                     {!isCollapsed && (
                                                         <span className="text-[13.5px] tracking-tight truncate flex-1">{label}</span>
                                                     )}
-                                                    
+
                                                     {!isCollapsed && !isActive && (
                                                         <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
                                                             <ChevronRight className="h-3.5 w-3.5 text-emerald-500/50" />

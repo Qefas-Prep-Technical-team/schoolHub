@@ -2,6 +2,7 @@
 export const FEATURE_FLAGS_TEACHERS = {
   // Feature Set 1: Core Teaching Tools (ALWAYS ENABLED)
   dashboard: true,
+  schoolProfile: true,
   classes: true,
   subjects: true,
   assignments: false,

@@ -2,6 +2,7 @@
 "use client"
 import Link from 'next/link';
 import { useAuthStore } from '../(auth)/login/services/auth-store';
+import { authAPI } from '../(auth)/login/services/auth-api';
 
 
 export default function UnauthorizedPage() {
@@ -41,7 +42,10 @@ export default function UnauthorizedPage() {
                     <Link
                         href="/login"
                         className="w-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors block font-medium"
-                        onClick={() => useAuthStore.getState().clearAuth()}
+                        onClick={() => {
+                            authAPI.logout().catch(() => { });
+                            useAuthStore.getState().clearAuth();
+                        }}
                     >
                         Sign in with different account
                     </Link>

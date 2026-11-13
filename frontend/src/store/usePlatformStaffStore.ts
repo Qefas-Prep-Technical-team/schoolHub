@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import Cookies from "js-cookie";
 
 interface PlatformStaff {
   id: string;
@@ -36,13 +37,27 @@ export const usePlatformStaffStore = create<PlatformStaffStore>()(
         set((state) => ({
           staff: state.staff ? { ...state.staff, ...partial } : null,
         })),
-      clearStaff: () =>
-        set({ staff: null, platform_token: null, isAuthenticated: false }),
+      clearStaff: () => {
+        Cookies.remove("platform_token", { path: "/" });
+        Cookies.remove("platform_token");
+        Cookies.remove("token", { path: "/" });
+        Cookies.remove("token");
+        set({ staff: null, platform_token: null, isAuthenticated: false });
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("platform-staff-storage");
+          localStorage.removeItem("token");
+        }
+      },
       setHydrated: (value) => set({ isHydrated: value }),
     }),
     {
       name: "platform-staff-storage",
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        staff: state.staff,
+        platform_token: state.platform_token,
+        isAuthenticated: state.isAuthenticated,
+      }),
       onRehydrateStorage: () => (state) => {
         // Mark as hydrated after rehydration completes
         state?.setHydrated(true);

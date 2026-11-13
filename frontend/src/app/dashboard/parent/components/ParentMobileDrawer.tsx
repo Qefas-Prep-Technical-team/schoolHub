@@ -56,7 +56,7 @@ export function ParentMobileDrawer() {
 
     const filtered = (parentMenuItems as ParentMenuItem[]).filter((item) => {
       if (item.featureKey === "billing") return false;
-      if (item.featureKey === "offlineGrades") return true;
+      if (item.featureKey === "offlineGrades" || item.featureKey === "schoolProfile") return true;
       const key = item.featureKey === "results" ? "grades" : item.featureKey;
       return currentFeatures[key] !== undefined
         ? !!currentFeatures[key]

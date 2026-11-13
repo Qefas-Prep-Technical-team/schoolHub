@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { paymentService } from "@/lib/api/services/paymentService";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Lottie from "lottie-react";
 import SuccessLottie from "@/lotties/Success.json";
+import CancelLottie from "@/lotties/Cancel.json";
+import ProcessingLottie from "@/lotties/Processing.json";
 
 type CallbackState = "VERIFYING" | "SUCCESS" | "FAILED";
 
@@ -27,6 +29,16 @@ export default function PaymentCallbackPage() {
   const [countdown, setCountdown] = useState(5);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [expiryDate, setExpiryDate] = useState<string | null>(null);
+
+  const callbackLottieData = useMemo(() => {
+    const source =
+      state === "SUCCESS"
+        ? SuccessLottie
+        : state === "VERIFYING"
+          ? ProcessingLottie
+          : CancelLottie;
+    return JSON.parse(JSON.stringify(source)) as Record<string, unknown>;
+  }, [state]);
 
   useEffect(() => {
     const verify = async () => {
@@ -124,16 +136,13 @@ export default function PaymentCallbackPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800 p-12 max-w-md w-full text-center"
         >
-          <div className="relative size-24 mb-8 flex items-center justify-center mx-auto">
-            <div
-              className="absolute inset-0 rounded-full border-4 border-slate-100 dark:border-white/5 animate-spin"
-              style={{ borderTopColor: "#2563eb", borderRightColor: "#3b82f6", animationDuration: "1s" }}
+          <div className="flex items-center justify-center mx-auto mb-6">
+            <Lottie
+              key="callback-verifying"
+              animationData={callbackLottieData}
+              loop={true}
+              style={{ height: '120px', width: '120px' }}
             />
-            <div
-              className="absolute inset-2 rounded-full border-4 border-slate-100 dark:border-white/5 animate-spin"
-              style={{ borderBottomColor: "#f97316", animationDuration: "1.5s", animationDirection: "reverse" }}
-            />
-            <ShieldCheck className="size-10 text-blue-600 animate-pulse" />
           </div>
           <h2 className="text-3xl font-black text-slate-900 dark:text-white font-lexend mb-4">
             Verifying Payment
@@ -153,8 +162,13 @@ export default function PaymentCallbackPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800 p-12 max-w-md w-full text-center"
         >
-          <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-            <XCircle className="w-10 h-10 text-red-600" />
+          <div className="flex items-center justify-center mx-auto mb-4">
+            <Lottie
+              key="callback-failed"
+              animationData={callbackLottieData}
+              loop={false}
+              style={{ height: '120px', width: '120px' }}
+            />
           </div>
           <h2 className="text-3xl font-black text-slate-900 dark:text-white font-lexend mb-3">
             Verification Failed
@@ -187,10 +201,11 @@ export default function PaymentCallbackPage() {
           <div className="relative bg-white dark:bg-slate-900 rounded-t-[2rem] rounded-b-[0.5rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] dark:shadow-none w-full border border-b-0 border-slate-100 dark:border-slate-800">
             {/* Top Section */}
             <div className="p-10 pb-6 flex flex-col items-center text-center">
-              <Lottie 
-                  animationData={SuccessLottie} 
-                  loop={false}
-                  style={{ height: '140px', width: '140px', marginBottom: '8px' }}
+              <Lottie
+                key="callback-success"
+                animationData={callbackLottieData}
+                loop={false}
+                style={{ height: '140px', width: '140px', marginBottom: '8px' }}
               />
               <h2 className="text-2xl font-black text-slate-900 dark:text-white font-lexend mt-2">
                 Thank you
@@ -254,16 +269,16 @@ export default function PaymentCallbackPage() {
                   })}
                 </div>
                 <p className="text-[9px] text-slate-400 font-mono tracking-[0.2em] mt-3">
-                  {transactionId.replace(/\D/g, '').padEnd(16, '0').slice(0,16)}
+                  {transactionId.replace(/\D/g, '').padEnd(16, '0').slice(0, 16)}
                 </p>
               </div>
-              
+
               {/* Jagged bottom edge (CSS zig-zag) */}
               <div className="absolute -bottom-2 left-0 w-full h-4 overflow-hidden">
                 <div className="w-full h-8 -mt-4 bg-[radial-gradient(circle,transparent_4px,#fff_5px)] dark:bg-[radial-gradient(circle,transparent_4px,#0f172a_5px)] bg-[length:12px_12px]" />
               </div>
             </div>
-            
+
           </div>
 
           <div className="mt-12 flex items-center justify-center gap-2">

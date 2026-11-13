@@ -20,13 +20,13 @@ function LandingContent() {
   const searchParams = useSearchParams();
   const { scrollYProgress } = useScroll();
   const { isAuthenticated, userType, user, isInitialized, isLoggingOut } = useAuthStore();
-  const { isAuthenticated: isStaffAuth, staff } = usePlatformStaffStore();
+  const { isAuthenticated: isStaffAuth, staff, isHydrated: isStaffHydrated } = usePlatformStaffStore();
   const viewMode = searchParams.get("view");
 
   const isRedirectingToDashboard =
     viewMode !== "landing" &&
     !isLoggingOut &&
-    ((isInitialized && isAuthenticated) || isStaffAuth);
+    ((isInitialized && isAuthenticated) || (isStaffHydrated && isStaffAuth && !!staff));
 
   useEffect(() => {
     // If navigating with ?view=landing (e.g. clicked dashboard sidebar logo), allow viewing landing page
@@ -34,7 +34,7 @@ function LandingContent() {
       return;
     }
 
-    if (isStaffAuth && staff) {
+    if (isStaffHydrated && isStaffAuth && staff) {
       router.replace("/console");
       return;
     }
@@ -45,7 +45,7 @@ function LandingContent() {
       const targetDashboard = resolveUserDashboard(user, userType);
       router.replace(targetDashboard);
     }
-  }, [isAuthenticated, userType, user, isInitialized, isLoggingOut, isStaffAuth, staff, viewMode, router]);
+  }, [isAuthenticated, userType, user, isInitialized, isLoggingOut, isStaffHydrated, isStaffAuth, staff, viewMode, router]);
 
   if (isRedirectingToDashboard) {
     return (
@@ -57,7 +57,7 @@ function LandingContent() {
 
   return (
     <>
-      <motion.div 
+      <motion.div
         className="fixed top-0 left-0 right-0 h-1 bg-[#111827] z-[100] origin-left"
         style={{ scaleX: scrollYProgress }}
       />
@@ -65,7 +65,7 @@ function LandingContent() {
       <main className="min-h-screen bg-[#fcf8ff] dark:bg-[#0a0f1e] text-[#1a1a2b] dark:text-white overflow-x-hidden transition-colors duration-300">
         {/* Hero — split layout with dashboard mockup */}
         <IntroSection />
-        
+
         {/* Partner strip + Platform highlights with phone mockup */}
         <KeyBenefits />
 

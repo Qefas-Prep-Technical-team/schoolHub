@@ -14,6 +14,7 @@ import { UserRole } from '@/lib/types/user.types';
 import { getPasswordStrength } from '../../services/passwordStrength';
 import SocialAuthRow from "@/app/(auth)/login/components/SocialAuthRow";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { authAPI } from "@/app/(auth)/login/services/auth-api";
 import { linkService } from "@/lib/api/services/linkService";
 import { toast } from "react-toastify";
 
@@ -273,7 +274,8 @@ export default function ParentCard() {
 
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
+                      await authAPI.logout().catch(() => {});
                       clearAuth();
                       window.location.reload();
                     }}
@@ -306,7 +308,8 @@ export default function ParentCard() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
+                      await authAPI.logout().catch(() => {});
                       clearAuth();
                       window.location.reload();
                     }}

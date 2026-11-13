@@ -85,6 +85,9 @@ export default function ManageTeachersPage() {
         if (!teachersData || !Array.isArray(teachersData)) return []
 
         const validTeachers = teachersData.filter((teacher: any) => {
+            if (teacher?.isLinkedToSchool !== undefined) {
+                return Boolean(teacher.isLinkedToSchool);
+            }
             const schoolIds = new Set([
                 teacher?.primarySchoolId,
                 teacher?.activeSchoolId,

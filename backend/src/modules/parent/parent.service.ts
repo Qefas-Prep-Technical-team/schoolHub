@@ -44,6 +44,13 @@ export const getParentChildrenService = async (parentId: string) => {
                   id: true,
                   name: true,
                   section: true,
+                  school: {
+                    select: {
+                      id: true,
+                      name: true,
+                      schoolCode: true,
+                    },
+                  },
                 },
               },
             },
@@ -102,13 +109,18 @@ export const getParentChildrenService = async (parentId: string) => {
     });
     const todayAttendance = todayRecord?.status || 'None';
 
+    const resolvedSchool = student.school || student.classes[0]?.class?.school || null;
+    const currentClassRaw = student.classes[0]?.class;
+
     return {
       id: student.id,
       name: student.name,
       studentCode: student.studentCode,
       profileImage: student.profileImage,
-      school: student.school,
-      currentClass: student.classes[0]?.class || null,
+      school: resolvedSchool,
+      currentClass: currentClassRaw
+        ? { id: currentClassRaw.id, name: currentClassRaw.name, section: currentClassRaw.section }
+        : null,
       status: "IN_PROGRESS",
       stats: {
         averageGrade,

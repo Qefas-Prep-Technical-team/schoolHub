@@ -18,6 +18,7 @@ import {
 import { formatDistanceToNow } from "date-fns"
 
 import { ConsoleMobileDrawer } from "./ConsoleMobileDrawer"
+import { usePlatformLogoutMutation } from "@/app/(internal-console)/auth/login/usePlatformAuthMutations"
 
 interface ConsoleTopBarProps {
     onToggleSidebar: () => void;
@@ -28,6 +29,7 @@ export default function ConsoleTopBar({ onToggleSidebar, isCollapsed }: ConsoleT
     const { staff } = usePlatformStaffStore()
     const { unreadCount, recentTickets, clearUnread } = usePlatformSupportNotifications()
     const router = useRouter()
+    const { mutate: platformLogout, isPending: isLoggingOut } = usePlatformLogoutMutation()
 
     return (
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/80 px-4 backdrop-blur-xl md:px-8">
@@ -167,10 +169,8 @@ export default function ConsoleTopBar({ onToggleSidebar, isCollapsed }: ConsoleT
                     </DropdownMenuItem>
                     <DropdownMenuSeparator className="my-1 bg-slate-100 dark:bg-white/5" />
                     <DropdownMenuItem
-                      onClick={() => {
-                        usePlatformStaffStore.getState().clearStaff();
-                        router.push("/console/login");
-                      }}
+                      disabled={isLoggingOut}
+                      onClick={() => platformLogout()}
                       className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
                     >
                       <span>Sign Out from Console</span>

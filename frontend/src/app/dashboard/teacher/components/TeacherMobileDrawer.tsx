@@ -24,7 +24,7 @@ export function TeacherMobileDrawer() {
   const { selectedSchoolName } = useDashboardStore();
 
   const currentFeatures = React.useMemo(() => {
-    return { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}), offlineGrades: true } as Record<FeatureTeacherFlagKey, boolean>;
+    return { ...FEATURE_FLAGS_TEACHERS, ...(dynamicFeatures || {}), offlineGrades: true, schoolProfile: true } as Record<FeatureTeacherFlagKey, boolean>;
   }, [dynamicFeatures]);
 
   // Filter groups: strictly hide disabled / "soon" links and exclude empty groups completely
@@ -35,7 +35,7 @@ export function TeacherMobileDrawer() {
           if (dynamicFeatures && dynamicFeatures[item.featureKey] !== undefined) {
             return !!dynamicFeatures[item.featureKey];
           }
-          if (item.featureKey === 'offlineGrades') return true;
+          if (item.featureKey === 'offlineGrades' || item.featureKey === 'schoolProfile') return true;
           return !!currentFeatures[item.featureKey];
         });
         return {
@@ -49,8 +49,8 @@ export function TeacherMobileDrawer() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           aria-label="Open mobile navigation menu"
           className="size-11 sm:size-12 rounded-2xl md:hidden flex items-center justify-center border-slate-200/90 dark:border-white/10 bg-white/80 dark:bg-slate-800/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-500/40 text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all shadow-xs active:scale-95 shrink-0"
         >
@@ -101,8 +101,8 @@ export function TeacherMobileDrawer() {
                       onClick={() => setOpen(false)}
                       className={cn(
                         "flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-200",
-                        isActive 
-                          ? "bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-bold shadow-sm" 
+                        isActive
+                          ? "bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 font-bold shadow-sm"
                           : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 active:scale-[0.98]"
                       )}
                     >

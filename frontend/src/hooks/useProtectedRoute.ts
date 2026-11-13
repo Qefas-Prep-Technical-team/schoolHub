@@ -14,7 +14,7 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
 
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, isLoggingOut } = useAuthStore();
   const [isChecking, setIsChecking] = useState(true);
   // console.log("🔐 useProtectedRoute: isAuthenticated =", isAuthenticated);
 
@@ -24,6 +24,10 @@ export function useProtectedRoute(options: UseProtectedRouteOptions = {}) {
 
       // If authentication is required but user is not authenticated
       if (requireAuth && !isAuthenticated) {
+        if (isLoggingOut) {
+          router.replace(redirectTo);
+          return;
+        }
         // console.log("🔐 Redirecting to login: Not authenticated");
         router.push(`${redirectTo}?redirect=${encodeURIComponent(pathname)}`);
         return;

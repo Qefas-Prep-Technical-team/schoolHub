@@ -56,7 +56,7 @@ export const pickDepartmentService = async ({
   const updatedStudent = await prisma.student.update({
     where: { id: studentId },
     data: { departmentId },
-    include: { 
+    include: {
       department: true,
       school: true,
       classes: {
@@ -97,7 +97,7 @@ export const pickDepartmentService = async ({
 
     for (const admin of schoolAdmins) {
       if (admin.adminId === currentUserId) continue; // Don't notify the person who made the change
-      
+
       await createNotification({
         recipientType: "ADMIN",
         recipientId: admin.adminId,
@@ -150,7 +150,7 @@ export const pickDepartmentService = async ({
 };
 
 export const getStudentProfileService = async (studentId: string) => {
-  return prisma.student.findUnique({
+  const student = await prisma.student.findUnique({
     where: { id: studentId },
     include: {
       department: {
@@ -169,6 +169,7 @@ export const getStudentProfileService = async (studentId: string) => {
         include: {
           class: {
             include: {
+              school: true,
               subjects: {
                 include: {
                   subject: {
@@ -226,6 +227,44 @@ export const getStudentProfileService = async (studentId: string) => {
       },
     },
   });
+
+  if (!student) return null;
+
+  if (!student.school) {
+    const classSchool = student.classes?.find((c) => c.class?.school)?.class?.school;
+    if (classSchool) {
+      return { ...student, school: classSchool, schoolId: student.schoolId || classSchool.id };
+    }
+
+    const activeSchoolLink = await prisma.relationshipLink.findFirst({
+      where: {
+        linkType: "SCHOOL_STUDENT",
+        status: "ACTIVE",
+        OR: [{ rightEntityId: studentId }, { leftEntityId: studentId }],
+      },
+      select: {
+        leftEntityId: true,
+        leftEntityType: true,
+        rightEntityId: true,
+        rightEntityType: true,
+      },
+    });
+
+    const linkedSchoolId = activeSchoolLink
+      ? activeSchoolLink.leftEntityType === "SCHOOL"
+        ? activeSchoolLink.leftEntityId
+        : activeSchoolLink.rightEntityId
+      : null;
+
+    if (linkedSchoolId) {
+      const linkedSchool = await prisma.school.findUnique({ where: { id: linkedSchoolId } });
+      if (linkedSchool) {
+        return { ...student, school: linkedSchool, schoolId: student.schoolId || linkedSchool.id };
+      }
+    }
+  }
+
+  return student;
 };
 
 export const updateStudentProfileService = async (studentId: string, data: {
@@ -303,7 +342,7 @@ export const verifyEmailUpdateService = async (studentId: string, code: string) 
   });
 
   if (!student) throw new Error("Student not found");
-  
+
   const s = student as any;
 
   if (s.emailVerificationCode !== code) {
@@ -404,10 +443,10 @@ export const getStudentAttendanceService = async (studentId: string, query?: { s
 };
 
 export const updateStudentAttendanceService = async (
-  studentId: string, 
-  data: { 
-    date: string; 
-    status: string; 
+  studentId: string,
+  data: {
+    date: string;
+    status: string;
     note?: string;
     subjects?: Record<string, any>;
     recordedByName?: string;
@@ -439,7 +478,7 @@ export const updateStudentAttendanceService = async (
       try {
         const parsed = JSON.parse(comment);
         comment = parsed.comment || "";
-      } catch {}
+      } catch { }
     }
     finalNote = JSON.stringify({
       comment,
@@ -1162,11 +1201,11 @@ export const getStudentHistoryService = async (
   const overallAverage =
     academicHistory.length > 0
       ? Number(
-          (
-            academicHistory.reduce((acc, a) => acc + a.termAverage, 0) /
-            academicHistory.length
-          ).toFixed(1)
-        )
+        (
+          academicHistory.reduce((acc, a) => acc + a.termAverage, 0) /
+          academicHistory.length
+        ).toFixed(1)
+      )
       : 0;
 
   return {
@@ -1642,8 +1681,8 @@ export const getStudentSchoolsService = async (studentId: string): Promise<Stude
   const scoredSchools = schoolsList.filter((s) => s.totalGradesRecorded > 0 || s.overallAverage > 0);
   const overallAvg = scoredSchools.length > 0
     ? Math.round(
-        (scoredSchools.reduce((acc, s) => acc + s.overallAverage, 0) / scoredSchools.length) * 10
-      ) / 10
+      (scoredSchools.reduce((acc, s) => acc + s.overallAverage, 0) / scoredSchools.length) * 10
+    ) / 10
     : 0;
 
   return {

@@ -75,16 +75,7 @@ export const platformLogin = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Staff logout
- */
-export const platformLogout = async (req: Request, res: Response) => {
-  res.clearCookie("platform_token");
-  return res.status(200).json({
-    success: true,
-    message: "Logged out from platform console",
-  });
-};
+export { platformLogout } from "./controllers";
 
 /**
  * Get current staff profile with fallback to admin

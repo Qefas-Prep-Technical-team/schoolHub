@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-    CreditCard, 
-    Calendar, 
+import {
+    CreditCard,
+    Calendar,
     ChevronLeft,
     ChevronRight,
     ArrowRight,
@@ -18,8 +18,8 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Lottie from 'lottie-react';
 import SuccessLottie from '@/lotties/Success.json';
-import CancelLottie from '../../../public/lottie/cancel.json';
-import ProcessingLottie from '../../../public/lottie/processing.json';
+import CancelLottie from '@/lotties/Cancel.json';
+import ProcessingLottie from '@/lotties/Processing.json';
 import { ShieldCheck } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -44,8 +44,21 @@ interface TransactionHistoryProps {
     onPageChange?: (page: number) => void;
 }
 
-const TransactionHistory: React.FC<TransactionHistoryProps> = ({ 
-    items = [], 
+type NormalizedStatusCategory = 'SUCCESS' | 'PENDING' | 'FAILED';
+
+const getNormalizedStatusCategory = (status?: string | null): NormalizedStatusCategory => {
+    const normalized = (status || '').trim().toUpperCase();
+    if (normalized === 'SUCCESS' || normalized === 'COMPLETED' || normalized === 'PAID') {
+        return 'SUCCESS';
+    }
+    if (normalized === 'PENDING' || normalized === 'INITIATED' || normalized === 'PROCESSING') {
+        return 'PENDING';
+    }
+    return 'FAILED';
+};
+
+const TransactionHistory: React.FC<TransactionHistoryProps> = ({
+    items = [],
     totalItems,
     currentPage: externalCurrentPage,
     itemsPerPage: externalItemsPerPage,
@@ -55,23 +68,53 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
     const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
     const itemsPerPage = externalItemsPerPage || 5;
     const currentPage = externalCurrentPage || internalPage;
-    
+
     const isServerSide = totalItems !== undefined;
-    
+
     // Pagination logic
     const totalCount = isServerSide ? totalItems : items.length;
     const totalPages = Math.ceil(totalCount / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    
+
     // If server-side, items should already be paginated. If client-side, we slice them.
     const paginatedTransactions = isServerSide ? items : items.slice(startIndex, startIndex + itemsPerPage);
 
-    const getStatusStyles = (status: string) => {
-        switch (status) {
-            case 'SUCCESS': return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
-            case 'FAILED': return 'bg-red-500/10 text-red-600 border-red-500/20';
-            case 'PENDING': return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
-            default: return 'bg-slate-500/10 text-slate-600 border-slate-500/20';
+    const selectedStatusCategory = selectedTxn ? getNormalizedStatusCategory(selectedTxn.status) : null;
+
+    // Deep clone animationData per opened transaction because lottie-web mutates precomp assets in place.
+    const activeLottieData = useMemo(() => {
+        if (!selectedTxn || !selectedStatusCategory) return null;
+        const source =
+            selectedStatusCategory === 'SUCCESS'
+                ? SuccessLottie
+                : selectedStatusCategory === 'PENDING'
+                    ? ProcessingLottie
+                    : CancelLottie;
+        return JSON.parse(JSON.stringify(source)) as Record<string, unknown>;
+    }, [selectedTxn, selectedStatusCategory]);
+
+    const getStatusBadgeConfig = (status?: string | null) => {
+        const category = getNormalizedStatusCategory(status);
+        switch (category) {
+            case 'SUCCESS':
+                return {
+                    label: 'Paid',
+                    tableClass: 'bg-[#55EFC4]/10 text-[#00b894]',
+                    mobileClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+                };
+            case 'PENDING':
+                return {
+                    label: 'Pending',
+                    tableClass: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
+                    mobileClass: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
+                };
+            case 'FAILED':
+            default:
+                return {
+                    label: 'Failed',
+                    tableClass: 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400',
+                    mobileClass: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+                };
         }
     };
 
@@ -100,7 +143,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {paginatedTransactions.map((txn, idx) => (
-                            <motion.tr 
+                            <motion.tr
                                 key={txn.id}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -146,15 +189,20 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                                     </div>
                                 </td>
                                 <td className="px-6 py-5 text-center">
-                                    <div className={cn(
-                                        "inline-flex items-center px-3 py-1 rounded bg-[#55EFC4]/10 text-[#00b894] text-[10px] font-bold tracking-wider",
-                                        txn.status !== 'SUCCESS' && "bg-amber-100 text-amber-600"
-                                    )}>
-                                        {txn.status === 'SUCCESS' ? 'Paid' : 'Pending'}
-                                    </div>
+                                    {(() => {
+                                        const badge = getStatusBadgeConfig(txn.status);
+                                        return (
+                                            <div className={cn(
+                                                "inline-flex items-center px-3 py-1 rounded text-[10px] font-bold tracking-wider",
+                                                badge.tableClass
+                                            )}>
+                                                {badge.label}
+                                            </div>
+                                        );
+                                    })()}
                                 </td>
                                 <td className="px-6 py-5 text-right">
-                                    <button 
+                                    <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setSelectedTxn(txn);
@@ -195,12 +243,17 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                                     {txn.reference || `INV-00${txn.id}`}
                                 </span>
                             </div>
-                            <div className={cn(
-                                "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider shrink-0",
-                                txn.status === 'SUCCESS' ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
-                            )}>
-                                {txn.status === 'SUCCESS' ? 'Paid' : 'Pending'}
-                            </div>
+                            {(() => {
+                                const badge = getStatusBadgeConfig(txn.status);
+                                return (
+                                    <div className={cn(
+                                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider shrink-0",
+                                        badge.mobileClass
+                                    )}>
+                                        {badge.label}
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                         {/* Middle Row: Amount & Payment Method */}
@@ -246,7 +299,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                         Showing <span className="text-slate-900 dark:text-white">{startIndex + 1}</span> - <span className="text-slate-900 dark:text-white">{Math.min(startIndex + itemsPerPage, totalCount)}</span> / <span className="text-slate-900 dark:text-white">{totalCount}</span>
                     </p>
                     <div className="flex items-center gap-2">
-                        <button 
+                        <button
                             onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                             disabled={currentPage === 1}
                             className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:text-indigo-600 transition-all shadow-sm active:scale-90"
@@ -254,7 +307,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                         >
                             <ChevronLeft size={16} />
                         </button>
-                        
+
                         {/* Mobile compact page indicator */}
                         <div className="sm:hidden px-3 text-xs font-bold text-slate-700 dark:text-slate-300">
                             {currentPage} / {totalPages}
@@ -268,9 +321,9 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                                     onClick={() => handlePageChange(page)}
                                     className={cn(
                                         "w-10 h-10 rounded-xl font-black text-[10px] transition-all uppercase tracking-widest",
-                                        currentPage === page 
-                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
-                                        : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-indigo-600'
+                                        currentPage === page
+                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                                            : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-indigo-600'
                                     )}
                                 >
                                     {page}
@@ -278,7 +331,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                             ))}
                         </div>
 
-                        <button 
+                        <button
                             onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                             disabled={currentPage === totalPages}
                             className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:text-indigo-600 transition-all shadow-sm active:scale-90"
@@ -289,11 +342,11 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                     </div>
                 </div>
             )}
-            
+
             {items.length === 0 && (
                 <div className="p-8 sm:p-20 text-center">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 dark:bg-slate-800 rounded-2xl sm:rounded-[2rem] flex items-center justify-center mx-auto mb-4 sm:mb-6 text-slate-200 dark:text-slate-700">
-                       <Search size={32} className="sm:w-10 sm:h-10" />
+                        <Search size={32} className="sm:w-10 sm:h-10" />
                     </div>
                     <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-1 sm:mb-2">No Transactions Detected</h3>
                     <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">The financial ledger is currently awaiting initialization.</p>
@@ -304,9 +357,9 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                 <DialogContent className="p-2 sm:p-0 border-none bg-transparent shadow-none w-full max-w-[95vw] sm:max-w-md max-h-[92vh] overflow-y-auto" showCloseButton={false}>
                     {selectedTxn && (
                         <div className="relative bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-t-[2rem] rounded-b-2xl sm:rounded-b-[0.5rem] shadow-2xl dark:shadow-none w-full border border-slate-100 dark:border-slate-800 mx-auto">
-                            
+
                             {/* Close Button overlay */}
-                            <button 
+                            <button
                                 onClick={() => setSelectedTxn(null)}
                                 className="absolute top-4 right-4 z-50 h-8 w-8 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full flex items-center justify-center text-slate-500 transition-colors"
                             >
@@ -315,36 +368,25 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 
                             {/* Top Section */}
                             <div className="p-6 sm:p-10 pb-4 sm:pb-6 flex flex-col items-center text-center">
-                                {selectedTxn.status === 'SUCCESS' ? (
-                                    <Lottie 
-                                        animationData={SuccessLottie} 
-                                        loop={false}
-                                        style={{ height: '110px', width: '110px', marginBottom: '8px' }}
-                                    />
-                                ) : selectedTxn.status === 'PENDING' || selectedTxn.status === 'INITIATED' || selectedTxn.status === 'PROCESSING' ? (
-                                    <Lottie 
-                                        animationData={ProcessingLottie} 
-                                        loop={true}
-                                        style={{ height: '110px', width: '110px', marginBottom: '8px' }}
-                                    />
-                                ) : (
-                                    <Lottie 
-                                        animationData={CancelLottie} 
-                                        loop={false}
+                                {activeLottieData && selectedStatusCategory && (
+                                    <Lottie
+                                        key={`${selectedTxn.id}-${selectedStatusCategory}`}
+                                        animationData={activeLottieData}
+                                        loop={selectedStatusCategory === 'PENDING'}
                                         style={{ height: '110px', width: '110px', marginBottom: '8px' }}
                                     />
                                 )}
                                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-lexend mt-2">
-                                    {selectedTxn.status === 'SUCCESS' 
-                                        ? 'Thank you' 
-                                        : (selectedTxn.status === 'PENDING' || selectedTxn.status === 'INITIATED' || selectedTxn.status === 'PROCESSING') 
-                                            ? 'Pending' 
+                                    {selectedStatusCategory === 'SUCCESS'
+                                        ? 'Thank you'
+                                        : selectedStatusCategory === 'PENDING'
+                                            ? 'Pending'
                                             : 'Failed'}
                                 </h2>
                                 <p className="text-xs sm:text-sm text-slate-500 mt-1 sm:mt-2 font-medium">
-                                    {selectedTxn.status === 'SUCCESS' 
-                                        ? 'Your payment was processed successfully.' 
-                                        : (selectedTxn.status === 'PENDING' || selectedTxn.status === 'INITIATED' || selectedTxn.status === 'PROCESSING')
+                                    {selectedStatusCategory === 'SUCCESS'
+                                        ? 'Your payment was processed successfully.'
+                                        : selectedStatusCategory === 'PENDING'
                                             ? 'Transaction is currently pending confirmation.'
                                             : 'Transaction failed or was cancelled.'
                                     }
@@ -365,7 +407,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ticket ID</p>
                                         <div className="flex items-center gap-2">
                                             <p className="text-sm font-bold text-slate-900 dark:text-white max-w-[150px] truncate">{selectedTxn.reference || selectedTxn.id}</p>
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                     navigator.clipboard.writeText(String(selectedTxn.reference || selectedTxn.id));
                                                     toast.success("Ticket ID copied!");
@@ -416,10 +458,10 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                                         })}
                                     </div>
                                     <p className="text-[9px] text-slate-400 font-mono tracking-[0.2em] mt-3">
-                                        {String(selectedTxn.reference || selectedTxn.id).replace(/\D/g, '').padEnd(16, '0').slice(0,16)}
+                                        {String(selectedTxn.reference || selectedTxn.id).replace(/\D/g, '').padEnd(16, '0').slice(0, 16)}
                                     </p>
                                 </div>
-                                
+
                                 {/* Jagged bottom edge */}
                                 <div className="absolute -bottom-2 left-0 w-full h-4 overflow-hidden">
                                     <div className="w-full h-8 -mt-4 bg-[radial-gradient(circle,transparent_4px,#fff_5px)] dark:bg-[radial-gradient(circle,transparent_4px,#0f172a_5px)] bg-[length:12px_12px]" />

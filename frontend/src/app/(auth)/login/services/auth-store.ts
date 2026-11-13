@@ -2,6 +2,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import Cookies from "js-cookie";
+import { useDashboardStore } from "@/lib/api/hooks/useDashboardStore";
+import { useParentStore } from "@/lib/api/hooks/useParentStore";
+import { useSessionStore } from "@/store/useSessionStore";
+import { useUserStore } from "@/store/useUserStore";
 
 // Define user types as a union for better TypeScript support
 export type UserType = "PARENT" | "TEACHER" | "ADMIN" | "STUDENT";
@@ -162,32 +166,71 @@ export const useAuthStore = create<AuthState>()(
 
       clearAuth: () => {
         Cookies.remove("token", { path: "/" });
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("qefas_access_token");
-        }
+        Cookies.remove("token");
+        Cookies.remove("refreshToken", { path: "/" });
+        Cookies.remove("refreshToken");
+
+        // Reset in-memory auxiliary stores before clearing persisted keys
+        useDashboardStore.setState({
+          selectedSchoolId: "",
+          selectedSchoolName: "Personal Dashboard",
+          schools: [],
+        });
+        useParentStore.setState({ selectedChildId: null });
+        useSessionStore.getState().clearSession();
+        useUserStore.getState().clearUsername();
+
         set({
           user: null,
           accessToken: null,
+          userType: null,
           isAuthenticated: false,
           hasCompletedOnboarding: false,
           isLoggingOut: true, // Flag that we are logging out
+          isLogoutModalOpen: false,
+          isTransitioning: false,
+          transitionRole: null,
+          transitionUserName: null,
         });
+
+        // Remove persisted storage after `set` so Zustand persist does not immediately re-write keys
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("qefas_access_token");
+          localStorage.removeItem("token");
+          localStorage.removeItem("auth-storage");
+          localStorage.removeItem("dashboard-context");
+          localStorage.removeItem("parent-storage");
+          localStorage.removeItem("session-storage");
+          localStorage.removeItem("user-storage");
+          sessionStorage.removeItem("pendingJoinRedirect");
+        }
       },
 
       initialize: () => {
         const state = get();
 
         // Restore auth state from persisted storage if accessToken is present
-        if (state.accessToken && state.user && !state.isAuthenticated) {
-          console.log("🔄 Restoring auth state from persisted storage");
+        if (state.accessToken && state.user) {
+          if (!state.isAuthenticated) {
+            console.log("🔄 Restoring auth state from persisted storage");
+          }
           set({
             isAuthenticated: true,
+            isLoggingOut: false,
+          });
+        } else {
+          Cookies.remove("token", { path: "/" });
+          Cookies.remove("token");
+          set({
+            isAuthenticated: false,
+            userType: null,
+            isLoggingOut: false,
           });
         }
 
         // Keep client-side cookie synchronized if present in storage/localStorage but missing in cookies
         const fallbackToken = state.accessToken || (typeof window !== "undefined" ? localStorage.getItem("qefas_access_token") : null);
-        if (fallbackToken && typeof document !== "undefined") {
+        if (fallbackToken && state.user && typeof document !== "undefined") {
           if (!Cookies.get("token")) {
             Cookies.set("token", fallbackToken, {
               expires: 7,
@@ -210,6 +253,13 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
+      partialize: (state) => ({
+        user: state.user,
+        accessToken: state.accessToken,
+        userType: state.userType,
+        isAuthenticated: state.isAuthenticated,
+        hasCompletedOnboarding: state.hasCompletedOnboarding,
+      }),
     },
   ),
 );

@@ -39,6 +39,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
+import { usePlatformLogoutMutation } from "@/app/(internal-console)/auth/login/usePlatformAuthMutations"
 
 export interface ConsoleSidebarSection {
     title: string;
@@ -101,7 +102,8 @@ interface ConsoleSidebarProps {
 
 export function ConsoleSidebar({ isCollapsed, setIsCollapsed }: ConsoleSidebarProps) {
     const pathname = usePathname()
-    const { staff, clearStaff } = usePlatformStaffStore()
+    const { staff } = usePlatformStaffStore()
+    const { mutate: platformLogout, isPending: isLoggingOut } = usePlatformLogoutMutation()
 
     return (
         <Sidebar
@@ -188,10 +190,12 @@ export function ConsoleSidebar({ isCollapsed, setIsCollapsed }: ConsoleSidebarPr
                         )}
                     </Link>
                     {!isCollapsed && (
-                        <button 
-                            onClick={clearStaff}
+                        <button
+                            type="button"
+                            disabled={isLoggingOut}
+                            onClick={() => platformLogout()}
                             title="Sign out of console"
-                            className="p-1 hover:bg-slate-800 rounded text-slate-500 hover:text-red-400 transition-colors"
+                            className="p-1 hover:bg-slate-800 rounded text-slate-500 hover:text-red-400 transition-colors disabled:opacity-50"
                         >
                             <LogOut size={14} />
                         </button>

@@ -38,6 +38,7 @@ import {
     SheetTrigger
 } from "@/components/ui/sheet"
 import { usePlatformStaffStore } from "@/store/usePlatformStaffStore"
+import { usePlatformLogoutMutation } from "@/app/(internal-console)/auth/login/usePlatformAuthMutations"
 
 interface ConsoleNavCategory {
     title: string;
@@ -93,7 +94,8 @@ const CONSOLE_NAV_SECTIONS: ConsoleNavCategory[] = [
 export function ConsoleMobileDrawer() {
     const [open, setOpen] = useState(false)
     const pathname = usePathname()
-    const { staff, clearStaff } = usePlatformStaffStore()
+    const { staff } = usePlatformStaffStore()
+    const { mutate: platformLogout, isPending: isLoggingOut } = usePlatformLogoutMutation()
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
@@ -196,11 +198,12 @@ export function ConsoleMobileDrawer() {
                         <Button
                             variant="ghost"
                             size="icon"
+                            disabled={isLoggingOut}
                             onClick={() => {
-                                clearStaff();
                                 setOpen(false);
+                                platformLogout();
                             }}
-                            className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 shrink-0"
+                            className="h-8 w-8 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 shrink-0 disabled:opacity-50"
                             title="Sign out"
                         >
                             <LogOut size={16} />

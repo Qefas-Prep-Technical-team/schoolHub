@@ -9,6 +9,7 @@ import { useStudentRegistration } from '../../services/useRegistrationMutations'
 import { StudentFormData, studentSchema } from '../../services/regSchema';
 import { UserRole } from '@/lib/types/user.types';
 import { useAuthStore } from '@/app/(auth)/login/services/auth-store';
+import { authAPI } from '@/app/(auth)/login/services/auth-api';
 import { linkService } from '@/lib/api/services/linkService';
 import { classService } from '@/lib/api/services/classService';
 import { toast } from 'react-toastify';
@@ -225,7 +226,10 @@ export default function StudentCard() {
               isLinking={isLinking}
               onLink={handleDirectStudentLink}
               onNavigateDashboard={(path) => router.push(path)}
-              onSignOut={() => clearAuth()}
+              onSignOut={() => {
+                authAPI.logout().catch(() => { });
+                clearAuth();
+              }}
             />
           ) : (
             <StudentRegistrationForm

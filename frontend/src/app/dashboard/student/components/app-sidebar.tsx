@@ -35,6 +35,7 @@ import {
     Brain,
     CalendarClock,
     School,
+    Building2,
     LucideIcon,
     FileText,
     Link2,
@@ -65,6 +66,7 @@ interface StudentMenuItem {
 export const studentMenuItems: StudentMenuItem[] = [
     // === CORE FEATURES ===
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard/student", featureKey: "dashboard", section: "core" },
+    { icon: Building2, label: "School Profile", href: "/dashboard/student/school-profile", featureKey: "schoolProfile", section: "core" },
     { icon: BookOpenCheck, label: "Classes", href: "/dashboard/student/my-classes", featureKey: "classes", section: "core" },
     { icon: ClipboardList, label: "Assignments", href: "/dashboard/student/assignments", featureKey: "assignments", section: "core" },
     { icon: BarChart3, label: "Grades", href: "/dashboard/student/grades", featureKey: "results", section: "core" },
@@ -115,7 +117,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
     const { data: dynamicFeatures, isLoading: isFeaturesLoading } = useGlobalFeatures('student')
 
     useEffect(() => {
-        linkService.getProfile().then(setProfile).catch(() => {})
+        linkService.getProfile().then(setProfile).catch(() => { })
     }, [])
 
     const copyCode = (code: string) => {
@@ -126,9 +128,9 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
     // Get filtered menu items grouped by section based on dynamic or static flags
     const menuSections = useMemo(() => {
         if (isFeaturesLoading) return null;
-        
+
         const currentFeatures = { ...STUDENT_FEATURE_FLAGS, ...(dynamicFeatures || {}) };
-        
+
         const filtered = studentMenuItems.filter(item => {
             // Deactivated: hide subscription button from the sidebar
             if (item.featureKey === 'billing') return false;
@@ -136,7 +138,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                 return !!dynamicFeatures[item.featureKey];
             }
             // Core academic tools are always enabled for students by default
-            if (item.featureKey === 'assignments' || item.featureKey === 'dashboard' || item.featureKey === 'offlineGrades' || item.featureKey === 'transcript') return true;
+            if (item.featureKey === 'assignments' || item.featureKey === 'dashboard' || item.featureKey === 'offlineGrades' || item.featureKey === 'transcript' || item.featureKey === 'schoolProfile') return true;
             // Map 'results' to 'grades' for consistency with schema/seed
             const key = item.featureKey === 'results' ? 'grades' : item.featureKey;
             return !!(currentFeatures as any)[key];
@@ -171,7 +173,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                         </div>
                     )}
                 </Link>
-                
+
                 {/* Retractable Toggle Button */}
                 <button
                     onClick={(e) => {
@@ -206,55 +208,55 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                     ) : (
                         /* Render each section */
                         menuSections && Object.entries(menuSections).map(([sectionKey, items]) => {
-                        if (items.length === 0) return null;
+                            if (items.length === 0) return null;
 
-                        return (
-                            <div key={sectionKey} className="mb-6">
-                                {/* Section Header */}
-                                {!isCollapsed && (
-                                    <div className="px-4 mb-2">
-                                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
-                                            {STUDENT_SECTION_TITLES[sectionKey as keyof typeof STUDENT_SECTION_TITLES]}
-                                        </span>
-                                    </div>
-                                )}
+                            return (
+                                <div key={sectionKey} className="mb-6">
+                                    {/* Section Header */}
+                                    {!isCollapsed && (
+                                        <div className="px-4 mb-2">
+                                            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">
+                                                {STUDENT_SECTION_TITLES[sectionKey as keyof typeof STUDENT_SECTION_TITLES]}
+                                            </span>
+                                        </div>
+                                    )}
 
-                                {items.map(({ icon: Icon, label, href }) => {
-                                    const isActive = pathname === href;
+                                    {items.map(({ icon: Icon, label, href }) => {
+                                        const isActive = pathname === href;
 
-                                    return (
-                                        <SidebarMenuItem key={label} className="my-1">
-                                            <Link href={href}>
-                                                <SidebarMenuButton
-                                                    className={cn(
-                                                        "flex items-center gap-3 rounded-xl px-3 py-6 transition-all duration-200 group relative cursor-pointer",
-                                                        isActive
-                                                            ? "bg-pink-600/10 text-pink-600 dark:text-pink-400 shadow-sm shadow-pink-600/5"
-                                                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.02] hover:text-slate-900 dark:hover:text-slate-100",
-                                                        isCollapsed && "justify-center mx-auto"
-                                                    )}
-                                                >
-                                                    <Icon className={cn(
-                                                        "h-5 w-5 transition-transform group-hover:scale-110",
-                                                        isActive ? "text-pink-500" : "text-slate-400"
-                                                    )} />
-                                                    {!isCollapsed && (
-                                                        <span className={cn(
-                                                            "font-semibold tracking-tight",
-                                                            isActive ? "text-pink-600 dark:text-pink-400" : ""
-                                                        )}>{label}</span>
-                                                    )}
-                                                    {isActive && (
-                                                        <div className="absolute right-2 h-1.5 w-1.5 rounded-full bg-pink-500 shadow-lg shadow-pink-500/50" />
-                                                    )}
-                                                </SidebarMenuButton>
-                                            </Link>
-                                        </SidebarMenuItem>
-                                    );
-                                })}
-                            </div>
-                        );
-                    }))}
+                                        return (
+                                            <SidebarMenuItem key={label} className="my-1">
+                                                <Link href={href}>
+                                                    <SidebarMenuButton
+                                                        className={cn(
+                                                            "flex items-center gap-3 rounded-xl px-3 py-6 transition-all duration-200 group relative cursor-pointer",
+                                                            isActive
+                                                                ? "bg-pink-600/10 text-pink-600 dark:text-pink-400 shadow-sm shadow-pink-600/5"
+                                                                : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.02] hover:text-slate-900 dark:hover:text-slate-100",
+                                                            isCollapsed && "justify-center mx-auto"
+                                                        )}
+                                                    >
+                                                        <Icon className={cn(
+                                                            "h-5 w-5 transition-transform group-hover:scale-110",
+                                                            isActive ? "text-pink-500" : "text-slate-400"
+                                                        )} />
+                                                        {!isCollapsed && (
+                                                            <span className={cn(
+                                                                "font-semibold tracking-tight",
+                                                                isActive ? "text-pink-600 dark:text-pink-400" : ""
+                                                            )}>{label}</span>
+                                                        )}
+                                                        {isActive && (
+                                                            <div className="absolute right-2 h-1.5 w-1.5 rounded-full bg-pink-500 shadow-lg shadow-pink-500/50" />
+                                                        )}
+                                                    </SidebarMenuButton>
+                                                </Link>
+                                            </SidebarMenuItem>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        }))}
                 </SidebarMenu>
             </SidebarContent>
 
@@ -298,7 +300,7 @@ export function StudentSidebar({ isCollapsed, setIsCollapsed }: StudentSidebarPr
                                 className="w-[220px] rounded-2xl shadow-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-2 ml-2"
                             >
                                 {profile?.linkingCode && (
-                                    <DropdownMenuItem 
+                                    <DropdownMenuItem
                                         onClick={() => copyCode(profile.linkingCode)}
                                         className="cursor-pointer hover:bg-pink-500/10 rounded-xl font-bold text-xs p-4 flex flex-col items-start gap-1 group"
                                     >

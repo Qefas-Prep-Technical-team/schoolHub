@@ -14,14 +14,15 @@ import { UserRole } from '@/lib/types/user.types';
 import { getPasswordStrength } from '../../services/passwordStrength';
 import SocialAuthRow from "@/app/(auth)/login/components/SocialAuthRow";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
+import { authAPI } from "@/app/(auth)/login/services/auth-api";
 import { linkService } from "@/lib/api/services/linkService";
 import { toast } from "react-toastify";
 
 /* ─── Design tokens — Teacher = Emerald ─── */
-const EMERALD      = '#047857'; // emerald-700
+const EMERALD = '#047857'; // emerald-700
 const EMERALD_DARK = '#064e3b'; // emerald-900
 const EMERALD_LITE = '#d1fae5'; // emerald-100
-const EMERALD_MID  = '#10b981'; // emerald-500
+const EMERALD_MID = '#10b981'; // emerald-500
 
 const featureCards = [
   {
@@ -43,19 +44,19 @@ const featureCards = [
 
 const trustBadges = [
   { label: '50 000+', sublabel: 'Teachers', icon: 'person_play' },
-  { label: '99%',     sublabel: 'Satisfaction', icon: 'thumb_up' },
-  { label: 'Free',    sublabel: 'Basic Tools', icon: 'redeem' },
+  { label: '99%', sublabel: 'Satisfaction', icon: 'thumb_up' },
+  { label: 'Free', sublabel: 'Basic Tools', icon: 'redeem' },
 ];
 
 export default function TeacherCard() {
-  const [showPassword,        setShowPassword]        = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showOverlay,         setShowOverlay]         = useState(false);
-  const [showPrivacyModal,    setShowPrivacyModal]    = useState(false);
-  const [showTermsModal,      setShowTermsModal]      = useState(false);
-  const [showOptional,        setShowOptional]        = useState(false);
-  const [activeFeature,       setActiveFeature]       = useState(0);
-  
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showOptional, setShowOptional] = useState(false);
+  const [activeFeature, setActiveFeature] = useState(0);
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, user, isInitialized, clearAuth } = useAuthStore();
@@ -139,11 +140,13 @@ export default function TeacherCard() {
     if (searchParams.get('classCode')) setValue('classCode', searchParams.get('classCode') || '');
   }, [searchParams, setValue]);
 
-  /* Clear schoolCode when independent account is selected */
-  const isIndependentValue = watch('isIndependent');
+  /* Clear schoolCode and auto-close Optional Information when independent account is selected */
+  const isIndependentValue = !!watch('isIndependent');
+  const acceptTermsValue = !!watch('acceptTerms');
   useEffect(() => {
     if (isIndependentValue) {
       setValue('schoolCode', '');
+      setShowOptional(false);
     }
   }, [isIndependentValue, setValue]);
 
@@ -262,7 +265,7 @@ export default function TeacherCard() {
                   {searchParams.get('schoolCode') || searchParams.get('studentCode') || searchParams.get('classCode') ? (
                     <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/30 space-y-3">
                       <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Detected Invitations:</span>
-                      
+
                       {searchParams.get('schoolCode') && (
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-slate-600 dark:text-slate-300 font-medium">School Code:</span>
@@ -328,7 +331,10 @@ export default function TeacherCard() {
 
                   <button
                     type="button"
-                    onClick={() => clearAuth()}
+                    onClick={() => {
+                      authAPI.logout().catch(() => {});
+                      clearAuth();
+                    }}
                     className="w-full h-11 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700"
                   >
                     Sign in with a different account
@@ -369,7 +375,10 @@ export default function TeacherCard() {
 
                   <button
                     type="button"
-                    onClick={() => clearAuth()}
+                    onClick={() => {
+                      authAPI.logout().catch(() => {});
+                      clearAuth();
+                    }}
                     className="w-full h-11 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-700"
                   >
                     Sign out to Register as Teacher
@@ -395,230 +404,295 @@ export default function TeacherCard() {
               )}
               <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col gap-4">
 
-            {/* Row 1: Full Name + Email */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Full Name" icon="person" error={errors.fullName?.message}>
-                <input
-                  {...register('fullName')}
-                  placeholder="Jane Doe"
-                  disabled={isPending}
-                  className={inputCls(!!errors.fullName)}
-                />
-              </Field>
-              <Field label="Email" icon="mail" error={errors.email?.message}>
-                <input
-                  {...register('email')}
-                  type="email"
-                  placeholder="you@school.edu"
-                  disabled={isPending}
-                  className={inputCls(!!errors.email)}
-                />
-              </Field>
-            </div>
-
-            {/* Row 2: Password + Confirm */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Password" icon="lock" error={errors.password?.message}>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    {...register('password')}
-                    placeholder="••••••••"
-                    disabled={isPending}
-                    className={`${inputCls(!!errors.password)} pr-11`}
-                  />
-                  <EyeBtn show={showPassword} toggle={() => setShowPassword(p => !p)} />
-                </div>
-              </Field>
-
-              <Field label="Confirm Password" icon="lock_reset" error={errors.confirmPassword?.message}>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    {...register('confirmPassword')}
-                    placeholder="••••••••"
-                    disabled={isPending}
-                    className={`${inputCls(!!errors.confirmPassword)} pr-11`}
-                  />
-                  <EyeBtn show={showConfirmPassword} toggle={() => setShowConfirmPassword(p => !p)} />
-                </div>
-              </Field>
-            </div>
-
-            {/* Optional Fields Accordion */}
-            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden mt-2">
-              <button
-                type="button"
-                onClick={() => setShowOptional(!showOptional)}
-                className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-slate-500 dark:text-slate-400 text-[18px]">settings</span>
-                  <span className="text-[14px] font-medium text-slate-800 dark:text-slate-200">Optional Information</span>
-                </div>
-                <span className={`material-symbols-outlined text-slate-500 dark:text-slate-400 transition-transform duration-300 ${showOptional ? 'rotate-180' : ''}`}>
-                  expand_more
-                </span>
-              </button>
-
-              <div className={`transition-all duration-300 ease-in-out bg-white dark:bg-slate-900 ${showOptional ? 'max-h-[500px] opacity-100 p-4 border-t border-slate-200 dark:border-slate-700' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+                {/* Row 1: Full Name + Email */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field
-                      label={<>School Code <span className="font-normal text-slate-400 dark:text-slate-500">(Ask admin)</span></>}
-                      icon="apartment"
-                      error={errors.schoolCode?.message}
-                    >
-                      <input
-                        {...register('schoolCode')}
-                        placeholder="sch-1234"
-                        disabled={isPending || isIndependentValue}
-                        className={inputCls(!!errors.schoolCode)}
-                      />
-                    </Field>
-
-                    <Field
-                      label={<>Class Code</>}
-                      icon="class"
-                      error={errors.classCode?.message}
-                    >
-                      <input
-                        {...register('classCode')}
-                        placeholder="cls-123456"
-                        disabled={isPending}
-                        className={inputCls(!!errors.classCode)}
-                      />
-                    </Field>
-                </div>
-                <div className="mt-4">
-                  <Field
-                    label={<>Student Code <span className="font-normal text-slate-400 dark:text-slate-500">(Link a student)</span></>}
-                    icon="badge"
-                    error={errors.studentCode?.message}
-                  >
+                  <Field label="Full Name" icon="person" error={errors.fullName?.message}>
                     <input
-                      {...register('studentCode')}
-                      placeholder="stu-123456"
+                      {...register('fullName')}
+                      placeholder="Jane Doe"
                       disabled={isPending}
-                      className={inputCls(!!errors.studentCode)}
+                      className={inputCls(!!errors.fullName)}
+                    />
+                  </Field>
+                  <Field label="Email" icon="mail" error={errors.email?.message}>
+                    <input
+                      {...register('email')}
+                      type="email"
+                      placeholder="you@school.edu"
+                      disabled={isPending}
+                      className={inputCls(!!errors.email)}
                     />
                   </Field>
                 </div>
-              </div>
-            </div>
 
-            {/* Independent Account Checkbox */}
-            <label
-              htmlFor="independent-teacher-checkbox"
-              className="group flex items-start gap-3.5 p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 hover:border-emerald-300 dark:hover:border-emerald-700/60 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/15 cursor-pointer transition-all duration-200 select-none shadow-sm"
-            >
-              <div className="relative mt-0.5 shrink-0">
-                <input
-                  type="checkbox"
-                  id="independent-teacher-checkbox"
-                  {...register('isIndependent')}
-                  className="peer sr-only"
-                />
-                <div
-                  className="w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all duration-200 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 group-hover:border-emerald-400 dark:group-hover:border-emerald-600 peer-checked:border-emerald-600 peer-checked:bg-emerald-600 peer-checked:shadow-sm peer-checked:shadow-emerald-500/30"
-                >
-                  <span className="material-symbols-outlined text-[14px] font-black scale-0 peer-checked:scale-100 text-white transition-transform duration-200">
-                    check
-                  </span>
+                {/* Row 2: Password + Confirm */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="Password" icon="lock" error={errors.password?.message}>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        {...register('password')}
+                        placeholder="••••••••"
+                        disabled={isPending}
+                        className={`${inputCls(!!errors.password)} pr-11`}
+                      />
+                      <EyeBtn show={showPassword} toggle={() => setShowPassword(p => !p)} />
+                    </div>
+                  </Field>
+
+                  <Field label="Confirm Password" icon="lock_reset" error={errors.confirmPassword?.message}>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        {...register('confirmPassword')}
+                        placeholder="••••••••"
+                        disabled={isPending}
+                        className={`${inputCls(!!errors.confirmPassword)} pr-11`}
+                      />
+                      <EyeBtn show={showConfirmPassword} toggle={() => setShowConfirmPassword(p => !p)} />
+                    </div>
+                  </Field>
                 </div>
-              </div>
-              <div className="pt-0.5">
-                <span className="text-[13px] text-slate-800 dark:text-slate-200 font-medium block">
-                  I want to create an independent teaching account
-                </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
-                  Allows you to teach private tutoring or multiple schools without a fixed school affiliation
-                </span>
-              </div>
-            </label>
 
-            {/* Terms */}
-            <label
-              htmlFor="teacher-terms"
-              className={`group flex items-start gap-3.5 p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 select-none shadow-sm ${
-                errors.acceptTerms
-                  ? 'border-red-300 dark:border-red-800 bg-red-50/40 dark:bg-red-950/20 ring-1 ring-red-400/30'
-                  : 'border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 hover:border-emerald-300 dark:hover:border-emerald-700/60 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/15'
-              }`}
-            >
-              <div className="relative mt-0.5 shrink-0">
-                <input
-                  type="checkbox"
-                  id="teacher-terms"
-                  {...register('acceptTerms')}
-                  className="peer sr-only"
-                />
+                {/* Optional Fields Accordion */}
                 <div
-                  className="w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all duration-200 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 group-hover:border-emerald-400 dark:group-hover:border-emerald-600 peer-checked:border-emerald-600 peer-checked:bg-emerald-600 peer-checked:shadow-sm peer-checked:shadow-emerald-500/30"
+                  className={`border rounded-xl overflow-hidden mt-2 transition-colors ${isIndependentValue
+                    ? 'border-slate-200/70 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 opacity-75'
+                    : 'border-slate-200 dark:border-slate-700'
+                    }`}
                 >
-                  <span className="material-symbols-outlined text-[14px] font-black scale-0 peer-checked:scale-100 text-white transition-transform duration-200">
-                    check
-                  </span>
-                </div>
-              </div>
-              <span className="text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed font-normal pt-0.5">
-                I agree to the{' '}
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }}
-                  className="font-semibold hover:underline underline-offset-2 transition-opacity"
-                  style={{ color: EMERALD }}
-                >
-                  Terms of Service
-                </button>
-                {' '}and{' '}
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setShowPrivacyModal(true); }}
-                  className="font-semibold hover:underline underline-offset-2 transition-opacity"
-                  style={{ color: EMERALD }}
-                >
-                  Privacy Policy
-                </button>
-              </span>
-            </label>
-            {errors.acceptTerms && (
-              <p className="text-red-500 text-xs -mt-3">{errors.acceptTerms.message}</p>
-            )}
+                  <button
+                    type="button"
+                    disabled={isIndependentValue || isPending}
+                    aria-expanded={!isIndependentValue && showOptional}
+                    onClick={() => {
+                      if (!isIndependentValue) {
+                        setShowOptional((prev) => !prev);
+                      }
+                    }}
+                    className={`w-full flex items-center justify-between p-4 transition-colors ${isIndependentValue
+                      ? 'bg-slate-100/80 dark:bg-slate-800/40 cursor-not-allowed'
+                      : 'bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer'
+                      }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="material-symbols-outlined text-slate-500 dark:text-slate-400 text-[18px]">
+                        {isIndependentValue ? 'lock' : 'settings'}
+                      </span>
+                      <span className="text-[14px] font-medium text-slate-800 dark:text-slate-200 truncate">
+                        Optional Information
+                      </span>
+                      {isIndependentValue && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 shrink-0">
+                          Locked for independent account
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className={`material-symbols-outlined text-slate-500 dark:text-slate-400 transition-transform duration-300 ${!isIndependentValue && showOptional ? 'rotate-180' : ''
+                        }`}
+                    >
+                      {isIndependentValue ? 'lock_outline' : 'expand_more'}
+                    </span>
+                  </button>
 
-            {/* CTA button */}
-            <button
-              type="submit"
-              disabled={isPending}
-              className="mt-2 w-full rounded-xl text-white text-[15px] font-semibold tracking-wide transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 relative overflow-hidden group"
-              style={{ background: `linear-gradient(135deg, ${EMERALD_DARK} 0%, ${EMERALD} 100%)`, height: '52px' }}
-            >
-              {/* hover shimmer */}
-              <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <span className="relative flex items-center gap-2">
-                {isPending ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Creating your account…
-                  </>
-                ) : (
-                  <>
-                    <span className="material-symbols-outlined text-[18px]">school</span>
-                    Create Teacher Account
-                  </>
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ease-in-out bg-white dark:bg-slate-900 ${!isIndependentValue && showOptional
+                      ? 'max-h-[500px] opacity-100 p-4 border-t border-slate-200 dark:border-slate-700'
+                      : 'max-h-0 opacity-0 p-0 pointer-events-none'
+                      }`}
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Field
+                        label={<>School Code <span className="font-normal text-slate-400 dark:text-slate-500">(Ask admin)</span></>}
+                        icon="apartment"
+                        error={errors.schoolCode?.message}
+                      >
+                        <input
+                          {...register('schoolCode')}
+                          placeholder="sch-1234"
+                          disabled={isPending || isIndependentValue}
+                          className={inputCls(!!errors.schoolCode)}
+                        />
+                      </Field>
+
+                      <Field
+                        label={<>Class Code</>}
+                        icon="class"
+                        error={errors.classCode?.message}
+                      >
+                        <input
+                          {...register('classCode')}
+                          placeholder="cls-123456"
+                          disabled={isPending || isIndependentValue}
+                          className={inputCls(!!errors.classCode)}
+                        />
+                      </Field>
+                    </div>
+                    <div className="mt-4">
+                      <Field
+                        label={<>Student Code <span className="font-normal text-slate-400 dark:text-slate-500">(Link a student)</span></>}
+                        icon="badge"
+                        error={errors.studentCode?.message}
+                      >
+                        <input
+                          {...register('studentCode')}
+                          placeholder="stu-123456"
+                          disabled={isPending || isIndependentValue}
+                          className={inputCls(!!errors.studentCode)}
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Independent Account Checkbox */}
+                <label
+                  htmlFor="independent-teacher-checkbox"
+                  className={`group flex items-start gap-3.5 p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 select-none shadow-sm ${isIndependentValue
+                    ? 'border-emerald-500/60 dark:border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-950/25 shadow-emerald-500/5'
+                    : 'border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 hover:border-emerald-300 dark:hover:border-emerald-700/60 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/15'
+                    }`}
+                >
+                  <div className="relative mt-0.5 shrink-0">
+                    <input
+                      type="checkbox"
+                      id="independent-teacher-checkbox"
+                      {...register('isIndependent')}
+                      className="peer sr-only"
+                    />
+                    <div
+                      className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${isIndependentValue
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm shadow-emerald-500/30 scale-100'
+                        : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 group-hover:border-emerald-400 dark:group-hover:border-emerald-600 scale-95 group-hover:scale-100'
+                        }`}
+                    >
+                      <svg
+                        viewBox="0 0 12 12"
+                        fill="none"
+                        aria-hidden="true"
+                        className={`w-3 h-3 transition-transform duration-200 ${isIndependentValue ? 'scale-100 text-white' : 'scale-0 text-transparent'
+                          }`}
+                      >
+                        <path
+                          d="M2.5 6.2L5 8.7L9.5 3.5"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="pt-0.5">
+                    <span className="text-[13px] text-slate-800 dark:text-slate-200 font-medium block">
+                      I want to create an independent teaching account
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                      Allows you to teach private tutoring or multiple schools without a fixed school affiliation
+                    </span>
+                  </div>
+                </label>
+
+                {/* Terms */}
+                <label
+                  htmlFor="teacher-terms"
+                  className={`group flex items-start gap-3.5 p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 select-none shadow-sm ${errors.acceptTerms
+                    ? 'border-red-300 dark:border-red-800 bg-red-50/40 dark:bg-red-950/20 ring-1 ring-red-400/30'
+                    : acceptTermsValue
+                      ? 'border-emerald-500/60 dark:border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-950/25 shadow-emerald-500/5'
+                      : 'border-slate-200/90 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 hover:border-emerald-300 dark:hover:border-emerald-700/60 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/15'
+                    }`}
+                >
+                  <div className="relative mt-0.5 shrink-0">
+                    <input
+                      type="checkbox"
+                      id="teacher-terms"
+                      {...register('acceptTerms')}
+                      className="peer sr-only"
+                    />
+                    <div
+                      className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${acceptTermsValue
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm shadow-emerald-500/30 scale-100'
+                        : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 group-hover:border-emerald-400 dark:group-hover:border-emerald-600 scale-95 group-hover:scale-100'
+                        }`}
+                    >
+                      <svg
+                        viewBox="0 0 12 12"
+                        fill="none"
+                        aria-hidden="true"
+                        className={`w-3 h-3 transition-transform duration-200 ${acceptTermsValue ? 'scale-100 text-white' : 'scale-0 text-transparent'
+                          }`}
+                      >
+                        <path
+                          d="M2.5 6.2L5 8.7L9.5 3.5"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <span className="text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed font-normal pt-0.5">
+                    I agree to the{' '}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setShowTermsModal(true); }}
+                      className="font-semibold hover:underline underline-offset-2 transition-opacity"
+                      style={{ color: EMERALD }}
+                    >
+                      Terms of Service
+                    </button>
+                    {' '}and{' '}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setShowPrivacyModal(true); }}
+                      className="font-semibold hover:underline underline-offset-2 transition-opacity"
+                      style={{ color: EMERALD }}
+                    >
+                      Privacy Policy
+                    </button>
+                  </span>
+                </label>
+                {errors.acceptTerms && (
+                  <p className="text-red-500 text-xs -mt-3">{errors.acceptTerms.message}</p>
                 )}
-              </span>
-            </button>
 
-            <SocialAuthRow userType="teacher" mode="signup" />
+                {/* CTA button */}
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="mt-2 w-full rounded-xl text-white text-[15px] font-semibold tracking-wide transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 relative overflow-hidden group"
+                  style={{ background: `linear-gradient(135deg, ${EMERALD_DARK} 0%, ${EMERALD} 100%)`, height: '52px' }}
+                >
+                  {/* hover shimmer */}
+                  <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <span className="relative flex items-center gap-2">
+                    {isPending ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Creating your account…
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-[18px]">school</span>
+                        Create Teacher Account
+                      </>
+                    )}
+                  </span>
+                </button>
 
-            {/* Footer */}
-            <div className="flex items-center justify-center gap-1.5 mt-auto pt-2">
-              <span className="material-symbols-outlined text-[14px] text-slate-400 dark:text-slate-500">mail</span>
-              <span className="text-[12px] text-slate-400 dark:text-slate-500">help@qefashub.com</span>
-            </div>
-          </form>
-          </>
-        )}
+                <SocialAuthRow userType="teacher" mode="signup" />
+
+                {/* Footer */}
+                <div className="flex items-center justify-center gap-1.5 mt-auto pt-2">
+                  <span className="material-symbols-outlined text-[14px] text-slate-400 dark:text-slate-500">mail</span>
+                  <span className="text-[12px] text-slate-400 dark:text-slate-500">help@qefashub.com</span>
+                </div>
+              </form>
+            </>
+          )}
         </div>
 
         {/* ════════════════════════════════════
@@ -707,7 +781,7 @@ export default function TeacherCard() {
                     onClick={() => setActiveFeature(i)}
                     className="rounded-full transition-all duration-300"
                     style={{
-                      width:  i === activeFeature ? '20px' : '6px',
+                      width: i === activeFeature ? '20px' : '6px',
                       height: '6px',
                       background: i === activeFeature ? '#6ee7b7' : 'rgba(255,255,255,0.3)',
                     }}
@@ -737,7 +811,7 @@ export default function TeacherCard() {
       </div>
 
       <PrivacyModal isOpen={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
-      <TermsModal   isOpen={showTermsModal}   onClose={() => setShowTermsModal(false)} />
+      <TermsModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
     </>
   );
 }

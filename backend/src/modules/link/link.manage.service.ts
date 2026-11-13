@@ -226,6 +226,66 @@ const removeDomainSideEffects = async (
       break;
     }
 
+    case "SCHOOL_TEACHER": {
+      const schoolId =
+        link.schoolId ||
+        (link.leftEntityType === "SCHOOL"
+          ? link.leftEntityId
+          : link.rightEntityId);
+      const teacherId =
+        link.leftEntityType === "TEACHER"
+          ? link.leftEntityId
+          : link.rightEntityId;
+
+      if (teacherId && schoolId) {
+        await tx.teacherSubject.deleteMany({
+          where: { teacherId, schoolId },
+        });
+        await tx.classTeacher.deleteMany({
+          where: { teacherId, class: { schoolId } },
+        });
+
+        const remainingLink = await tx.relationshipLink.findFirst({
+          where: {
+            id: { not: link.id },
+            linkType: "SCHOOL_TEACHER",
+            status: LinkStatus.ACTIVE,
+            OR: [
+              { leftEntityType: "TEACHER", leftEntityId: teacherId },
+              { rightEntityType: "TEACHER", rightEntityId: teacherId },
+            ],
+          },
+          select: {
+            schoolId: true,
+            leftEntityType: true,
+            leftEntityId: true,
+            rightEntityType: true,
+            rightEntityId: true,
+          },
+        });
+
+        const nextSchoolId = remainingLink
+          ? remainingLink.schoolId ||
+          (remainingLink.leftEntityType === "SCHOOL"
+            ? remainingLink.leftEntityId
+            : remainingLink.rightEntityType === "SCHOOL"
+              ? remainingLink.rightEntityId
+              : null)
+          : null;
+
+        await tx.teacher.update({
+          where: { id: teacherId },
+          data: {
+            activeSchoolId: nextSchoolId,
+            primarySchoolId: nextSchoolId,
+            currentSchoolId: nextSchoolId,
+            schoolId: nextSchoolId,
+          },
+        });
+      }
+      break;
+    }
+
     default:
       break;
   }

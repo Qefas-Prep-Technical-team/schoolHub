@@ -20,6 +20,22 @@ function setCachedSession(userId: string, userType: string, data: { valid: boole
   sessionCache.set(`${userId}:${userType}`, { ...data, expiresAt: Date.now() + SESSION_CACHE_TTL_MS });
 }
 
+export function invalidateSessionCache(userId?: string, userType?: string) {
+  if (userId && userType) {
+    sessionCache.delete(`${userId}:${userType}`);
+    return;
+  }
+  if (userId) {
+    for (const key of sessionCache.keys()) {
+      if (key.startsWith(`${userId}:`)) {
+        sessionCache.delete(key);
+      }
+    }
+    return;
+  }
+  sessionCache.clear();
+}
+
 export const authenticateToken = async (
   req: Request,
   res: Response,
@@ -114,43 +130,98 @@ export const authenticateToken = async (
         );
         if (teacher && teacher.isActive !== false) {
           userExists = true;
-          schoolId = (teacher as any).activeSchoolId || (teacher as any).primarySchoolId || (teacher as any).currentSchoolId || (teacher as any).schoolId || undefined;
+          const candidateSchoolId =
+            (teacher as any).activeSchoolId ||
+            (teacher as any).primarySchoolId ||
+            (teacher as any).currentSchoolId ||
+            (teacher as any).schoolId ||
+            undefined;
 
-          // Self-heal: If schoolId is still missing, look up active RelationshipLink, TeacherSubject, or ClassTeacher
-          if (!schoolId) {
-            const [relLink, tSub, cTeach] = await withRetry(
+          if ((teacher as any).isClaimed !== false) {
+            const activeSchoolLinks = await withRetry(
               () =>
-                Promise.all([
-                  prisma.relationshipLink.findFirst({
-                    where: {
-                      status: "ACTIVE",
-                      OR: [
-                        { leftEntityId: teacher.id, leftEntityType: "TEACHER" },
-                        { rightEntityId: teacher.id, rightEntityType: "TEACHER" },
-                      ],
-                    },
-                    select: { schoolId: true },
-                  }),
-                  prisma.teacherSubject.findFirst({
-                    where: { teacherId: teacher.id, schoolId: { not: null } },
-                    select: { schoolId: true },
-                  }),
-                  prisma.classTeacher.findFirst({
-                    where: { teacherId: teacher.id },
-                    include: { class: { select: { schoolId: true } } },
-                  }),
-                ]),
-              "authMiddleware_teacher_selfHeal"
+                prisma.relationshipLink.findMany({
+                  where: {
+                    linkType: "SCHOOL_TEACHER",
+                    status: "ACTIVE",
+                    OR: [
+                      { leftEntityId: teacher.id, leftEntityType: "TEACHER" },
+                      { rightEntityId: teacher.id, rightEntityType: "TEACHER" },
+                    ],
+                  },
+                  select: {
+                    schoolId: true,
+                    leftEntityType: true,
+                    leftEntityId: true,
+                    rightEntityType: true,
+                    rightEntityId: true,
+                  },
+                }),
+              "authMiddleware_teacher_activeSchoolLinks"
             );
 
-            const resolvedSchoolId = relLink?.schoolId || tSub?.schoolId || cTeach?.class?.schoolId || undefined;
-            if (resolvedSchoolId) {
-              schoolId = resolvedSchoolId;
-              prisma.teacher.update({
-                where: { id: teacher.id },
-                data: { activeSchoolId: resolvedSchoolId },
-              }).catch((e) => console.error("[authMiddleware] Failed to self-heal teacher activeSchoolId:", e));
+            const linkedSchoolIds = activeSchoolLinks
+              .map(
+                (l) =>
+                  l.schoolId ||
+                  (l.leftEntityType === "SCHOOL"
+                    ? l.leftEntityId
+                    : l.rightEntityType === "SCHOOL"
+                      ? l.rightEntityId
+                      : null),
+              )
+              .filter(Boolean) as string[];
+
+            if (candidateSchoolId && linkedSchoolIds.includes(candidateSchoolId)) {
+              schoolId = candidateSchoolId;
+            } else if (linkedSchoolIds.length > 0) {
+              schoolId = linkedSchoolIds[0];
+              prisma.teacher
+                .update({
+                  where: { id: teacher.id },
+                  data: { activeSchoolId: schoolId },
+                })
+                .catch((e) =>
+                  console.error(
+                    "[authMiddleware] Failed to self-heal teacher activeSchoolId:",
+                    e,
+                  ),
+                );
+            } else {
+              schoolId = undefined;
+              if (candidateSchoolId) {
+                prisma.teacher
+                  .update({
+                    where: { id: teacher.id },
+                    data: {
+                      activeSchoolId:
+                        (teacher as any).activeSchoolId === candidateSchoolId
+                          ? null
+                          : (teacher as any).activeSchoolId,
+                      primarySchoolId:
+                        (teacher as any).primarySchoolId === candidateSchoolId
+                          ? null
+                          : (teacher as any).primarySchoolId,
+                      currentSchoolId:
+                        (teacher as any).currentSchoolId === candidateSchoolId
+                          ? null
+                          : (teacher as any).currentSchoolId,
+                      schoolId:
+                        (teacher as any).schoolId === candidateSchoolId
+                          ? null
+                          : (teacher as any).schoolId,
+                    },
+                  })
+                  .catch((e) =>
+                    console.error(
+                      "[authMiddleware] Failed to clear stale teacher school pointers:",
+                      e,
+                    ),
+                  );
+              }
             }
+          } else {
+            schoolId = candidateSchoolId;
           }
 
           tenantId = (teacher as any).tenantId;
@@ -295,7 +366,7 @@ export const authenticateToken = async (
             where: { id: activeSession.id },
             data: { deviceModel: String(deviceModel).slice(0, 100) },
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     }
 
