@@ -136,11 +136,17 @@ export default function PaymentCallbackPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800 p-12 max-w-md w-full text-center"
         >
-          <div className="flex items-center justify-center mx-auto mb-6">
+          <div className="w-[120px] h-[120px] flex items-center justify-center mx-auto mb-6 shrink-0">
             <Lottie
               key="callback-verifying"
               animationData={callbackLottieData}
               loop={true}
+              autoplay={true}
+              rendererSettings={{
+                preserveAspectRatio: "xMidYMid meet",
+                progressiveLoad: false,
+              }}
+              className="w-full h-full"
               style={{ height: '120px', width: '120px' }}
             />
           </div>
@@ -162,11 +168,17 @@ export default function PaymentCallbackPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800 p-12 max-w-md w-full text-center"
         >
-          <div className="flex items-center justify-center mx-auto mb-4">
+          <div className="w-[120px] h-[120px] flex items-center justify-center mx-auto mb-4 shrink-0">
             <Lottie
               key="callback-failed"
               animationData={callbackLottieData}
               loop={false}
+              autoplay={true}
+              rendererSettings={{
+                preserveAspectRatio: "xMidYMid meet",
+                progressiveLoad: false,
+              }}
+              className="w-full h-full"
               style={{ height: '120px', width: '120px' }}
             />
           </div>
@@ -201,12 +213,20 @@ export default function PaymentCallbackPage() {
           <div className="relative bg-white dark:bg-slate-900 rounded-t-[2rem] rounded-b-[0.5rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] dark:shadow-none w-full border border-b-0 border-slate-100 dark:border-slate-800">
             {/* Top Section */}
             <div className="p-10 pb-6 flex flex-col items-center text-center">
-              <Lottie
-                key="callback-success"
-                animationData={callbackLottieData}
-                loop={false}
-                style={{ height: '140px', width: '140px', marginBottom: '8px' }}
-              />
+              <div className="w-[140px] h-[140px] flex items-center justify-center mx-auto mb-2 shrink-0">
+                <Lottie
+                  key="callback-success"
+                  animationData={callbackLottieData}
+                  loop={false}
+                  autoplay={true}
+                  rendererSettings={{
+                    preserveAspectRatio: "xMidYMid meet",
+                    progressiveLoad: false,
+                  }}
+                  className="w-full h-full"
+                  style={{ height: '140px', width: '140px' }}
+                />
+              </div>
               <h2 className="text-2xl font-black text-slate-900 dark:text-white font-lexend mt-2">
                 Thank you
               </h2>

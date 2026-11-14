@@ -6,10 +6,10 @@ import Link from "next/link";
 import { useAuthStore } from "@/app/(auth)/login/services/auth-store";
 import { apiClient } from "@/lib/api/client";
 import { toast } from "react-toastify";
-import { 
-  ShieldCheck, 
-  Sparkles, 
-  CheckCircle2, 
+import {
+  ShieldCheck,
+  Sparkles,
+  CheckCircle2,
   ArrowRight,
   GraduationCap,
   Users,
@@ -158,13 +158,30 @@ export default function GoogleAuthCallback() {
 
       if (authStatus === "success") {
         try {
+          // Persist OAuth refresh token handoff cookie if present
+          const oauthRefreshToken = Cookies.get("oauth_refresh_token");
+          if (oauthRefreshToken && typeof window !== "undefined") {
+            localStorage.setItem("qefas_refresh_token", oauthRefreshToken);
+            Cookies.remove("oauth_refresh_token", { path: "/" });
+            Cookies.remove("oauth_refresh_token");
+          }
+
           // Hydrate client-side auth store using the newly established session
-          const token = Cookies.get("token") || "";
+          const token =
+            Cookies.get("token") ||
+            (typeof window !== "undefined" ? localStorage.getItem("qefas_access_token") : "") ||
+            "";
+          if (token && typeof window !== "undefined") {
+            localStorage.setItem("qefas_access_token", token);
+          }
+
           let finalDisplayName = "User";
           let finalRole = role;
 
           try {
-            const response = await apiClient.get("/auth/me");
+            const response = await apiClient.get("/auth/me", {
+              headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            });
             if (response.data && (response.data.user || response.data.data)) {
               const userData = response.data.user || response.data.data;
               finalDisplayName = userData.name || userData.fullName || "User";
@@ -239,7 +256,7 @@ export default function GoogleAuthCallback() {
 
       {/* Main Glassmorphism Authentication Card */}
       <div className="relative z-10 w-full max-w-md bg-white/95 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 rounded-[32px] p-7 sm:p-9 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-300">
-        
+
         {/* Brand Header & Animated Shield */}
         <div className="flex flex-col items-center text-center space-y-4">
           <div className="relative">
@@ -269,7 +286,7 @@ export default function GoogleAuthCallback() {
         {/* Animated Progress Bar matching user theme */}
         <div className="mt-7 space-y-2">
           <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative">
-            <div 
+            <div
               className={`h-full bg-gradient-to-r ${roleConfig.progressBar} transition-all duration-700 ease-out rounded-full shadow-xs`}
               style={{ width: activeStep === 1 ? "40%" : activeStep === 2 ? "75%" : "100%" }}
             />
@@ -294,11 +311,10 @@ export default function GoogleAuthCallback() {
           {/* Step 2 */}
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-2.5">
-              <div className={`size-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                activeStep >= 2 
-                  ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400" 
+              <div className={`size-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${activeStep >= 2
+                  ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400"
                   : "bg-slate-200 dark:bg-slate-700 text-slate-400"
-              }`}>
+                }`}>
                 {activeStep >= 2 ? (
                   <CheckCircle2 size={13} />
                 ) : (
@@ -317,11 +333,10 @@ export default function GoogleAuthCallback() {
           {/* Step 3 */}
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-2.5">
-              <div className={`size-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                activeStep >= 3 
+              <div className={`size-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${activeStep >= 3
                   ? roleConfig.step3Active
                   : "bg-slate-200 dark:bg-slate-700 text-slate-400"
-              }`}>
+                }`}>
                 {activeStep >= 3 ? (
                   <Sparkles size={13} className="animate-spin" />
                 ) : (

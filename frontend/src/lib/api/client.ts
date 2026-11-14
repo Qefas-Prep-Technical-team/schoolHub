@@ -110,10 +110,13 @@ export async function executeRefreshToken(): Promise<string> {
             await waitForOnlineConnection(10000);
           }
 
+          const storedRefreshToken =
+            typeof window !== "undefined" ? localStorage.getItem("qefas_refresh_token") : null;
+
           // Use raw axios instance with credentials & generous 45s timeout for slow 3G/4G connections
           const response = await axios.post(
             `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/auth/refresh`,
-            {},
+            storedRefreshToken ? { refreshToken: storedRefreshToken } : {},
             {
               withCredentials: true,
               timeout: 45000,
@@ -121,6 +124,7 @@ export async function executeRefreshToken(): Promise<string> {
           );
 
           const newToken = response.data?.accessToken;
+          const nextRefreshToken = response.data?.refreshToken;
           if (!newToken) throw new Error("No access token returned from refresh");
 
           Cookies.set("token", newToken, {
@@ -131,6 +135,9 @@ export async function executeRefreshToken(): Promise<string> {
           });
           if (typeof window !== "undefined") {
             localStorage.setItem("qefas_access_token", newToken);
+            if (nextRefreshToken) {
+              localStorage.setItem("qefas_refresh_token", nextRefreshToken);
+            }
           }
 
           const { user } = useAuthStore.getState();
@@ -176,7 +183,10 @@ apiClient.interceptors.request.use(
     const storeToken = useAuthStore.getState().accessToken;
     const cookieToken = Cookies.get("token");
     const localToken = typeof window !== "undefined" ? localStorage.getItem("qefas_access_token") : null;
-    let token = storeToken || cookieToken || localToken;
+    const isCallbackRoute = typeof window !== "undefined" && window.location.pathname.includes("/login/callback");
+    let token = isCallbackRoute
+      ? cookieToken || storeToken || localToken
+      : storeToken || cookieToken || localToken;
 
     const isAuthEndpoint =
       config.url?.includes("/auth/login") ||

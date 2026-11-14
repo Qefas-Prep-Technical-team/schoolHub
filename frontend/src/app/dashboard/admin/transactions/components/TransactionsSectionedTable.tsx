@@ -62,8 +62,8 @@ export function TransactionsSectionedTable({
       selectedStatusCategory === "SUCCESS"
         ? SuccessLottie
         : selectedStatusCategory === "PENDING"
-        ? ProcessingLottie
-        : CancelLottie;
+          ? ProcessingLottie
+          : CancelLottie;
     return JSON.parse(JSON.stringify(source)) as Record<string, unknown>;
   }, [selectedTxn, selectedStatusCategory]);
 
@@ -150,13 +150,12 @@ export function TransactionsSectionedTable({
                     </TableCell>
                     <TableCell className="text-center">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          txn.status?.toUpperCase() === "SUCCESS" || txn.status?.toLowerCase() === "completed"
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${txn.status?.toUpperCase() === "SUCCESS" || txn.status?.toLowerCase() === "completed"
                             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                             : txn.status?.toUpperCase() === "PENDING"
-                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                            : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                        }`}
+                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                              : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                          }`}
                       >
                         {txn.status}
                       </span>
@@ -196,13 +195,12 @@ export function TransactionsSectionedTable({
                     {txn.reference || `INV-${txn.id}`}
                   </span>
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                      getTxnStatusCategory(txn.status) === "SUCCESS"
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${getTxnStatusCategory(txn.status) === "SUCCESS"
                         ? "bg-emerald-500/10 text-emerald-600"
                         : getTxnStatusCategory(txn.status) === "PENDING"
-                        ? "bg-amber-500/10 text-amber-600"
-                        : "bg-rose-500/10 text-rose-600"
-                    }`}
+                          ? "bg-amber-500/10 text-amber-600"
+                          : "bg-rose-500/10 text-rose-600"
+                      }`}
                   >
                     {txn.status}
                   </span>
@@ -272,26 +270,34 @@ export function TransactionsSectionedTable({
 
               <div className="flex flex-col items-center text-center pt-4 pb-2">
                 {activeLottieData && selectedStatusCategory && (
-                  <Lottie
-                    key={`${selectedTxn.id}-${selectedStatusCategory}`}
-                    animationData={activeLottieData}
-                    loop={selectedStatusCategory === "PENDING"}
-                    style={{ height: "90px", width: "90px" }}
-                  />
+                  <div className="w-[110px] h-[110px] flex items-center justify-center mx-auto mb-2 shrink-0">
+                    <Lottie
+                      key={`${selectedTxn.id}-${selectedStatusCategory}`}
+                      animationData={activeLottieData}
+                      loop={selectedStatusCategory === "PENDING"}
+                      autoplay={true}
+                      rendererSettings={{
+                        preserveAspectRatio: "xMidYMid meet",
+                        progressiveLoad: false,
+                      }}
+                      className="w-full h-full"
+                      style={{ height: "110px", width: "110px" }}
+                    />
+                  </div>
                 )}
                 <h3 className="text-lg font-black text-slate-900 dark:text-white mt-1">
                   {selectedStatusCategory === "SUCCESS"
                     ? "Payment Receipt"
                     : selectedStatusCategory === "PENDING"
-                    ? "Payment Pending"
-                    : "Payment Failed"}
+                      ? "Payment Pending"
+                      : "Payment Failed"}
                 </h3>
                 <p className="text-xs text-slate-500">
                   {selectedStatusCategory === "SUCCESS"
                     ? "Institutional Billing Transaction"
                     : selectedStatusCategory === "PENDING"
-                    ? "Transaction awaiting confirmation"
-                    : "Transaction unsuccessful or cancelled"}
+                      ? "Transaction awaiting confirmation"
+                      : "Transaction unsuccessful or cancelled"}
                 </p>
               </div>
 

@@ -15,6 +15,7 @@ import SchoolProfileOverviewColumn from '@/app/dashboard/admin/school-profile/co
 import SchoolProfileAcademicColumn from '@/app/dashboard/admin/school-profile/components/SchoolProfileAcademicColumn';
 import SchoolProfileSidebar from '@/app/dashboard/admin/school-profile/components/SchoolProfileSidebar';
 import SchoolProfileLoading from '@/app/dashboard/admin/school-profile/loading';
+import TeacherAssignedSubjectsCard from './TeacherAssignedSubjectsCard';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -218,6 +219,12 @@ export default function ConnectedSchoolProfileView({
 
       <main className="w-[95%] max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          {role === 'teacher' && effectiveSchoolId && (
+            <TeacherAssignedSubjectsCard
+              schoolId={effectiveSchoolId}
+              primaryColor={primaryColor}
+            />
+          )}
           <SchoolProfileOverviewColumn
             school={school}
             primaryColor={primaryColor}

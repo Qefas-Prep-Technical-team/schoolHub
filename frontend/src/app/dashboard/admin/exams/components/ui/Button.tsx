@@ -1,28 +1,32 @@
 import { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 interface ButtonProps {
     children: ReactNode;
     variant?: 'primary' | 'secondary';
     className?: string;
     onClick?: () => void;
+    type?: 'button' | 'submit' | 'reset';
 }
 
 export default function Button({
     children,
     variant = 'primary',
     className = '',
-    onClick
+    onClick,
+    type = 'button'
 }: ButtonProps) {
     const baseStyles = "flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 text-sm font-bold leading-normal tracking-[0.015em] gap-2";
 
     const variants = {
-        primary: "bg-primary text-white",
-        secondary: "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+        primary: "bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white",
+        secondary: "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
     };
 
     return (
         <button
-            className={`${baseStyles} ${variants[variant]} ${className}`}
+            type={type}
+            className={cn(baseStyles, variants[variant], className)}
             onClick={onClick}
         >
             {children}

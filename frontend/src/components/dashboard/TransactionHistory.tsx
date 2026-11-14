@@ -369,12 +369,20 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                             {/* Top Section */}
                             <div className="p-6 sm:p-10 pb-4 sm:pb-6 flex flex-col items-center text-center">
                                 {activeLottieData && selectedStatusCategory && (
-                                    <Lottie
-                                        key={`${selectedTxn.id}-${selectedStatusCategory}`}
-                                        animationData={activeLottieData}
-                                        loop={selectedStatusCategory === 'PENDING'}
-                                        style={{ height: '110px', width: '110px', marginBottom: '8px' }}
-                                    />
+                                    <div className="w-[110px] h-[110px] flex items-center justify-center mx-auto mb-2 shrink-0">
+                                        <Lottie
+                                            key={`${selectedTxn.id}-${selectedStatusCategory}`}
+                                            animationData={activeLottieData}
+                                            loop={selectedStatusCategory === 'PENDING'}
+                                            autoplay={true}
+                                            rendererSettings={{
+                                                preserveAspectRatio: 'xMidYMid meet',
+                                                progressiveLoad: false,
+                                            }}
+                                            className="w-full h-full"
+                                            style={{ height: '110px', width: '110px' }}
+                                        />
+                                    </div>
                                 )}
                                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-lexend mt-2">
                                     {selectedStatusCategory === 'SUCCESS'

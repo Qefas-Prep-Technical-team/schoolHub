@@ -70,14 +70,14 @@ export default function Header() {
                     <div className="grid grid-cols-2 sm:flex sm:flex-row sm:items-center gap-3">
                         <Button
                             onClick={() => setIsExamTypeModalOpen(true)}
-                            className="w-full whitespace-nowrap font-black uppercase tracking-wider sm:tracking-widest h-12 px-3 sm:px-6 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white border border-blue-500/80 rounded-2xl shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/35 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 text-[11px] sm:text-xs cursor-pointer"
+                            className="w-full whitespace-nowrap font-black uppercase tracking-wider sm:tracking-widest h-12 px-3 sm:px-6 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white border border-blue-500/80 dark:border-blue-400/30 rounded-2xl shadow-md shadow-blue-600/20 dark:shadow-blue-950/60 hover:shadow-lg hover:shadow-blue-600/30 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 text-[11px] sm:text-xs cursor-pointer"
                         >
                             <Plus size={16} strokeWidth={3} className="text-white" />
                             <span className="text-white">Create Exam</span>
                         </Button>
 
-                        <Button 
-                            variant="secondary" 
+                        <Button
+                            variant="secondary"
                             onClick={() => handleOpenExamModal('QUIZ', 'SINGLE_SUBJECT')}
                             className="w-full whitespace-nowrap font-black uppercase tracking-wider sm:tracking-widest h-12 px-3 sm:px-6 flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100/80 text-purple-700 border border-purple-200/80 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-300 dark:border-purple-800/80 rounded-2xl shadow-sm hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 text-[11px] sm:text-xs"
                         >
@@ -85,8 +85,8 @@ export default function Header() {
                             <span>Create Quiz</span>
                         </Button>
 
-                        <Button 
-                            variant="secondary" 
+                        <Button
+                            variant="secondary"
                             onClick={() => handleOpenExamModal('CA', 'SINGLE_SUBJECT')}
                             className="w-full whitespace-nowrap font-black uppercase tracking-wider sm:tracking-widest h-12 px-3 sm:px-6 flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100/80 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800/80 rounded-2xl shadow-sm hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-700 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 text-[11px] sm:text-xs"
                         >
@@ -94,8 +94,8 @@ export default function Header() {
                             <span>Create CA</span>
                         </Button>
 
-                        <Button 
-                            variant="secondary" 
+                        <Button
+                            variant="secondary"
                             onClick={() => setIsPaperModalOpen(true)}
                             className="w-full whitespace-nowrap font-black uppercase tracking-wider sm:tracking-widest h-12 px-3 sm:px-6 flex items-center justify-center gap-2 bg-slate-100/80 hover:bg-slate-200/80 text-slate-800 border border-slate-200/90 dark:bg-slate-900 dark:hover:bg-slate-800/90 dark:text-slate-200 dark:border-slate-800 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 text-[11px] sm:text-xs"
                         >
@@ -115,10 +115,10 @@ export default function Header() {
                             <p className="text-slate-500 dark:text-slate-400 mb-8 text-xs font-bold uppercase tracking-widest">Select the type of exam structure you want to create.</p>
 
                             <div className="flex flex-col gap-4">
-                                <div 
+                                <div
                                     role="button"
                                     tabIndex={0}
-                                    onClick={() => handleOpenExamModal('EXAM', 'SINGLE_SUBJECT')} 
+                                    onClick={() => handleOpenExamModal('EXAM', 'SINGLE_SUBJECT')}
                                     className="group cursor-pointer"
                                 >
                                     <div className="flex items-center gap-5 p-5 rounded-3xl border-2 border-slate-200 dark:border-slate-800 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
@@ -132,10 +132,10 @@ export default function Header() {
                                     </div>
                                 </div>
 
-                                <div 
+                                <div
                                     role="button"
                                     tabIndex={0}
-                                    onClick={() => handleOpenExamModal('EXAM', 'COMBINED')} 
+                                    onClick={() => handleOpenExamModal('EXAM', 'COMBINED')}
                                     className="group cursor-pointer"
                                 >
                                     <div className="flex items-center gap-5 p-5 rounded-3xl border-2 border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
@@ -168,11 +168,11 @@ export default function Header() {
                         <DialogTitle className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
                             <Sparkles className="w-5 h-5 text-blue-500" />
                             Create {
-                                examCategory === 'EXAM' 
-                                    ? (examMode === 'COMBINED' ? 'Multi-Paper Exam' : 'Single Paper Exam') 
-                                    : examCategory === 'CA' 
-                                    ? 'Continuous Assessment' 
-                                    : 'Quiz'
+                                examCategory === 'EXAM'
+                                    ? (examMode === 'COMBINED' ? 'Multi-Paper Exam' : 'Single Paper Exam')
+                                    : examCategory === 'CA'
+                                        ? 'Continuous Assessment'
+                                        : 'Quiz'
                             }
                         </DialogTitle>
                     </DialogHeader>

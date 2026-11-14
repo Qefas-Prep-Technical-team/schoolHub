@@ -95,6 +95,9 @@ export const useLoginMutation = () => {
         };
 
         setAuth(userWithType, response.data.accessToken);
+        if (typeof window !== "undefined" && response.data.refreshToken) {
+          localStorage.setItem("qefas_refresh_token", response.data.refreshToken);
+        }
 
         const isNewUser = variables.isNewUser ?? (typeof window !== 'undefined'
           ? new URLSearchParams(window.location.search).get("new") === "true"
@@ -266,6 +269,9 @@ export const useLogin2FAMutation = () => {
         }
 
         setAuth(userWithType, response.data.accessToken);
+        if (typeof window !== "undefined" && response.data.refreshToken) {
+          localStorage.setItem("qefas_refresh_token", response.data.refreshToken);
+        }
         setHasCompletedOnboarding(true);
 
         authToast.loginSuccess(userWithType.name);

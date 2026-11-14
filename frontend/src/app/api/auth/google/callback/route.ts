@@ -231,8 +231,16 @@ export async function GET(request: NextRequest) {
         path: "/",
         httpOnly: true,
         secure: isProd,
-        sameSite: "strict",
+        sameSite: "lax",
         maxAge: 30 * 24 * 60 * 60,
+      });
+      // Short-lived handoff cookie so /login/callback can persist refreshToken for cross-origin /auth/refresh calls
+      response.cookies.set("oauth_refresh_token", refreshToken, {
+        path: "/",
+        httpOnly: false,
+        secure: isProd,
+        sameSite: "lax",
+        maxAge: 300,
       });
     }
 

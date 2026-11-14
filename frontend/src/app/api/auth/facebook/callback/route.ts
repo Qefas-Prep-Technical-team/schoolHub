@@ -159,13 +159,28 @@ export async function GET(request: NextRequest) {
     };
     const mappedRole = roleMapping[storedRole.toLowerCase()] || "STUDENT";
 
-    const res = await axios.post(`${backendUrl}/auth/facebook`, {
-      facebookId: profile.id,
-      email: profile.email,
-      name: profile.name || profile.email.split("@")[0],
-      userRole: mappedRole,
-      inviteToken: inviteToken || undefined,
-    });
+    const userAgent = request.headers.get("user-agent") || "";
+    const clientIp =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      "";
+
+    const res = await axios.post(
+      `${backendUrl}/auth/facebook`,
+      {
+        facebookId: profile.id,
+        email: profile.email,
+        name: profile.name || profile.email.split("@")[0],
+        userRole: mappedRole,
+        inviteToken: inviteToken || undefined,
+      },
+      {
+        headers: {
+          "user-agent": userAgent,
+          "x-forwarded-for": clientIp,
+        },
+      }
+    );
 
     if (!res.data.success) {
       loginUrl.searchParams.set(
@@ -228,8 +243,16 @@ export async function GET(request: NextRequest) {
         path: "/",
         httpOnly: true,
         secure: isProd,
-        sameSite: "strict",
+        sameSite: "lax",
         maxAge: 30 * 24 * 60 * 60,
+      });
+      // Short-lived handoff cookie so /login/callback can persist refreshToken for cross-origin /auth/refresh calls
+      response.cookies.set("oauth_refresh_token", refreshToken, {
+        path: "/",
+        httpOnly: false,
+        secure: isProd,
+        sameSite: "lax",
+        maxAge: 300,
       });
     }
 

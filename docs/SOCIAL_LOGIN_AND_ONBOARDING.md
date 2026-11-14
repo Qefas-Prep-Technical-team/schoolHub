@@ -61,8 +61,19 @@ When a new user completes OAuth:
 | Layer | File Path | Purpose |
 |---|---|---|
 | **Backend Route** | `backend/src/modules/auth/auth.routes.ts` | `/google`, `/facebook`, `/facebook-data-deletion`. |
-| **Backend Controller** | `backend/src/modules/auth/auth.controller.ts` | `googleAuth`, `facebookAuth`. |
+| **Backend Controller** | `backend/src/modules/auth/controllers/google-auth.controller.ts` | `googleAuth` (sets `sameSite: "lax"` refresh cookie, invalidates `sessionCache`). |
 | **Backend Service** | `backend/src/modules/auth/auth.service.ts` | `googleAuthService` (checks feature flags, handles staff invites, creates JWTs). |
-| **Frontend Callback** | `frontend/src/app/(auth)/login/callback/page.tsx` | Hydrates auth state, checks onboarding status, handles redirection. |
+| **Frontend OAuth Callbacks** | `frontend/src/app/api/auth/{google,facebook}/callback/route.ts` | Exchanges OAuth code with backend, sets `token`, `refreshToken` (`lax`), and 300s `oauth_refresh_token` handoff cookie. |
+| **Frontend Callback** | `frontend/src/app/(auth)/login/callback/page.tsx` | Hydrates auth state (`qefas_access_token` & `qefas_refresh_token`), checks onboarding status, handles redirection. |
+| **Frontend API Client** | `frontend/src/lib/api/client.ts` | Sends `qefas_refresh_token` in `/auth/refresh` body when cross-origin `refreshToken` cookie is unavailable; prioritizes cookie on `/login/callback`. |
 | **Frontend Onboarding** | `frontend/src/app/onboarding/page.tsx` | Guided welcome tour for new roles. |
 | **Mobile Auth Hook** | `Mobile/lib/api/hooks/useAuth.ts` | Handles mobile social token handoff. |
+
+---
+
+## 4. Recent Updates (Friday, November 13, 2026)
+- **Session Persistence Across OAuth Redirect & Cross-Origin Token Refresh**:
+  - `useAuthStore.initialize()` in `frontend/src/app/(auth)/login/services/auth-store.ts` no longer deletes `Cookies.get("token")` while unauthenticated so `AppInitializer` does not wipe freshly issued OAuth cookies before `GoogleAuthCallback` mounts.
+  - `google-auth.controller.ts` calls `invalidateSessionCache(user.id)` and sets `sameSite: "lax"` on `refreshToken`.
+  - Next.js `/api/auth/google/callback` and `/api/auth/facebook/callback` pass a 300-second `oauth_refresh_token` handoff cookie consumed by `/login/callback` and `useAuthStore.setAuth()` to store `qefas_refresh_token` in `localStorage`, which `executeRefreshToken()` in `client.ts` sends in the `POST /auth/refresh` body when cross-origin cookies are unavailable.
+  - `facebook/callback/route.ts` now forwards `user-agent` and `x-forwarded-for` to match `google/callback/route.ts`.

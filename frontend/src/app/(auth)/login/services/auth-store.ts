@@ -98,14 +98,22 @@ export const useAuthStore = create<AuthState>()(
       isLoggingOut: false,
 
       setAuth: (user: User, token: string) => {
-        if (token && typeof document !== "undefined") {
-          Cookies.set("token", token, {
-            expires: 7,
-            path: "/",
-            sameSite: "lax",
-            secure: process.env.NODE_ENV === "production",
-          });
-          localStorage.setItem("qefas_access_token", token);
+        if (typeof document !== "undefined") {
+          const oauthRefreshToken = Cookies.get("oauth_refresh_token");
+          if (oauthRefreshToken) {
+            localStorage.setItem("qefas_refresh_token", oauthRefreshToken);
+            Cookies.remove("oauth_refresh_token", { path: "/" });
+            Cookies.remove("oauth_refresh_token");
+          }
+          if (token) {
+            Cookies.set("token", token, {
+              expires: 7,
+              path: "/",
+              sameSite: "lax",
+              secure: process.env.NODE_ENV === "production",
+            });
+            localStorage.setItem("qefas_access_token", token);
+          }
         }
 
         set({
@@ -169,6 +177,8 @@ export const useAuthStore = create<AuthState>()(
         Cookies.remove("token");
         Cookies.remove("refreshToken", { path: "/" });
         Cookies.remove("refreshToken");
+        Cookies.remove("oauth_refresh_token", { path: "/" });
+        Cookies.remove("oauth_refresh_token");
 
         // Reset in-memory auxiliary stores before clearing persisted keys
         useDashboardStore.setState({
@@ -196,6 +206,7 @@ export const useAuthStore = create<AuthState>()(
         // Remove persisted storage after `set` so Zustand persist does not immediately re-write keys
         if (typeof window !== "undefined") {
           localStorage.removeItem("qefas_access_token");
+          localStorage.removeItem("qefas_refresh_token");
           localStorage.removeItem("token");
           localStorage.removeItem("auth-storage");
           localStorage.removeItem("dashboard-context");
@@ -219,8 +230,8 @@ export const useAuthStore = create<AuthState>()(
             isLoggingOut: false,
           });
         } else {
-          Cookies.remove("token", { path: "/" });
-          Cookies.remove("token");
+          // Do NOT delete Cookies.get("token") here: OAuth callbacks (/login/callback) rely
+          // on the freshly set token cookie before useAuthStore hydrates.
           set({
             isAuthenticated: false,
             userType: null,
