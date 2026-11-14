@@ -1829,6 +1829,13 @@ export const getTeacherSubjectsService = async (teacherId: string, schoolId?: st
             departments: {
                 include: { department: true }
             },
+            classes: {
+                include: {
+                    class: {
+                        select: { id: true, name: true, section: true, level: true }
+                    }
+                }
+            },
             _count: {
                 select: { classes: true, teacherSubjects: true }
             }

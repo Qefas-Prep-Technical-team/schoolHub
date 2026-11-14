@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { googleAuthService } from "../auth.service";
 import { extractDeviceInfo, processNewDeviceLogin, setDeviceVerifiedCookie } from "../auth.device";
+import { invalidateSessionCache } from "../../../middleware/authMiddleware";
 import { handleError } from "../../../utils/error-handler";
 import jwt from "jsonwebtoken";
 import { UserRole } from "@prisma/client";
@@ -31,6 +32,10 @@ export const googleAuth = async (req: Request, res: Response) => {
 
     const { user, accessToken, refreshToken, token, isNewUser, userRole: actualRole, isPlatformStaff } = authResult as any;
 
+    if (user?.id) {
+      invalidateSessionCache(user.id);
+    }
+
     if (user && !isNewUser) {
       await processNewDeviceLogin({
         req,
@@ -57,7 +62,7 @@ export const googleAuth = async (req: Request, res: Response) => {
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        sameSite: "lax",
         path: "/",
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
